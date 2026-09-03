@@ -1,11 +1,11 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>OSTEP course — Operating Systems: Three Easy Pieces, taught interactively</title><style>
+<title>19 · Time series — Python 3.13 course</title><style>
 /* OSTEP course — shared stylesheet. Three pieces, three hues. */
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
 :root{
   --ink:#151b2f; --ink-2:#1e2540; --ink-3:#28304f; --line:#3a4368;
   --paper:#eef0f7; --muted:#a9b1cf; --faint:#6e779a;
-  --virt:#e8b84a; --conc:#5bc8f5; --pers:#6bcb77; --sec:#f47fa0; --intro:#c9a8ff;
+  --virt:#e8b84a; --conc:#5bc8f5; --pers:#6bcb77; --sec:#f47fa0; --intro:#c9a8ff; --spec:#ffd166; --internals:#5bc8f5; --data:#6bcb77;
   --ok:#6bcb77; --bad:#ff6b6b;
   --accent:var(--virt);
   --radius:6px;
@@ -28,7 +28,7 @@ p,li{max-width:72ch}
 .hero{padding:44px 0 16px}
 .hero .chapters{color:var(--muted);font-size:.95rem;margin-bottom:6px}
 .lede{font-size:1.2rem;color:var(--muted);max-width:66ch}
-.piece-virt{--accent:var(--virt)} .piece-conc{--accent:var(--conc)} .piece-pers{--accent:var(--pers)} .piece-sec{--accent:var(--sec)} .piece-intro{--accent:var(--intro)}
+.piece-spec{--accent:var(--spec)} .piece-internals{--accent:var(--internals)} .piece-data{--accent:var(--data)} .piece-virt{--accent:var(--virt)} .piece-conc{--accent:var(--conc)} .piece-pers{--accent:var(--pers)} .piece-sec{--accent:var(--sec)} .piece-intro{--accent:var(--intro)}
 .fig{background:var(--ink-2);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;margin:22px 0}
 .fig figcaption,.cap{color:var(--muted);font-size:.9rem;margin-top:10px}
 .fig svg{max-width:100%;height:auto;display:block}
@@ -182,32 +182,41 @@ details>div{padding:0 16px 14px}
 }
 @media (max-width:420px){.cards{grid-template-columns:1fr}}
 
+/* ---------- runnable Python ---------- */
+.pyrun{border:1px solid var(--line);border-radius:var(--radius);background:#0f1424;margin:18px 0;overflow:hidden}
+.pyrun .pyhead{display:flex;gap:10px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--line);font-size:.85rem;color:var(--muted);background:var(--ink-2)}
+.pyrun .pyhead span:first-child{flex:1;font-weight:600;color:var(--paper)}
+.pyrun .pystatus{font-size:.78rem}
+.pyrun textarea{display:block;width:100%;border:none;background:#0f1424;color:var(--paper);font-family:'IBM Plex Mono',monospace;font-size:.86rem;line-height:1.5;padding:12px 14px;resize:vertical;outline:none;min-height:60px;tab-size:4}
+.pyrun .pyout{margin:0;border:none;border-top:1px solid var(--line);border-left:none;border-radius:0;background:#0a0e1a;color:#cfe3ff;max-height:320px}
+
 </style>
-<style>.map{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:24px 0}.piece{border:1px solid var(--line);border-radius:8px;padding:16px;background:var(--ink-2);border-top:4px solid var(--accent)}.piece h3{margin:0 0 4px;color:var(--accent)}.piece p{font-size:.9rem;color:var(--muted);margin:0 0 10px}.piece a{display:block;text-decoration:none;color:var(--paper);padding:6px 0;border-top:1px solid var(--line);font-size:.92rem}.piece a:hover{color:var(--accent)}.piece a small{display:block;color:var(--faint);font-size:.78rem}.piece a.done::after{content:" ✓";color:var(--ok)}.how{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}.how .fig{margin:0}.how h4{margin:0 0 6px}@media(max-width:900px){.map{grid-template-columns:1fr 1fr}.how{grid-template-columns:1fr}}@media(max-width:600px){.map{grid-template-columns:1fr}}.big{font-size:1.05rem}</style></head>
-<body class="piece-intro"><div class="wrap">
-<header class="hero"><div class="chapters">Operating Systems: Three Easy Pieces · Remzi H. and Andrea C. Arpaci-Dusseau (v1.10, 2023) · security chapters by Peter Reiher</div>
-<h1>The whole book, as sixteen interactive lessons</h1>
-<p class="lede big">Built from the text of all 57 chapters plus the VMM appendix — every "crux", every summary, every number in the figures was extracted from the chapter PDFs, not recalled. Each lesson is short, visual, and ends in retrieval practice. Do them in order; the book's pieces build on each other.</p></header>
+<style>.win{position:relative;height:120px;background:#0f1424;border:1px solid var(--line);border-radius:6px;overflow:hidden}.win .tick{position:absolute;bottom:0;width:1px;height:8px;background:var(--muted)}.win .lbl{position:absolute;bottom:10px;font-size:.65rem;color:var(--muted);transform:translateX(-50%)}.win .w{position:absolute;top:10px;height:24px;border:1px solid var(--accent);background:color-mix(in srgb,var(--accent) 25%,transparent);border-radius:3px;font-size:.65rem;padding:2px 4px;white-space:nowrap}.win .w.b{top:44px}.win .w.c{top:78px}</style></head>
+<body class="piece-data"><div class="wrap">
+<header class="hero"><div class="chapters">pandas user guide: Time series / date functionality · Polars user guide: Parsing, Filtering, Grouping/resampling, Rolling, Time zones</div>
+<h1>Time series: types, resolution, windows and zones</h1>
+<p class="lede">Time is where DataFrame libraries carry the most machinery: dedicated dtypes, parsing, frequency strings, resampling, rolling windows, calendars and time zones. pandas grew this around the <code>DatetimeIndex</code>; Polars treats datetimes as ordinary typed columns and grouping-by-time as a variant of <code>group_by</code>. Same problems, different defaults — including a resolution change in pandas 3.0 worth memorizing.</p></header>
+<div class="source"><b>Primary sources:</b> pandas <a href="https://pandas.pydata.org/docs/user_guide/timeseries.html">Time series / date functionality</a> (3.0 docs: the overview table, resolution note, resampling, offsets, time zones); Polars <a href="https://docs.pola.rs/user-guide/transformations/time-series/parsing/">Parsing</a>, <a href="https://docs.pola.rs/user-guide/transformations/time-series/resampling/">Resampling</a>, <a href="https://docs.pola.rs/user-guide/transformations/time-series/rolling/">Grouping (dynamic/rolling)</a>, <a href="https://docs.pola.rs/user-guide/transformations/time-series/timezones/">Time zones</a>.</div>
+<h2>What you'll be able to do</h2><ul id="obj"></ul>
 
-<figure class="fig"><svg viewBox="0 0 900 150" role="img" aria-label="three pieces">
-<rect x="20" y="30" width="270" height="90" rx="8" fill="#e8b84a"/><text x="155" y="68" text-anchor="middle" fill="#111" font-size="20" font-weight="700" font-family="Fraunces,serif">Virtualization</text><text x="155" y="95" text-anchor="middle" fill="#111" font-size="13">CPU (ch 4–10) · Memory (ch 13–23)</text>
-<rect x="315" y="30" width="270" height="90" rx="8" fill="#5bc8f5"/><text x="450" y="68" text-anchor="middle" fill="#111" font-size="20" font-weight="700" font-family="Fraunces,serif">Concurrency</text><text x="450" y="95" text-anchor="middle" fill="#111" font-size="13">threads, locks, CVs, semaphores, bugs (ch 26–33)</text>
-<rect x="610" y="30" width="270" height="90" rx="8" fill="#6bcb77"/><text x="745" y="68" text-anchor="middle" fill="#111" font-size="20" font-weight="700" font-family="Fraunces,serif">Persistence</text><text x="745" y="95" text-anchor="middle" fill="#111" font-size="13">devices, disks, file systems, distributed (ch 36–50)</text>
-<text x="450" y="140" text-anchor="middle" fill="#a9b1cf" font-size="13">+ Security (ch 53–57) and Virtual Machine Monitors (Appendix B)</text></svg></figure>
+<h2>The types</h2>
+<div class="two"><div class="fig"><h4>pandas (from the guide's table)</h4><table><tr><th>Concept</th><th>Scalar</th><th>Array / Index</th><th>dtype</th></tr><tr><td>Date times</td><td><code>Timestamp</code></td><td><code>DatetimeIndex</code></td><td><code>datetime64[us]</code> / <code>datetime64[us, tz]</code></td></tr><tr><td>Time deltas</td><td><code>Timedelta</code></td><td><code>TimedeltaIndex</code></td><td><code>timedelta64[us]</code></td></tr><tr><td>Time spans</td><td><code>Period</code></td><td><code>PeriodIndex</code></td><td><code>period[freq]</code></td></tr><tr><td>Date offsets</td><td><code>DateOffset</code></td><td>—</td><td>—</td></tr></table><p><b>Resolution:</b> the 3.0 guide states the default resolution for datetimes and timedeltas is <b>microsecond ("us")</b>, with "s", "ms" and "ns" also supported and <code>dt.as_unit()</code> to change it; <code>to_datetime</code> infers the unit from the string. (pandas 2.x defaulted to nanoseconds — the Pyodide runner below still shows <code>ns</code>.) <code>NaT</code> is the missing marker for all of them. <code>Period</code> represents a <em>span</em> (a month, a quarter); <code>Timestamp</code> a point.</p></div>
+<div class="fig"><h4>Polars</h4><ul><li><code>Date</code>: days since the UNIX epoch (32-bit).</li><li><code>Datetime</code>: 64-bit integer since epoch in a chosen unit — <code>ns</code>, <code>us</code>, <code>ms</code> — with an optional time zone in the <em>dtype</em>: <code>Datetime("us", "Europe/Amsterdam")</code>.</li><li><code>Duration</code>: the difference of two Date/Datetime values (like <code>timedelta</code>).</li><li><code>Time</code>: nanoseconds since midnight.</li></ul><p>Parsing: <code>read_csv(try_parse_dates=True)</code>, or <code>pl.col("s").str.to_datetime(format)</code> / <code>str.to_date</code>; Parquet carries the types in its schema. Accessors under <code>.dt</code>: <code>year()</code>, <code>truncate()</code>, <code>offset_by()</code>, <code>convert_time_zone()</code>, <code>replace_time_zone()</code>. Missing is <code>null</code>, as always. There is no Period type; use <code>dt.truncate("1mo")</code>.</p></div></div>
+<div id="py1"></div>
 
-<h2>Course map</h2>
-<div class="map" id="map"></div>
+<h2>Resampling and time windows</h2>
+<p><b>pandas</b>: <code>ts.resample("2h").mean()</code> <em>downsamples</em> (groups into bins of the frequency string and aggregates); <code>resample("15min").asfreq()</code> / <code>.ffill()</code> / <code>.interpolate()</code> <em>upsample</em>. Bin edges are controlled by <code>closed</code>, <code>label</code> and <code>origin</code>. Frequency strings are offset aliases — <code>"D"</code>, <code>"h"</code>, <code>"min"</code>, <code>"ME"</code> (month end), <code>"QS"</code>, business days <code>"B"</code>, custom business days with holidays — and <code>DateOffset</code>s know calendars (<code>friday + BusinessDay()</code> is Monday). Partial-string indexing selects ranges from a <code>DatetimeIndex</code>: <code>ts["2024-03"]</code>. <code>rolling("7D")</code> gives time-based rolling windows; <code>shift</code>, <code>diff</code>, <code>pct_change</code> for lags.</p>
+<p><b>Polars</b>: <code>group_by_dynamic("t", every="1h", period="2h", offset="30m")</code> groups by <em>dynamic windows</em>: <code>every</code> is how often a window starts, <code>period</code> its length (defaults to <code>every</code> — set it longer for overlapping windows), <code>offset</code> shifts the starts; the guide warns the time column <b>must be sorted ascending</b> or the result is wrong. <code>rolling(index_column="t", period="7d")</code> makes one window per row looking back <code>period</code>. Upsampling is <code>upsample(time_column, every="15m")</code> followed by <code>fill_null(strategy="forward")</code> or <code>interpolate()</code>. Durations use the same string grammar: <code>"1y6mo"</code>, <code>"1w"</code>, <code>"3d12h"</code>, <code>"90s"</code>, and calendar-aware <code>dt.offset_by("1mo")</code>.</p>
+<div class="fig"><h4>group_by_dynamic windows</h4><div class="controls"><label>every <select id="every"><option>1h</option><option selected>2h</option><option>3h</option></select></label><label>period <select id="period"><option>1h</option><option selected>2h</option><option>3h</option><option>4h</option></select></label><label>offset <select id="offset"><option selected>0m</option><option>30m</option><option>1h</option></select></label></div><div class="win" id="win"></div><div class="cap" id="wmsg"></div></div>
+<div id="py2"></div>
 
-<h2>How to use this course</h2>
-<div class="how">
-<div class="fig"><h4>1. One lesson per sitting</h4><p>Each takes 25–45 minutes: read, play with the simulator until you can predict its output, flip the cards, then do the quiz <em>from memory</em>. Check off the objectives at the top only when you could explain them to someone else.</p></div>
-<div class="fig"><h4>2. Then read the chapter</h4><p>Every lesson links its primary source — the free chapter PDFs at <a href="https://pages.cs.wisc.edu/~remzi/OSTEP/">ostep.org</a>. The lesson gives you the map; the chapter has the jokes, the asides, and the homework simulators (<code>ostep-homework</code>) which are the best practice there is.</p></div>
-<div class="fig"><h4>3. Space it out</h4><p>Long-term retention comes from re-testing later, not from feeling fluent now. Redo a lesson's quiz two days later and again after a week; the <a href="reference/cheatsheets.html">cheat sheets</a> are for the fast pass, the <a href="reference/glossary.html">glossary</a> for vocabulary. Ask me in the chat for mixed quizzes across lessons.</p></div></div>
+<h2>Time zones</h2>
+<p>Both libraries distinguish <b>naive</b> (no zone) from <b>aware</b> values. pandas: <code>tz_localize("UTC")</code> attaches a zone to naive data (interpreting the wall-clock time as that zone); <code>tz_convert("America/Los_Angeles")</code> changes the zone of aware data, keeping the instant. Polars mirrors this exactly: <code>dt.replace_time_zone(tz)</code> sets/unsets/changes the zone label (wall-clock kept); <code>dt.convert_time_zone(tz)</code> converts an aware column to another zone (instant kept). Store and compute in UTC; convert at the edges. Both handle DST ambiguities with explicit options (<code>ambiguous=</code>, <code>nonexistent=</code>).</p>
+<div id="py3"></div>
 
-<h2>What the book covers that this course does too</h2>
-<p>Chapters 1–2 (dialogue, introduction) → lesson 1. Chapters 3, 11, 12, 24, 25, 34, 35, 46, 47, 51, 52 are the book's short dialogues that open and close each part; their content is folded into the neighbouring lessons. The lab appendices (tutorial, systems and xv6 projects) and the deprecated monitors appendix are referenced in RESOURCES.md rather than taught.</p>
-<h2>Sister courses</h2><div class="how"><div class="fig"><h4><a href="python/index.html">Python 3.13</a></h4><p>The Language Reference, CPython internals (specializing interpreter, JIT, GC, GIL and free-threading), and pandas vs Polars — 20 interactive lessons with Python running in the browser.</p></div><div class="fig"><h4>Java 21</h4><p>Coming next: the JLS/JVMS, the JVM (class loading, bytecode, JIT, GC), and virtual threads internals.</p></div></div>
-<p class="tip">This workspace follows the <code>teach</code> skill layout: <code>MISSION.md</code> (why you're learning this), <code>RESOURCES.md</code> (sources), <code>NOTES.md</code>, <code>learning-records/</code>, <code>lessons/</code>, <code>reference/</code>, <code>assets/</code>. Tell me in the chat how a lesson landed and I'll adapt the next ones.</p>
+<h2>Flash cards</h2><div id="cards"></div>
+<h2>Retrieval practice</h2><div id="quiz"></div>
+<p class="tip">Want to build a business-day calendar with holidays in pandas, or an as-of join of trades to quotes in Polars? Ask me in the chat.</p>
 </div>
 <script>
 /* OSTEP course — shared components. Every page loads this file (inlined by build.py). */
@@ -217,34 +226,38 @@ window.OS = (function () {
   /* ---------- persistent storage (localStorage on a real site; in-memory fallback in sandboxes) ---------- */
   const mem = {};
   const store = {
-    get(k) { try { const v = localStorage.getItem('ostep:' + k); return v === null ? (mem[k] ?? null) : JSON.parse(v); } catch (e) { return mem[k] ?? null; } },
-    set(k, v) { mem[k] = v; try { localStorage.setItem('ostep:' + k, JSON.stringify(v)); } catch (e) {} },
-    del(k) { delete mem[k]; try { localStorage.removeItem('ostep:' + k); } catch (e) {} },
-    keys(prefix) { const out = new Set(Object.keys(mem).filter(k => k.startsWith(prefix))); try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith('ostep:' + prefix)) out.add(k.slice(6)); } } catch (e) {} return [...out]; },
-    available() { try { localStorage.setItem('ostep:test', '1'); localStorage.removeItem('ostep:test'); return true; } catch (e) { return false; } }
+    get(k) { try { const v = localStorage.getItem('py313:' + k); return v === null ? (mem[k] ?? null) : JSON.parse(v); } catch (e) { return mem[k] ?? null; } },
+    set(k, v) { mem[k] = v; try { localStorage.setItem('py313:' + k, JSON.stringify(v)); } catch (e) {} },
+    del(k) { delete mem[k]; try { localStorage.removeItem('py313:' + k); } catch (e) {} },
+    keys(prefix) { const out = new Set(Object.keys(mem).filter(k => k.startsWith(prefix))); try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith('py313:' + prefix)) out.add(k.slice(6)); } } catch (e) {} return [...out]; },
+    available() { try { localStorage.setItem('py313:test', '1'); localStorage.removeItem('py313:test'); return true; } catch (e) { return false; } }
   };
 
   /* ---------- course structure ---------- */
   const PIECES = [
-    ['intro', 'Introduction', [['0001-three-easy-pieces', 'Three easy pieces', 'ch 1–2']]],
-    ['virt', 'Virtualization', [
-      ['0002-processes', 'Processes & the process API', 'ch 4–5'],
-      ['0003-limited-direct-execution', 'Limited direct execution', 'ch 6'],
-      ['0004-scheduling', 'Scheduling', 'ch 7–10'],
-      ['0005-address-spaces', 'Address spaces & segments', 'ch 13–16'],
-      ['0006-paging-and-tlbs', 'Paging & TLBs', 'ch 17–20'],
-      ['0007-swapping', 'Swapping & policies', 'ch 21–23']]],
-    ['conc', 'Concurrency', [
-      ['0008-threads-and-locks', 'Threads & locks', 'ch 26–28'],
-      ['0009-cvs-and-semaphores', 'CVs & semaphores', 'ch 29–31'],
-      ['0010-bugs-and-events', 'Bugs & events', 'ch 32–33']]],
-    ['pers', 'Persistence', [
-      ['0011-devices-disks-raid', 'Devices, disks, RAID', 'ch 36–38'],
-      ['0012-files-and-vsfs', 'Files & a simple FS', 'ch 39–40'],
-      ['0013-ffs-journaling-lfs', 'FFS, journaling, LFS', 'ch 41–43'],
-      ['0014-ssd-and-integrity', 'SSDs & integrity', 'ch 44–45'],
-      ['0015-distributed-nfs-afs', 'Distributed FS', 'ch 48–50']]],
-    ['sec', 'Security', [['0016-security-and-vmms', 'Security & VMMs', 'ch 53–57, App B']]]
+    ['spec', 'The language, as specified', [
+      ['0001-objects-values-types', 'Objects, values and types', 'Ref §3.1–3.2'],
+      ['0002-lexical-structure-and-expressions', 'Lexical structure & expressions', 'Ref §2, §6'],
+      ['0003-execution-model', 'Execution model: names, scopes, closures', 'Ref §4'],
+      ['0004-data-model-special-methods', 'Data model I: special methods', 'Ref §3.3'],
+      ['0005-attribute-access-and-descriptors', 'Data model II: attributes & descriptors', 'Ref §3.3.2, HOWTO'],
+      ['0006-classes-mro-metaclasses', 'Classes, MRO, metaclasses', 'Ref §3.3.3, HOWTO'],
+      ['0007-functions-generators-coroutines', 'Functions, generators, coroutines', 'Ref §6.3, §3.4'],
+      ['0008-statements-and-pattern-matching', 'Statements, exceptions, pattern matching', 'Ref §7–8'],
+      ['0009-import-system', 'The import system', 'Ref §5'],
+      ['0010-typing', 'Typing: the PEP 484 lineage to 3.13', 'PEPs 484…742']]],
+    ['internals', 'CPython 3.13 internals', [
+      ['0011-compiler-and-bytecode', 'From source to bytecode', 'InternalDocs compiler, dis'],
+      ['0012-eval-loop-and-specialization', 'The eval loop, specialization, JIT', 'InternalDocs interpreter, PEPs 659/744'],
+      ['0013-memory-refcounting-gc', 'Memory, refcounting, garbage collection', 'InternalDocs GC, PEP 683'],
+      ['0014-gil-and-free-threading', 'The GIL and free-threaded Python', 'PEP 703, HOWTO']]],
+    ['data', 'DataFrames: pandas vs Polars', [
+      ['0015-dataframe-data-models', 'Two data models', 'pandas dsintro, Polars concepts'],
+      ['0016-selection-and-indexing', 'Selecting, filtering, assigning', 'pandas indexing, Polars expressions'],
+      ['0017-expressions-and-lazy', 'Expressions, contexts, lazy queries', 'Polars lazy, pandas chaining'],
+      ['0018-groupby-joins-reshaping', 'Groupby, joins, reshaping', 'pandas groupby/merging, Polars transformations'],
+      ['0019-time-series', 'Time series', 'pandas timeseries, Polars time-series'],
+      ['0020-performance-and-scale', 'Performance, memory, scale', 'pandas enhancingperf/scale, Modern Polars']]]
   ];
   const LESSONS = PIECES.flatMap(p => p[2].map(l => [l[0], l[1], p[0], l[2]]));
   const title = id => (LESSONS.find(l => l[0] === id) || [])[1] || id;
@@ -257,7 +270,7 @@ window.OS = (function () {
     const isLesson = i >= 0;
     const top = document.createElement('header'); top.className = 'topbar';
     top.innerHTML = `<button class="menu" aria-label="Open directory" aria-expanded="false">☰<span>Directory</span></button>
-      <a class="brand" href="${root}index.html"><span class="dot"></span>OSTEP course</a>
+      <a class="brand" href="${root}index.html"><span class="dot"></span>Python 3.13 course</a>
       <nav class="links"><a href="${root}reference/glossary.html">Glossary</a><a href="${root}reference/cheatsheets.html">Cheat sheets</a><a href="${root}notes.html">My notes</a></nav>
       ${isLesson ? `<span class="where">${i+1} / ${LESSONS.length}</span>` : ''}`;
     document.body.prepend(top);
@@ -341,6 +354,42 @@ window.OS = (function () {
     });
   }
 
+
+  /* ---------- runnable Python (Pyodide, loaded on first use) ---------- */
+  const pyodideP = {};
+  function loadPy(status, version) {
+    version = version || '0.28.3';
+    if (pyodideP[version]) return pyodideP[version];
+    status('loading Python (Pyodide ' + version + ', ~10 MB, once per page)…');
+    pyodideP[version] = new Promise((res, rej) => {
+      const s = document.createElement('script'); s.src = 'https://cdn.jsdelivr.net/pyodide/v' + version + '/full/pyodide.js';
+      s.onload = () => window.loadPyodide({ indexURL: 'https://cdn.jsdelivr.net/pyodide/v' + version + '/full/' }).then(res, rej);
+      s.onerror = () => rej(new Error('Could not load Pyodide (offline, or blocked by this preview).'));
+      document.head.append(s);
+    });
+    return pyodideP[version];
+  }
+  function py(el, code, opts) {
+    el = typeof el === 'string' ? document.getElementById(el) : el; opts = opts || {};
+    el.classList.add('pyrun');
+    el.innerHTML = `<div class="pyhead"><span>Python${opts.note ? ' · ' + esc(opts.note) : ''}</span><span class="pystatus"></span><button class="primary run">▶ Run</button><button class="reset">Reset</button></div><textarea spellcheck="false">${esc(code.trim())}</textarea><pre class="pyout" hidden></pre>`;
+    const ta = el.querySelector('textarea'), out = el.querySelector('.pyout'), st = el.querySelector('.pystatus');
+    const fit = () => { ta.style.height = 'auto'; ta.style.height = Math.min(480, ta.scrollHeight + 4) + 'px'; }; fit(); ta.addEventListener('input', fit);
+    el.querySelector('.reset').onclick = () => { ta.value = code.trim(); fit(); out.hidden = true; };
+    el.querySelector('.run').onclick = async () => {
+      out.hidden = false; out.textContent = ''; st.textContent = '';
+      try {
+        const pyo = await loadPy(m => st.textContent = m, opts.pyodide || ((opts.packages||[]).includes('polars') ? '0.27.7' : '0.28.3'));
+        if (opts.packages) { st.textContent = 'loading ' + opts.packages.join(', ') + '…'; await pyo.loadPackage(opts.packages).catch(() => {}); }
+        st.textContent = 'running…';
+        pyo.setStdout({ batched: s => out.textContent += s + '\n' }); pyo.setStderr({ batched: s => out.textContent += s + '\n' });
+        const r = await pyo.runPythonAsync(ta.value);
+        if (r !== undefined && r !== null && String(r) !== 'None') out.textContent += String(r);
+        st.textContent = 'done · CPython ' + pyo.runPython('import sys; f"{sys.version_info.major}.{sys.version_info.minor}"') + ' in WebAssembly';
+      } catch (e) { out.textContent += String(e); st.textContent = 'error'; }
+    };
+  }
+
   /* ---------- flip cards ---------- */
   function cards(el, list) {
     el = typeof el === 'string' ? document.getElementById(el) : el;
@@ -385,17 +434,64 @@ window.OS = (function () {
     el.querySelectorAll('input').forEach(c => c.onchange = () => { const s = [...el.querySelectorAll('input:checked')].map(x => +x.dataset.i); if (pageId) store.set('obj:' + pageId, s); });
   }
 
-  return { chrome, quiz, cards, stepper, gantt, objectives, esc, store, LESSONS, PIECES, title };
+  return { chrome, quiz, cards, stepper, gantt, objectives, py, esc, store, LESSONS, PIECES, title };
 })();
 
 </script>
 <script>
-OS.chrome('index','');
-const P=[['intro','Introduction','What an OS is: the three pieces, design goals, history.',['0001-three-easy-pieces','Three easy pieces','ch 1–2']],
-['virt','Virtualization','The CPU and memory made private and plentiful.',['0002-processes','Processes & the process API','ch 4–5'],['0003-limited-direct-execution','Limited direct execution','ch 6'],['0004-scheduling','Scheduling: FIFO to CFS and multi-CPU','ch 7–10'],['0005-address-spaces','Address spaces, base/bounds, segments','ch 13–16'],['0006-paging-and-tlbs','Free space, paging, TLBs, small tables','ch 17–20'],['0007-swapping','Swapping, replacement, VAX/VMS & Linux','ch 21–23']],
-['conc','Concurrency','Threads and the primitives that make them safe.',['0008-threads-and-locks','Threads, thread API, locks','ch 26–28'],['0009-cvs-and-semaphores','Locked structures, CVs, semaphores','ch 29–31'],['0010-bugs-and-events','Concurrency bugs & event-based servers','ch 32–33']],
-['pers','Persistence + Security','Storage from the device up; then protecting it all.',['0011-devices-disks-raid','Devices, disks, RAID','ch 36–38'],['0012-files-and-vsfs','Files, directories, a simple file system','ch 39–40'],['0013-ffs-journaling-lfs','FFS, crash consistency, LFS','ch 41–43'],['0014-ssd-and-integrity','SSDs & data integrity','ch 44–45'],['0015-distributed-nfs-afs','Distributed systems, NFS, AFS','ch 48–50'],['0016-security-and-vmms','Security (ch 53–57) & VMMs','ch 53–57, App B']]];
-const m=document.getElementById('map');let idx=0;const S=OS.store;
-m.innerHTML=P.map(([cls,name,desc,...ls])=>`<div class="piece piece-${cls}"><h3>${name}</h3><p>${desc}</p>${ls.map(l=>{idx++;const q=S.get('quiz:'+l[0]),nt=(S.get('notes:'+l[0])||{}).text;return `<a href="lessons/${l[0]}.html" data-id="${l[0]}" class="${q&&q.score===q.total?'done':''}">${idx}. ${l[1]}<small>${l[2]}${q?` · quiz ${q.score}/${q.total}`:''}${nt?' · ✎ notes':''}</small></a>`;}).join('')}</div>`).join('');
-const done=OS.LESSONS.filter(l=>S.get('quiz:'+l[0])).length;const ph=document.createElement('p');ph.className='cap';ph.textContent=done?`${done} of 16 lesson quizzes attempted — see My notes & progress for details.`:'Quiz scores, checked objectives and notes are saved in this browser as you go.';document.getElementById('map').after(ph);
+OS.chrome('0019-time-series');
+OS.objectives('obj',['Name the time types in both libraries and state pandas 3.0\'s default resolution (us) vs 2.x (ns).','Parse and construct datetimes and durations in both APIs.','Downsample/upsample with resample() and group_by_dynamic/upsample, explaining every/period/offset.','Use rolling and calendar-aware offsets.','Distinguish localize/replace vs convert for time zones.']);
+function win(){const e=+document.getElementById('every').value[0],p=+document.getElementById('period').value[0],o={'0m':0,'30m':.5,'1h':1}[document.getElementById('offset').value];const W=document.getElementById('win');let h='';for(let t=0;t<=12;t++){h+=`<div class="tick" style="left:${100*t/12}%"></div><div class="lbl" style="left:${100*t/12}%">${t}h</div>`;}let i=0;for(let s=o;s<12;s+=e){h+=`<div class="w ${['','b','c'][i%3]}" style="left:${100*s/12}%;width:${100*Math.min(p,12-s)/12}%">[${s}h, ${s+p}h)</div>`;i++;}W.innerHTML=h;document.getElementById('wmsg').textContent=`every=${e}h → a window starts every ${e}h; period=${p}h → each window lasts ${p}h${p>e?' (overlapping)':p<e?' (gaps)':''}; offset=${o}h shifts all starts. Rows are assigned to every window containing their timestamp.`;}
+['every','period','offset'].forEach(id=>document.getElementById(id).onchange=win);win();
+OS.py('py1',`
+import pandas as pd, polars as pl
+dti = pd.date_range("2024-01-01", periods=3, freq="h")
+print("pandas:", dti.dtype, "| unit:", dti.unit, "(3.0 default is 'us'; 2.x uses 'ns')")
+ts = pd.Series([1, 2, 3], index=dti)
+print("Timestamp scalar:", ts.index[0], "| Period span:", pd.Period("2024-03", freq="M"), "| Timedelta:", pd.Timedelta("1 day 2h"))
+print("offset alias arithmetic: Fri + BusinessDay →", (pd.Timestamp("2024-03-01") + pd.offsets.BusinessDay()).day_name())
+print("partial-string indexing:", ts["2024-01-01 01:00":"2024-01-01 02:00"].tolist())
+
+df = pl.DataFrame({"s": ["2024-01-01 00:00", "2024-01-01 01:00", "2024-01-01 02:00"], "v": [1, 2, 3]})
+df = df.with_columns(t=pl.col("s").str.to_datetime("%Y-%m-%d %H:%M"))
+print("polars dtype:", df.schema["t"], "| Date:", pl.date(2024, 3, 1), "| Duration:", pl.duration(days=1, hours=2))
+print(df.select(pl.col("t").dt.truncate("1d"), (pl.col("t") - pl.col("t").first()).alias("elapsed"), pl.col("t").dt.offset_by("1mo").alias("next_month")))`,{packages:['pandas','polars']});
+OS.py('py2',`
+import pandas as pd, polars as pl, numpy as np
+idx = pd.date_range("2024-01-01", periods=12, freq="30min")
+s = pd.Series(np.arange(12), index=idx)
+print("downsample (bins closed left, labelled left by default for 'h'):"); print(s.resample("2h").mean())
+print("upsample + ffill:", s.resample("15min").ffill().head(3).tolist(), "| time-based rolling:", s.rolling("1h").sum().head(4).tolist())
+
+df = pl.DataFrame({"t": idx, "v": np.arange(12)})
+print(df.group_by_dynamic("t", every="2h").agg(pl.col("v").mean()))
+print("overlapping windows (period > every):"); print(df.group_by_dynamic("t", every="2h", period="3h").agg(pl.col("v").mean(), pl.len()))
+print(df.upsample("t", every="15m").fill_null(strategy="forward").head(3))
+print(df.rolling(index_column="t", period="1h").agg(pl.col("v").sum()).head(4))`,{packages:['pandas','polars']});
+OS.py('py3',`
+import pandas as pd, polars as pl
+naive = pd.date_range("2024-03-10 01:00", periods=2, freq="h")
+try:
+    import zoneinfo; zoneinfo.ZoneInfo("America/Los_Angeles")
+except Exception:
+    import micropip  # Pyodide: the IANA database is a separate package
+    await micropip.install("tzdata")
+aware = naive.tz_localize("UTC")                       # attach a zone: wall clock kept
+print("pandas localize:", aware[0], "| convert:", aware.tz_convert("America/Los_Angeles")[0], "(same instant)")
+
+df = pl.DataFrame({"t": naive})
+print(df.with_columns(
+    utc=pl.col("t").dt.replace_time_zone("UTC"),                                # like tz_localize
+    pacific=pl.col("t").dt.replace_time_zone("UTC").dt.convert_time_zone("America/Los_Angeles"),   # like tz_convert
+))
+print("dtype carries the zone:", df.with_columns(pl.col("t").dt.replace_time_zone("UTC")).schema["t"])`,{packages:['pandas','polars']});
+OS.cards('cards',[['Timestamp / Period / Timedelta / DateOffset','pandas scalars for a point, a span, a duration, and a calendar-aware step (e.g. BusinessDay).'],['Resolution (pandas 3.0)','Default datetime64/timedelta64 unit is microsecond ("us"); s/ms/ns supported; dt.as_unit() converts. 2.x used ns.'],['Polars temporal dtypes','Date (days), Datetime(unit, tz), Duration, Time (ns since midnight); zone is part of the dtype.'],['resample()','pandas frequency-based binning: downsample with an aggregate, upsample with asfreq/ffill/interpolate; closed/label/origin.'],['group_by_dynamic','Polars windows: every = start interval, period = length (overlap if > every), offset = shift; requires sorted time.'],['rolling (Polars)','One window per row looking back a period on the index column; pandas rolling("7D") is the analogue.'],['Offset aliases / duration strings','pandas "h", "ME", "B"…; Polars "1h", "1mo", "1y6mo", "3d12h"; dt.offset_by for calendar arithmetic.'],['localize vs convert','tz_localize / replace_time_zone attach or change the label keeping wall time; tz_convert / convert_time_zone keep the instant.']]);
+OS.quiz('quiz',[
+{q:'What is the default datetime resolution in pandas 3.0?',o:['nanosecond','microsecond','millisecond','second'],a:1,why:'The 3.0 user guide: the default resolution for date times and time deltas is microsecond; ns remains supported via as_unit.'},
+{q:'In Polars, where does the time zone of a datetime column live?',o:['in a separate column','in the Datetime dtype itself','in DataFrame metadata','Polars has no time zones'],a:1,why:'Datetime(time_unit, time_zone) — the zone is part of the column type, so naive and aware columns have different dtypes.'},
+{q:'group_by_dynamic(every="1h", period="3h") produces windows that:',o:['are disjoint 1h bins','start hourly and last 3h, overlapping','are 3h bins starting every 3h','fail: period must equal every'],a:1,why:'every controls the start cadence, period the duration; period > every yields overlapping windows and rows appear in several.'},
+{q:'Before group_by_dynamic, the guide requires the time column to be:',o:['unique','sorted ascending','tz-aware','in nanoseconds'],a:1,why:'The Polars guide warns the output is incorrect if the dates are not sorted in ascending order.'},
+{q:'pd.Timestamp("2024-03-01") (a Friday) + pd.offsets.BusinessDay() is:',o:['Saturday','Monday','Sunday','Friday'],a:1,why:'DateOffsets are calendar-aware; a business-day step skips the weekend.'},
+{q:'Which pair of operations keeps the same instant while changing the displayed zone?',o:['tz_localize / replace_time_zone','tz_convert / convert_time_zone','asfreq / upsample','shift / offset_by'],a:1,why:'Convert changes the zone of an aware value without changing the underlying instant; localize/replace only attach or relabel.'},
+{q:'How do you represent a monthly "span" in Polars, which has no Period type?',o:['pl.Period("1mo")','truncate the datetime with dt.truncate("1mo")','cast to Date','use a string column'],a:1,why:'Truncating to the month start gives a per-month key column usable for grouping, the idiomatic replacement for pandas Period.'}]);
 </script></body></html>

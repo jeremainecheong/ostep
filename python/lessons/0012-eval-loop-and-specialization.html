@@ -1,11 +1,11 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>OSTEP course — Operating Systems: Three Easy Pieces, taught interactively</title><style>
+<title>12 · The eval loop, specialization, JIT — Python 3.13 course</title><style>
 /* OSTEP course — shared stylesheet. Three pieces, three hues. */
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
 :root{
   --ink:#151b2f; --ink-2:#1e2540; --ink-3:#28304f; --line:#3a4368;
   --paper:#eef0f7; --muted:#a9b1cf; --faint:#6e779a;
-  --virt:#e8b84a; --conc:#5bc8f5; --pers:#6bcb77; --sec:#f47fa0; --intro:#c9a8ff;
+  --virt:#e8b84a; --conc:#5bc8f5; --pers:#6bcb77; --sec:#f47fa0; --intro:#c9a8ff; --spec:#ffd166; --internals:#5bc8f5; --data:#6bcb77;
   --ok:#6bcb77; --bad:#ff6b6b;
   --accent:var(--virt);
   --radius:6px;
@@ -28,7 +28,7 @@ p,li{max-width:72ch}
 .hero{padding:44px 0 16px}
 .hero .chapters{color:var(--muted);font-size:.95rem;margin-bottom:6px}
 .lede{font-size:1.2rem;color:var(--muted);max-width:66ch}
-.piece-virt{--accent:var(--virt)} .piece-conc{--accent:var(--conc)} .piece-pers{--accent:var(--pers)} .piece-sec{--accent:var(--sec)} .piece-intro{--accent:var(--intro)}
+.piece-spec{--accent:var(--spec)} .piece-internals{--accent:var(--internals)} .piece-data{--accent:var(--data)} .piece-virt{--accent:var(--virt)} .piece-conc{--accent:var(--conc)} .piece-pers{--accent:var(--pers)} .piece-sec{--accent:var(--sec)} .piece-intro{--accent:var(--intro)}
 .fig{background:var(--ink-2);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;margin:22px 0}
 .fig figcaption,.cap{color:var(--muted);font-size:.9rem;margin-top:10px}
 .fig svg{max-width:100%;height:auto;display:block}
@@ -182,32 +182,50 @@ details>div{padding:0 16px 14px}
 }
 @media (max-width:420px){.cards{grid-template-columns:1fr}}
 
+/* ---------- runnable Python ---------- */
+.pyrun{border:1px solid var(--line);border-radius:var(--radius);background:#0f1424;margin:18px 0;overflow:hidden}
+.pyrun .pyhead{display:flex;gap:10px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--line);font-size:.85rem;color:var(--muted);background:var(--ink-2)}
+.pyrun .pyhead span:first-child{flex:1;font-weight:600;color:var(--paper)}
+.pyrun .pystatus{font-size:.78rem}
+.pyrun textarea{display:block;width:100%;border:none;background:#0f1424;color:var(--paper);font-family:'IBM Plex Mono',monospace;font-size:.86rem;line-height:1.5;padding:12px 14px;resize:vertical;outline:none;min-height:60px;tab-size:4}
+.pyrun .pyout{margin:0;border:none;border-top:1px solid var(--line);border-left:none;border-radius:0;background:#0a0e1a;color:#cfe3ff;max-height:320px}
+
 </style>
-<style>.map{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:24px 0}.piece{border:1px solid var(--line);border-radius:8px;padding:16px;background:var(--ink-2);border-top:4px solid var(--accent)}.piece h3{margin:0 0 4px;color:var(--accent)}.piece p{font-size:.9rem;color:var(--muted);margin:0 0 10px}.piece a{display:block;text-decoration:none;color:var(--paper);padding:6px 0;border-top:1px solid var(--line);font-size:.92rem}.piece a:hover{color:var(--accent)}.piece a small{display:block;color:var(--faint);font-size:.78rem}.piece a.done::after{content:" ✓";color:var(--ok)}.how{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}.how .fig{margin:0}.how h4{margin:0 0 6px}@media(max-width:900px){.map{grid-template-columns:1fr 1fr}.how{grid-template-columns:1fr}}@media(max-width:600px){.map{grid-template-columns:1fr}}.big{font-size:1.05rem}</style></head>
-<body class="piece-intro"><div class="wrap">
-<header class="hero"><div class="chapters">Operating Systems: Three Easy Pieces · Remzi H. and Andrea C. Arpaci-Dusseau (v1.10, 2023) · security chapters by Peter Reiher</div>
-<h1>The whole book, as sixteen interactive lessons</h1>
-<p class="lede big">Built from the text of all 57 chapters plus the VMM appendix — every "crux", every summary, every number in the figures was extracted from the chapter PDFs, not recalled. Each lesson is short, visual, and ends in retrieval practice. Do them in order; the book's pieces build on each other.</p></header>
+<style>.vm{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:10px}.vm div{background:#0f1424;border:1px solid var(--line);border-radius:6px;padding:10px;font-family:'IBM Plex Mono',monospace;font-size:.8rem;min-height:150px}.vm h4{margin:0 0 6px;font-family:'IBM Plex Sans',sans-serif;font-size:.8rem;color:var(--muted)}.vm .ins{padding:2px 6px;border-radius:3px}.vm .ins.cur{background:color-mix(in srgb,var(--accent) 30%,transparent)}.vm .ins.done{opacity:.45}.stk{display:flex;flex-direction:column-reverse;gap:3px}.stk span{padding:4px 8px;background:#28304f;border-radius:3px}.tiers{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.tiers div{background:#0f1424;border:1px solid var(--line);border-radius:6px;padding:10px;font-size:.85rem}.tiers b{display:block;color:var(--accent)}@media(max-width:760px){.vm,.tiers{grid-template-columns:1fr}}</style></head>
+<body class="piece-internals"><div class="wrap">
+<header class="hero"><div class="chapters">InternalDocs: interpreter.md, frames.md, jit.md · PEP 659 Specializing Adaptive Interpreter · PEP 744 JIT Compilation</div>
+<h1>The eval loop: a stack machine that rewrites its own instructions</h1>
+<p class="lede"><code>_PyEval_EvalFrameDefault</code> in <code>Python/ceval.c</code> is a loop: fetch a code unit, dispatch on the opcode, run a case generated from <code>Python/bytecodes.c</code>. Since 3.11 those instructions <em>watch</em> the types they see and replace themselves with specialized variants (PEP 659) — the single biggest reason 3.11–3.13 are faster. 3.13 adds a second tier: hot loops are translated to micro-ops and, in JIT builds, to machine code by copy-and-patch (PEP 744).</p></header>
+<div class="source"><b>Primary sources:</b> <a href="https://github.com/python/cpython/blob/main/InternalDocs/interpreter.md">interpreter.md</a> (instruction format, inline caches, evaluation stack, specialization, families), <a href="https://github.com/python/cpython/blob/main/InternalDocs/frames.md">frames.md</a>, <a href="https://github.com/python/cpython/blob/main/InternalDocs/jit.md">jit.md</a>; <a href="https://peps.python.org/pep-0659/">PEP 659</a>; <a href="https://peps.python.org/pep-0744/">PEP 744</a>; What's New 3.13 (JIT section). Family names below are grep'd from the 3.13 <code>Python/bytecodes.c</code>.</div>
+<h2>What you'll be able to do</h2><ul id="obj"></ul>
 
-<figure class="fig"><svg viewBox="0 0 900 150" role="img" aria-label="three pieces">
-<rect x="20" y="30" width="270" height="90" rx="8" fill="#e8b84a"/><text x="155" y="68" text-anchor="middle" fill="#111" font-size="20" font-weight="700" font-family="Fraunces,serif">Virtualization</text><text x="155" y="95" text-anchor="middle" fill="#111" font-size="13">CPU (ch 4–10) · Memory (ch 13–23)</text>
-<rect x="315" y="30" width="270" height="90" rx="8" fill="#5bc8f5"/><text x="450" y="68" text-anchor="middle" fill="#111" font-size="20" font-weight="700" font-family="Fraunces,serif">Concurrency</text><text x="450" y="95" text-anchor="middle" fill="#111" font-size="13">threads, locks, CVs, semaphores, bugs (ch 26–33)</text>
-<rect x="610" y="30" width="270" height="90" rx="8" fill="#6bcb77"/><text x="745" y="68" text-anchor="middle" fill="#111" font-size="20" font-weight="700" font-family="Fraunces,serif">Persistence</text><text x="745" y="95" text-anchor="middle" fill="#111" font-size="13">devices, disks, file systems, distributed (ch 36–50)</text>
-<text x="450" y="140" text-anchor="middle" fill="#a9b1cf" font-size="13">+ Security (ch 53–57) and Virtual Machine Monitors (Appendix B)</text></svg></figure>
+<h2>Frames and the evaluation stack</h2>
+<p>Each call pushes a <code>_PyInterpreterFrame</code> onto a per-thread <em>data stack</em> (allocated in chunks — not the C stack, and not a heap object). It holds the code object, the instruction pointer, the function, and <em>localsplus</em>: the local variables followed by the evaluation stack. A Python-visible <code>PyFrameObject</code> is created <b>lazily</b>, only if something asks (a traceback, <code>sys._getframe()</code>, a debugger), and copies the interpreter frame if it outlives it. Generators embed their frame in the generator object (lesson 7). The compiler precomputes the maximum stack depth (<code>co_stacksize</code>), and each instruction's stack effect is recorded in the opcode metadata (<code>_PyOpcode_num_popped</code>/<code>_num_pushed</code>).</p>
+<div class="fig"><h4>Step a stack machine: <code>def f(a, b): return a * b + 1</code></h4><div class="controls"><button class="primary" id="vstep">execute next instruction</button><button id="vreset">reset</button></div><div class="vm"><div id="vins"><h4>bytecode (3.13)</h4></div><div><h4>locals (localsplus)</h4><div id="vloc"></div></div><div><h4>evaluation stack (top at top)</h4><div class="stk" id="vstk"></div></div></div><div class="cap" id="vmsg"></div></div>
+<div id="py1"></div>
 
-<h2>Course map</h2>
-<div class="map" id="map"></div>
+<h2>Dispatch</h2>
+<p>The loop decodes <code>opcode</code> and <code>oparg</code> from the current code unit and jumps to the matching case. On compilers that support it, CPython uses <b>computed gotos</b> (a table of label addresses) instead of a <code>switch</code>, which helps the CPU's branch predictor; the cases themselves are generated from the instruction definitions DSL in <code>Python/bytecodes.c</code> into <code>generated_cases.c.h</code>. Jumps are relative: <code>JUMP_FORWARD</code> adds <code>oparg</code> to the instruction pointer, <code>JUMP_BACKWARD</code> subtracts it — and <code>JUMP_BACKWARD</code> is also where the interpreter checks for pending signals, asynchronous exceptions and, in the default build, whether to release the GIL (lesson 14).</p>
 
-<h2>How to use this course</h2>
-<div class="how">
-<div class="fig"><h4>1. One lesson per sitting</h4><p>Each takes 25–45 minutes: read, play with the simulator until you can predict its output, flip the cards, then do the quiz <em>from memory</em>. Check off the objectives at the top only when you could explain them to someone else.</p></div>
-<div class="fig"><h4>2. Then read the chapter</h4><p>Every lesson links its primary source — the free chapter PDFs at <a href="https://pages.cs.wisc.edu/~remzi/OSTEP/">ostep.org</a>. The lesson gives you the map; the chapter has the jokes, the asides, and the homework simulators (<code>ostep-homework</code>) which are the best practice there is.</p></div>
-<div class="fig"><h4>3. Space it out</h4><p>Long-term retention comes from re-testing later, not from feeling fluent now. Redo a lesson's quiz two days later and again after a week; the <a href="reference/cheatsheets.html">cheat sheets</a> are for the fast pass, the <a href="reference/glossary.html">glossary</a> for vocabulary. Ask me in the chat for mixed quizzes across lessons.</p></div></div>
+<h2>Specialization: the adaptive interpreter (PEP 659)</h2>
+<div class="crux"><b>The idea:</b> a dynamic language VM must specialize on the types and values actually flowing through the program — usually associated with JITs, but valuable even in an interpreter. Each <em>adaptive</em> instruction counts its executions in its first inline-cache entry; when the counter reaches zero it calls <code>_Py_Specialize_XXX</code> (<code>Python/specialize.c</code>), which inspects the operands and, if a fast case applies, <b>rewrites the instruction in <code>co_code_adaptive</code></b> with a specialized variant and fills the remaining cache entries (type versions, dict indices, function versions). The specialized instruction re-checks its assumptions each time with a cheap guard; on failure it <b>de-optimizes</b> back to the adaptive form and the counter restarts with exponential back-off. Speculative but safe; small regions, so no warm-up problem. Measured speedups: 10–60%, "up to 50%" overall.</div>
+<div class="fig"><h4>Families in 3.13 (from bytecodes.c)</h4><table><tr><th>Adaptive instruction</th><th>Specialized forms</th><th>Guard</th></tr>
+<tr><td><code>LOAD_ATTR</code></td><td>INSTANCE_VALUE, SLOT, MODULE, CLASS, PROPERTY, WITH_HINT, METHOD_WITH_VALUES / NO_DICT / LAZY_DICT, NONDESCRIPTOR_*, GETATTRIBUTE_OVERRIDDEN</td><td>type version tag unchanged; instance dict layout (shared keys) unchanged</td></tr>
+<tr><td><code>LOAD_GLOBAL</code></td><td>MODULE, BUILTIN</td><td>dict version of globals (and builtins) unchanged → read cached index</td></tr>
+<tr><td><code>BINARY_OP</code></td><td>ADD_INT, ADD_FLOAT, ADD_UNICODE, INPLACE_ADD_UNICODE, SUBTRACT_*, MULTIPLY_*</td><td>both operands exactly int / float / str</td></tr>
+<tr><td><code>CALL</code></td><td>PY_EXACT_ARGS, PY_GENERAL, BOUND_METHOD_*, BUILTIN_O / FAST / CLASS, METHOD_DESCRIPTOR_*, TYPE_1, STR_1, TUPLE_1, LIST_APPEND, ALLOC_AND_ENTER_INIT, LEN, ISINSTANCE</td><td>function version / exact callable identity</td></tr>
+<tr><td><code>FOR_ITER</code></td><td>LIST, TUPLE, RANGE, GEN</td><td>iterator type</td></tr>
+<tr><td>also</td><td colspan="2"><code>BINARY_SUBSCR</code>, <code>STORE_ATTR</code>, <code>STORE_SUBSCR</code>, <code>COMPARE_OP</code>, <code>CONTAINS_OP</code>, <code>TO_BOOL</code>, <code>UNPACK_SEQUENCE</code>, <code>SEND</code>, <code>LOAD_SUPER_ATTR</code></td></tr></table></div>
+<div id="py2"></div>
+<div class="tip"><b>Why this matters for how you write code.</b> Stable types at each call site specialize well; a site that alternates between ints and floats ("polymorphic") keeps de-optimizing. Attribute access on plain classes with a fixed set of attributes (shared-key dicts) hits <code>LOAD_ATTR_INSTANCE_VALUE</code>; <code>__slots__</code> hits <code>LOAD_ATTR_SLOT</code>; overriding <code>__getattribute__</code> forces the slow path. Module-level globals are fast via dict versions; builtins too — unless you shadow them.</div>
 
-<h2>What the book covers that this course does too</h2>
-<p>Chapters 1–2 (dialogue, introduction) → lesson 1. Chapters 3, 11, 12, 24, 25, 34, 35, 46, 47, 51, 52 are the book's short dialogues that open and close each part; their content is folded into the neighbouring lessons. The lab appendices (tutorial, systems and xv6 projects) and the deprecated monitors appendix are referenced in RESOURCES.md rather than taught.</p>
-<h2>Sister courses</h2><div class="how"><div class="fig"><h4><a href="python/index.html">Python 3.13</a></h4><p>The Language Reference, CPython internals (specializing interpreter, JIT, GC, GIL and free-threading), and pandas vs Polars — 20 interactive lessons with Python running in the browser.</p></div><div class="fig"><h4>Java 21</h4><p>Coming next: the JLS/JVMS, the JVM (class loading, bytecode, JIT, GC), and virtual threads internals.</p></div></div>
-<p class="tip">This workspace follows the <code>teach</code> skill layout: <code>MISSION.md</code> (why you're learning this), <code>RESOURCES.md</code> (sources), <code>NOTES.md</code>, <code>learning-records/</code>, <code>lessons/</code>, <code>reference/</code>, <code>assets/</code>. Tell me in the chat how a lesson landed and I'll adapt the next ones.</p>
+<h2>Tier 2 and the JIT (PEP 744, 3.13)</h2>
+<div class="tiers"><div><b>Tier 1</b>Specialized bytecode, the adaptive interpreter above. Optimizes one instruction at a time.</div><div><b>Hot detection</b>When a <code>JUMP_BACKWARD</code> (loop) or <code>RESUME</code> counter says the code is hot, the optimizer records a <em>trace</em>: the instructions actually executed, translated into <b>micro-ops</b> ("uops") — smaller steps generated from the same DSL.</div><div><b>Tier 2 IR + optimizer</b>Passes over the uop trace: remove redundant guards and refcount traffic using known types, constant-propagate. An <em>executor</em> attached to the original instruction runs the trace; a guard failure takes a <em>side exit</em> back to Tier 1.</div><div><b>Machine code</b>With <code>--enable-experimental-jit</code>, the optimized trace is compiled by <b>copy-and-patch</b>: pre-built machine-code <em>stencils</em> for each uop (generated at build time with LLVM) are copied and their holes patched with constants and addresses. No runtime dependency; ~900 lines of build-time Python + ~500 lines of C. Off by default; <code>PYTHON_JIT=0/1</code> toggles a JIT build.</div></div>
+<p>Why not just interpret uops? PEP 744: dispatch overhead between uops dominates; a straight-line compiled trace removes dispatch and decoding costs and lets values live in registers instead of heap frames. And why copy-and-patch rather than a classic backend? Editing <code>bytecodes.c</code> updates the JIT "for free" on every platform; low maintenance for a volunteer project. The 3.13 status: experimental, roughly performance-neutral, a foundation. (InternalDocs on <code>main</code> describe a later design with a trace-recording interpreter; the version-independent parts above match 3.13.)</p>
+
+<h2>Flash cards</h2><div id="cards"></div>
+<h2>Retrieval practice</h2><div id="quiz"></div>
+<p class="tip">Want to watch specialization live on your own function (<code>dis.dis(f, adaptive=True)</code> before/after a loop), or discuss what code patterns defeat it? Ask me in the chat.</p>
 </div>
 <script>
 /* OSTEP course — shared components. Every page loads this file (inlined by build.py). */
@@ -217,34 +235,38 @@ window.OS = (function () {
   /* ---------- persistent storage (localStorage on a real site; in-memory fallback in sandboxes) ---------- */
   const mem = {};
   const store = {
-    get(k) { try { const v = localStorage.getItem('ostep:' + k); return v === null ? (mem[k] ?? null) : JSON.parse(v); } catch (e) { return mem[k] ?? null; } },
-    set(k, v) { mem[k] = v; try { localStorage.setItem('ostep:' + k, JSON.stringify(v)); } catch (e) {} },
-    del(k) { delete mem[k]; try { localStorage.removeItem('ostep:' + k); } catch (e) {} },
-    keys(prefix) { const out = new Set(Object.keys(mem).filter(k => k.startsWith(prefix))); try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith('ostep:' + prefix)) out.add(k.slice(6)); } } catch (e) {} return [...out]; },
-    available() { try { localStorage.setItem('ostep:test', '1'); localStorage.removeItem('ostep:test'); return true; } catch (e) { return false; } }
+    get(k) { try { const v = localStorage.getItem('py313:' + k); return v === null ? (mem[k] ?? null) : JSON.parse(v); } catch (e) { return mem[k] ?? null; } },
+    set(k, v) { mem[k] = v; try { localStorage.setItem('py313:' + k, JSON.stringify(v)); } catch (e) {} },
+    del(k) { delete mem[k]; try { localStorage.removeItem('py313:' + k); } catch (e) {} },
+    keys(prefix) { const out = new Set(Object.keys(mem).filter(k => k.startsWith(prefix))); try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith('py313:' + prefix)) out.add(k.slice(6)); } } catch (e) {} return [...out]; },
+    available() { try { localStorage.setItem('py313:test', '1'); localStorage.removeItem('py313:test'); return true; } catch (e) { return false; } }
   };
 
   /* ---------- course structure ---------- */
   const PIECES = [
-    ['intro', 'Introduction', [['0001-three-easy-pieces', 'Three easy pieces', 'ch 1–2']]],
-    ['virt', 'Virtualization', [
-      ['0002-processes', 'Processes & the process API', 'ch 4–5'],
-      ['0003-limited-direct-execution', 'Limited direct execution', 'ch 6'],
-      ['0004-scheduling', 'Scheduling', 'ch 7–10'],
-      ['0005-address-spaces', 'Address spaces & segments', 'ch 13–16'],
-      ['0006-paging-and-tlbs', 'Paging & TLBs', 'ch 17–20'],
-      ['0007-swapping', 'Swapping & policies', 'ch 21–23']]],
-    ['conc', 'Concurrency', [
-      ['0008-threads-and-locks', 'Threads & locks', 'ch 26–28'],
-      ['0009-cvs-and-semaphores', 'CVs & semaphores', 'ch 29–31'],
-      ['0010-bugs-and-events', 'Bugs & events', 'ch 32–33']]],
-    ['pers', 'Persistence', [
-      ['0011-devices-disks-raid', 'Devices, disks, RAID', 'ch 36–38'],
-      ['0012-files-and-vsfs', 'Files & a simple FS', 'ch 39–40'],
-      ['0013-ffs-journaling-lfs', 'FFS, journaling, LFS', 'ch 41–43'],
-      ['0014-ssd-and-integrity', 'SSDs & integrity', 'ch 44–45'],
-      ['0015-distributed-nfs-afs', 'Distributed FS', 'ch 48–50']]],
-    ['sec', 'Security', [['0016-security-and-vmms', 'Security & VMMs', 'ch 53–57, App B']]]
+    ['spec', 'The language, as specified', [
+      ['0001-objects-values-types', 'Objects, values and types', 'Ref §3.1–3.2'],
+      ['0002-lexical-structure-and-expressions', 'Lexical structure & expressions', 'Ref §2, §6'],
+      ['0003-execution-model', 'Execution model: names, scopes, closures', 'Ref §4'],
+      ['0004-data-model-special-methods', 'Data model I: special methods', 'Ref §3.3'],
+      ['0005-attribute-access-and-descriptors', 'Data model II: attributes & descriptors', 'Ref §3.3.2, HOWTO'],
+      ['0006-classes-mro-metaclasses', 'Classes, MRO, metaclasses', 'Ref §3.3.3, HOWTO'],
+      ['0007-functions-generators-coroutines', 'Functions, generators, coroutines', 'Ref §6.3, §3.4'],
+      ['0008-statements-and-pattern-matching', 'Statements, exceptions, pattern matching', 'Ref §7–8'],
+      ['0009-import-system', 'The import system', 'Ref §5'],
+      ['0010-typing', 'Typing: the PEP 484 lineage to 3.13', 'PEPs 484…742']]],
+    ['internals', 'CPython 3.13 internals', [
+      ['0011-compiler-and-bytecode', 'From source to bytecode', 'InternalDocs compiler, dis'],
+      ['0012-eval-loop-and-specialization', 'The eval loop, specialization, JIT', 'InternalDocs interpreter, PEPs 659/744'],
+      ['0013-memory-refcounting-gc', 'Memory, refcounting, garbage collection', 'InternalDocs GC, PEP 683'],
+      ['0014-gil-and-free-threading', 'The GIL and free-threaded Python', 'PEP 703, HOWTO']]],
+    ['data', 'DataFrames: pandas vs Polars', [
+      ['0015-dataframe-data-models', 'Two data models', 'pandas dsintro, Polars concepts'],
+      ['0016-selection-and-indexing', 'Selecting, filtering, assigning', 'pandas indexing, Polars expressions'],
+      ['0017-expressions-and-lazy', 'Expressions, contexts, lazy queries', 'Polars lazy, pandas chaining'],
+      ['0018-groupby-joins-reshaping', 'Groupby, joins, reshaping', 'pandas groupby/merging, Polars transformations'],
+      ['0019-time-series', 'Time series', 'pandas timeseries, Polars time-series'],
+      ['0020-performance-and-scale', 'Performance, memory, scale', 'pandas enhancingperf/scale, Modern Polars']]]
   ];
   const LESSONS = PIECES.flatMap(p => p[2].map(l => [l[0], l[1], p[0], l[2]]));
   const title = id => (LESSONS.find(l => l[0] === id) || [])[1] || id;
@@ -257,7 +279,7 @@ window.OS = (function () {
     const isLesson = i >= 0;
     const top = document.createElement('header'); top.className = 'topbar';
     top.innerHTML = `<button class="menu" aria-label="Open directory" aria-expanded="false">☰<span>Directory</span></button>
-      <a class="brand" href="${root}index.html"><span class="dot"></span>OSTEP course</a>
+      <a class="brand" href="${root}index.html"><span class="dot"></span>Python 3.13 course</a>
       <nav class="links"><a href="${root}reference/glossary.html">Glossary</a><a href="${root}reference/cheatsheets.html">Cheat sheets</a><a href="${root}notes.html">My notes</a></nav>
       ${isLesson ? `<span class="where">${i+1} / ${LESSONS.length}</span>` : ''}`;
     document.body.prepend(top);
@@ -341,6 +363,42 @@ window.OS = (function () {
     });
   }
 
+
+  /* ---------- runnable Python (Pyodide, loaded on first use) ---------- */
+  const pyodideP = {};
+  function loadPy(status, version) {
+    version = version || '0.28.3';
+    if (pyodideP[version]) return pyodideP[version];
+    status('loading Python (Pyodide ' + version + ', ~10 MB, once per page)…');
+    pyodideP[version] = new Promise((res, rej) => {
+      const s = document.createElement('script'); s.src = 'https://cdn.jsdelivr.net/pyodide/v' + version + '/full/pyodide.js';
+      s.onload = () => window.loadPyodide({ indexURL: 'https://cdn.jsdelivr.net/pyodide/v' + version + '/full/' }).then(res, rej);
+      s.onerror = () => rej(new Error('Could not load Pyodide (offline, or blocked by this preview).'));
+      document.head.append(s);
+    });
+    return pyodideP[version];
+  }
+  function py(el, code, opts) {
+    el = typeof el === 'string' ? document.getElementById(el) : el; opts = opts || {};
+    el.classList.add('pyrun');
+    el.innerHTML = `<div class="pyhead"><span>Python${opts.note ? ' · ' + esc(opts.note) : ''}</span><span class="pystatus"></span><button class="primary run">▶ Run</button><button class="reset">Reset</button></div><textarea spellcheck="false">${esc(code.trim())}</textarea><pre class="pyout" hidden></pre>`;
+    const ta = el.querySelector('textarea'), out = el.querySelector('.pyout'), st = el.querySelector('.pystatus');
+    const fit = () => { ta.style.height = 'auto'; ta.style.height = Math.min(480, ta.scrollHeight + 4) + 'px'; }; fit(); ta.addEventListener('input', fit);
+    el.querySelector('.reset').onclick = () => { ta.value = code.trim(); fit(); out.hidden = true; };
+    el.querySelector('.run').onclick = async () => {
+      out.hidden = false; out.textContent = ''; st.textContent = '';
+      try {
+        const pyo = await loadPy(m => st.textContent = m, opts.pyodide || ((opts.packages||[]).includes('polars') ? '0.27.7' : '0.28.3'));
+        if (opts.packages) { st.textContent = 'loading ' + opts.packages.join(', ') + '…'; await pyo.loadPackage(opts.packages).catch(() => {}); }
+        st.textContent = 'running…';
+        pyo.setStdout({ batched: s => out.textContent += s + '\n' }); pyo.setStderr({ batched: s => out.textContent += s + '\n' });
+        const r = await pyo.runPythonAsync(ta.value);
+        if (r !== undefined && r !== null && String(r) !== 'None') out.textContent += String(r);
+        st.textContent = 'done · CPython ' + pyo.runPython('import sys; f"{sys.version_info.major}.{sys.version_info.minor}"') + ' in WebAssembly';
+      } catch (e) { out.textContent += String(e); st.textContent = 'error'; }
+    };
+  }
+
   /* ---------- flip cards ---------- */
   function cards(el, list) {
     el = typeof el === 'string' ? document.getElementById(el) : el;
@@ -385,17 +443,52 @@ window.OS = (function () {
     el.querySelectorAll('input').forEach(c => c.onchange = () => { const s = [...el.querySelectorAll('input:checked')].map(x => +x.dataset.i); if (pageId) store.set('obj:' + pageId, s); });
   }
 
-  return { chrome, quiz, cards, stepper, gantt, objectives, esc, store, LESSONS, PIECES, title };
+  return { chrome, quiz, cards, stepper, gantt, objectives, py, esc, store, LESSONS, PIECES, title };
 })();
 
 </script>
 <script>
-OS.chrome('index','');
-const P=[['intro','Introduction','What an OS is: the three pieces, design goals, history.',['0001-three-easy-pieces','Three easy pieces','ch 1–2']],
-['virt','Virtualization','The CPU and memory made private and plentiful.',['0002-processes','Processes & the process API','ch 4–5'],['0003-limited-direct-execution','Limited direct execution','ch 6'],['0004-scheduling','Scheduling: FIFO to CFS and multi-CPU','ch 7–10'],['0005-address-spaces','Address spaces, base/bounds, segments','ch 13–16'],['0006-paging-and-tlbs','Free space, paging, TLBs, small tables','ch 17–20'],['0007-swapping','Swapping, replacement, VAX/VMS & Linux','ch 21–23']],
-['conc','Concurrency','Threads and the primitives that make them safe.',['0008-threads-and-locks','Threads, thread API, locks','ch 26–28'],['0009-cvs-and-semaphores','Locked structures, CVs, semaphores','ch 29–31'],['0010-bugs-and-events','Concurrency bugs & event-based servers','ch 32–33']],
-['pers','Persistence + Security','Storage from the device up; then protecting it all.',['0011-devices-disks-raid','Devices, disks, RAID','ch 36–38'],['0012-files-and-vsfs','Files, directories, a simple file system','ch 39–40'],['0013-ffs-journaling-lfs','FFS, crash consistency, LFS','ch 41–43'],['0014-ssd-and-integrity','SSDs & data integrity','ch 44–45'],['0015-distributed-nfs-afs','Distributed systems, NFS, AFS','ch 48–50'],['0016-security-and-vmms','Security (ch 53–57) & VMMs','ch 53–57, App B']]];
-const m=document.getElementById('map');let idx=0;const S=OS.store;
-m.innerHTML=P.map(([cls,name,desc,...ls])=>`<div class="piece piece-${cls}"><h3>${name}</h3><p>${desc}</p>${ls.map(l=>{idx++;const q=S.get('quiz:'+l[0]),nt=(S.get('notes:'+l[0])||{}).text;return `<a href="lessons/${l[0]}.html" data-id="${l[0]}" class="${q&&q.score===q.total?'done':''}">${idx}. ${l[1]}<small>${l[2]}${q?` · quiz ${q.score}/${q.total}`:''}${nt?' · ✎ notes':''}</small></a>`;}).join('')}</div>`).join('');
-const done=OS.LESSONS.filter(l=>S.get('quiz:'+l[0])).length;const ph=document.createElement('p');ph.className='cap';ph.textContent=done?`${done} of 16 lesson quizzes attempted — see My notes & progress for details.`:'Quiz scores, checked objectives and notes are saved in this browser as you go.';document.getElementById('map').after(ph);
+OS.chrome('0012-eval-loop-and-specialization');
+OS.objectives('obj',['Describe _PyInterpreterFrame, localsplus, the lazy PyFrameObject and the evaluation stack.','Explain dispatch: decoding code units, computed gotos, relative jumps, and what JUMP_BACKWARD also checks.','State how an adaptive instruction specializes, guards, and de-optimizes, and name several families.','Predict which code patterns specialize well or poorly.','Explain Tier 2 traces, uops, executors, side exits, and copy-and-patch.']);
+/* stack VM */
+const INS=[['RESUME 0','check for pending events; no stack effect'],['LOAD_FAST a','push local a'],['LOAD_FAST b','push local b'],['BINARY_OP *','pop b, pop a, push a*b  (adaptive; becomes BINARY_OP_MULTIPLY_INT if ints keep arriving)'],['LOAD_CONST 1','push constant 1'],['BINARY_OP +','pop 1, pop a*b, push sum'],['RETURN_VALUE','pop the result and return it to the caller\'s frame']];
+let vi=0,stack=[];const loc={a:6,b:7};
+function vd(){document.getElementById('vins').innerHTML='<h4>bytecode (3.13)</h4>'+INS.map((s,i)=>`<div class="ins ${i<vi?'done':i===vi?'cur':''}">${s[0]}</div>`).join('');document.getElementById('vloc').innerHTML=`a = ${loc.a}<br>b = ${loc.b}`;document.getElementById('vstk').innerHTML=stack.map(v=>`<span>${v}</span>`).join('')||'<span style="opacity:.4">empty</span>';document.getElementById('vmsg').textContent=vi<INS.length?`next: ${INS[vi][0]} — ${INS[vi][1]}`:'returned 43; the frame is popped from the thread\'s data stack';}
+document.getElementById('vstep').onclick=()=>{if(vi>=INS.length)return;const op=INS[vi][0];if(op.startsWith('LOAD_FAST a'))stack.push(loc.a);else if(op.startsWith('LOAD_FAST b'))stack.push(loc.b);else if(op.startsWith('BINARY_OP *')){const r=stack.pop(),l=stack.pop();stack.push(l*r);}else if(op.startsWith('LOAD_CONST'))stack.push(1);else if(op.startsWith('BINARY_OP +')){const r=stack.pop(),l=stack.pop();stack.push(l+r);}else if(op.startsWith('RETURN'))stack.pop();vi++;vd();};
+document.getElementById('vreset').onclick=()=>{vi=0;stack=[];vd();};vd();
+OS.py('py1',`
+import dis, sys, inspect
+def f(a, b): return a * b + 1
+dis.dis(f)
+print("stack depth needed:", f.__code__.co_stacksize, "| localsplus names:", f.__code__.co_varnames)
+def g():
+    fr = sys._getframe()               # this is what forces a PyFrameObject to exist
+    return type(fr).__name__, fr.f_code.co_name, fr.f_lasti, fr.f_back.f_code.co_name
+print("frame object created lazily on request:", g())
+print("stack effect of BINARY_OP:", dis.stack_effect(dis.opmap["BINARY_OP"], 0), "| LOAD_FAST:", dis.stack_effect(dis.opmap["LOAD_FAST"], 0))`);
+OS.py('py2',`
+import dis
+class P:
+    def __init__(self): self.x = 1
+def hot(p, xs):
+    t = 0
+    for i in xs:          # FOR_ITER → FOR_ITER_LIST
+        t += p.x + i      # LOAD_ATTR → LOAD_ATTR_INSTANCE_VALUE, BINARY_OP → BINARY_OP_ADD_INT
+    return len(xs) + t    # LOAD_GLOBAL → LOAD_GLOBAL_BUILTIN, CALL → CALL_LEN
+p, xs = P(), list(range(100))
+def names(f): return [i.opname for i in dis.get_instructions(f, adaptive=True) if i.opname in {"FOR_ITER","LOAD_ATTR","BINARY_OP","LOAD_GLOBAL","CALL"} or "_" in i.opname and i.opname.split("_")[0] in {"FOR","LOAD","BINARY","CALL"}]
+print("before warm-up:", names(hot))
+for _ in range(60): hot(p, xs)                        # let the adaptive counters fire
+print("after warm-up: ", names(hot))
+hot(P(), [0.5] * 10)                                  # floats: BINARY_OP_ADD_INT guard fails → deoptimize
+print("after floats:  ", names(hot), "\\n(shown names come from the live co_code_adaptive copy; dis(adaptive=True))")`);
+OS.cards('cards',[['_PyInterpreterFrame','Internal frame on the per-thread data stack: code, instruction pointer, function, localsplus (locals + eval stack).'],['Lazy PyFrameObject','The Python-visible frame object is created only when requested (tracebacks, sys._getframe) and may outlive the interpreter frame.'],['Computed goto','Dispatch via a table of label addresses instead of a switch; improves branch prediction; used when the compiler supports it.'],['Adaptive instruction','Generic instruction that counts executions in its first cache entry and tries to specialize when the counter hits zero.'],['Guard + deopt','A specialized instruction re-checks its assumption (type version, dict version…); on failure it reverts to the adaptive form with back-off.'],['Type version tag','Per-type counter bumped when a class changes; cached by LOAD_ATTR specializations to validate their fast path.'],['Micro-op (uop)','Smaller instruction the Tier 2 optimizer works on; traces of uops are what the JIT compiles.'],['Executor / side exit','Object attached to a hot instruction that runs a trace; a failed guard exits back to Tier 1 at the right point.'],['Copy-and-patch','Build-time LLVM stencils per uop, copied at run time with holes patched; no runtime dependency; ~900+500 lines.']]);
+OS.quiz('quiz',[
+{q:'Where do a running function\'s locals and evaluation stack live in 3.13?',o:['in a heap PyFrameObject always','in a _PyInterpreterFrame on the thread\'s data stack','on the C stack of ceval','in the code object'],a:1,why:'frames.md: interpreter frames are internal structs on a per-thread data stack; a PyFrameObject is created lazily only when Python code needs it.'},
+{q:'When does an adaptive instruction attempt to specialize?',o:['on its first execution','when the counter in its inline cache reaches zero','only when the JIT is enabled','at compile time'],a:1,why:'The first cache entry is a counter; when it hits zero the instruction calls _Py_Specialize_XXX, which may rewrite it in co_code_adaptive.'},
+{q:'A specialized BINARY_OP_ADD_INT suddenly receives two floats. What happens?',o:['it raises TypeError','its guard fails and it de-optimizes to BINARY_OP','it silently computes a wrong result','the program crashes'],a:1,why:'Specialized instructions guard their assumptions each time; on failure they fall back to the generic instruction and the counter restarts with back-off.'},
+{q:'What guard does LOAD_GLOBAL_MODULE rely on?',o:['the module\'s file mtime','the globals dict version tag','a type version tag','a function version'],a:1,why:'Dict version tags let the specialized instruction verify the globals dict is unchanged and read the cached index directly.'},
+{q:'Which instruction is the hot-code detection point for Tier 2 in loops?',o:['LOAD_FAST','JUMP_BACKWARD','RETURN_VALUE','CALL'],a:1,why:'Loop back-edges (and RESUME) carry counters; when hot, a trace of micro-ops is recorded and an executor installed.'},
+{q:'Why did PEP 744 choose copy-and-patch over an LLVM backend at run time?',o:['it produces faster code than LLVM','no runtime dependency, low maintenance, generated from the interpreter DSL','LLVM cannot target x86','it avoids needing traces'],a:1,why:'Stencils are built with LLVM at build time; run time only copies and patches. Editing bytecodes.c updates the JIT for all platforms automatically.'},
+{q:'In the 3.13 default build, the JIT is:',o:['enabled for all loops','absent unless built with --enable-experimental-jit','enabled only on Windows','replaced by Tier 2 interpretation'],a:1,why:'What\'s New 3.13: the JIT is experimental and requires a build-time option; a JIT build can be toggled with PYTHON_JIT=0/1.'}]);
 </script></body></html>

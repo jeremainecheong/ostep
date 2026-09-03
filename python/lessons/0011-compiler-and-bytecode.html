@@ -1,11 +1,11 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>OSTEP course — Operating Systems: Three Easy Pieces, taught interactively</title><style>
+<title>11 · From source to bytecode — Python 3.13 course</title><style>
 /* OSTEP course — shared stylesheet. Three pieces, three hues. */
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
 :root{
   --ink:#151b2f; --ink-2:#1e2540; --ink-3:#28304f; --line:#3a4368;
   --paper:#eef0f7; --muted:#a9b1cf; --faint:#6e779a;
-  --virt:#e8b84a; --conc:#5bc8f5; --pers:#6bcb77; --sec:#f47fa0; --intro:#c9a8ff;
+  --virt:#e8b84a; --conc:#5bc8f5; --pers:#6bcb77; --sec:#f47fa0; --intro:#c9a8ff; --spec:#ffd166; --internals:#5bc8f5; --data:#6bcb77;
   --ok:#6bcb77; --bad:#ff6b6b;
   --accent:var(--virt);
   --radius:6px;
@@ -28,7 +28,7 @@ p,li{max-width:72ch}
 .hero{padding:44px 0 16px}
 .hero .chapters{color:var(--muted);font-size:.95rem;margin-bottom:6px}
 .lede{font-size:1.2rem;color:var(--muted);max-width:66ch}
-.piece-virt{--accent:var(--virt)} .piece-conc{--accent:var(--conc)} .piece-pers{--accent:var(--pers)} .piece-sec{--accent:var(--sec)} .piece-intro{--accent:var(--intro)}
+.piece-spec{--accent:var(--spec)} .piece-internals{--accent:var(--internals)} .piece-data{--accent:var(--data)} .piece-virt{--accent:var(--virt)} .piece-conc{--accent:var(--conc)} .piece-pers{--accent:var(--pers)} .piece-sec{--accent:var(--sec)} .piece-intro{--accent:var(--intro)}
 .fig{background:var(--ink-2);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;margin:22px 0}
 .fig figcaption,.cap{color:var(--muted);font-size:.9rem;margin-top:10px}
 .fig svg{max-width:100%;height:auto;display:block}
@@ -182,32 +182,41 @@ details>div{padding:0 16px 14px}
 }
 @media (max-width:420px){.cards{grid-template-columns:1fr}}
 
+/* ---------- runnable Python ---------- */
+.pyrun{border:1px solid var(--line);border-radius:var(--radius);background:#0f1424;margin:18px 0;overflow:hidden}
+.pyrun .pyhead{display:flex;gap:10px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--line);font-size:.85rem;color:var(--muted);background:var(--ink-2)}
+.pyrun .pyhead span:first-child{flex:1;font-weight:600;color:var(--paper)}
+.pyrun .pystatus{font-size:.78rem}
+.pyrun textarea{display:block;width:100%;border:none;background:#0f1424;color:var(--paper);font-family:'IBM Plex Mono',monospace;font-size:.86rem;line-height:1.5;padding:12px 14px;resize:vertical;outline:none;min-height:60px;tab-size:4}
+.pyrun .pyout{margin:0;border:none;border-top:1px solid var(--line);border-left:none;border-radius:0;background:#0a0e1a;color:#cfe3ff;max-height:320px}
+
 </style>
-<style>.map{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:24px 0}.piece{border:1px solid var(--line);border-radius:8px;padding:16px;background:var(--ink-2);border-top:4px solid var(--accent)}.piece h3{margin:0 0 4px;color:var(--accent)}.piece p{font-size:.9rem;color:var(--muted);margin:0 0 10px}.piece a{display:block;text-decoration:none;color:var(--paper);padding:6px 0;border-top:1px solid var(--line);font-size:.92rem}.piece a:hover{color:var(--accent)}.piece a small{display:block;color:var(--faint);font-size:.78rem}.piece a.done::after{content:" ✓";color:var(--ok)}.how{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}.how .fig{margin:0}.how h4{margin:0 0 6px}@media(max-width:900px){.map{grid-template-columns:1fr 1fr}.how{grid-template-columns:1fr}}@media(max-width:600px){.map{grid-template-columns:1fr}}.big{font-size:1.05rem}</style></head>
-<body class="piece-intro"><div class="wrap">
-<header class="hero"><div class="chapters">Operating Systems: Three Easy Pieces · Remzi H. and Andrea C. Arpaci-Dusseau (v1.10, 2023) · security chapters by Peter Reiher</div>
-<h1>The whole book, as sixteen interactive lessons</h1>
-<p class="lede big">Built from the text of all 57 chapters plus the VMM appendix — every "crux", every summary, every number in the figures was extracted from the chapter PDFs, not recalled. Each lesson is short, visual, and ends in retrieval practice. Do them in order; the book's pieces build on each other.</p></header>
+<style>.pipe{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}.pipe div{background:#0f1424;border:1px solid var(--line);border-radius:6px;padding:8px;font-size:.78rem;text-align:center;cursor:pointer}.pipe div b{display:block;font-size:.85rem;color:var(--accent)}.pipe div.on{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,#0f1424)}.unit{display:flex;gap:4px;font-family:'IBM Plex Mono',monospace;font-size:.8rem;flex-wrap:wrap}.unit span{padding:6px 8px;border:1px solid var(--line);border-radius:4px;background:#0f1424}.unit .op{background:#5bc8f5;color:#111}.unit .arg{background:#28304f}.unit .cache{background:#3a4368;color:var(--muted)}@media(max-width:760px){.pipe{grid-template-columns:repeat(3,1fr)}}</style></head>
+<body class="piece-internals"><div class="wrap">
+<header class="hero"><div class="chapters">CPython InternalDocs: compiler.md, code_objects.md, exception_handling.md · dis module (3.13)</div>
+<h1>From source to bytecode: the compiler pipeline and the code object</h1>
+<p class="lede">Before CPython executes anything it compiles your source to <em>bytecode</em> — instructions for a stack-based virtual machine, packed into a <code>code</code> object together with constants, names, line-number tables and an exception table. The pipeline is tokenizer → PEG parser → AST → symbol table → control-flow graph → optimizer → assembler. This lesson follows a function through it and reads the result with <code>dis</code>, on real 3.13 bytecode in your browser.</p></header>
+<div class="source"><b>Primary sources:</b> <a href="https://github.com/python/cpython/blob/main/InternalDocs/compiler.md">InternalDocs/compiler.md</a>, <a href="https://github.com/python/cpython/blob/main/InternalDocs/code_objects.md">code_objects.md</a>, <a href="https://github.com/python/cpython/blob/main/InternalDocs/exception_handling.md">exception_handling.md</a>; <a href="https://docs.python.org/3.13/library/dis.html">dis</a>; PEP 617 (PEG parser, 3.9), PEP 626 (line numbers), PEP 657 (fine-grained error locations). The runners execute in Pyodide 0.28, i.e. CPython 3.13 compiled to WebAssembly — the bytecode you see is genuine 3.13 output.</div>
+<h2>What you'll be able to do</h2><ul id="obj"></ul>
 
-<figure class="fig"><svg viewBox="0 0 900 150" role="img" aria-label="three pieces">
-<rect x="20" y="30" width="270" height="90" rx="8" fill="#e8b84a"/><text x="155" y="68" text-anchor="middle" fill="#111" font-size="20" font-weight="700" font-family="Fraunces,serif">Virtualization</text><text x="155" y="95" text-anchor="middle" fill="#111" font-size="13">CPU (ch 4–10) · Memory (ch 13–23)</text>
-<rect x="315" y="30" width="270" height="90" rx="8" fill="#5bc8f5"/><text x="450" y="68" text-anchor="middle" fill="#111" font-size="20" font-weight="700" font-family="Fraunces,serif">Concurrency</text><text x="450" y="95" text-anchor="middle" fill="#111" font-size="13">threads, locks, CVs, semaphores, bugs (ch 26–33)</text>
-<rect x="610" y="30" width="270" height="90" rx="8" fill="#6bcb77"/><text x="745" y="68" text-anchor="middle" fill="#111" font-size="20" font-weight="700" font-family="Fraunces,serif">Persistence</text><text x="745" y="95" text-anchor="middle" fill="#111" font-size="13">devices, disks, file systems, distributed (ch 36–50)</text>
-<text x="450" y="140" text-anchor="middle" fill="#a9b1cf" font-size="13">+ Security (ch 53–57) and Virtual Machine Monitors (Appendix B)</text></svg></figure>
+<h2>The pipeline</h2>
+<div class="fig"><div class="pipe" id="pipe"></div><div class="cap" id="pmsg" style="margin-top:10px">Click a stage.</div></div>
+<div id="py1"></div>
 
-<h2>Course map</h2>
-<div class="map" id="map"></div>
+<h2>The code object</h2>
+<p><code>compile()</code> (or a function definition) produces a <code>code</code> object — immutable, containing no references to mutable objects, which is why <code>.pyc</code> files can simply <code>marshal</code> them. Fields you will meet (§3.2 of the reference, code_objects.md): <code>co_code</code> (the bytecode bytes — a read-only view; the interpreter actually runs <code>co_code_adaptive</code>, a private mutable copy that specialization rewrites, next lesson), <code>co_consts</code>, <code>co_names</code> (globals/attributes), <code>co_varnames</code> (locals and parameters), <code>co_cellvars</code>/<code>co_freevars</code> (closures), <code>co_argcount</code>/<code>co_posonlyargcount</code>/<code>co_kwonlyargcount</code>, <code>co_stacksize</code> (maximum evaluation-stack depth, computed by the compiler), <code>co_flags</code> (generator, coroutine, varargs…), <code>co_linetable</code> (compact positions; iterate <code>co_positions()</code> for line/column ranges, PEP 657), <code>co_exceptiontable</code>, <code>co_qualname</code>, <code>co_filename</code>. When a code object is created, <code>_PyCode_Quicken()</code> initializes the inline caches of adaptive instructions.</p>
+<div id="py2"></div>
 
-<h2>How to use this course</h2>
-<div class="how">
-<div class="fig"><h4>1. One lesson per sitting</h4><p>Each takes 25–45 minutes: read, play with the simulator until you can predict its output, flip the cards, then do the quiz <em>from memory</em>. Check off the objectives at the top only when you could explain them to someone else.</p></div>
-<div class="fig"><h4>2. Then read the chapter</h4><p>Every lesson links its primary source — the free chapter PDFs at <a href="https://pages.cs.wisc.edu/~remzi/OSTEP/">ostep.org</a>. The lesson gives you the map; the chapter has the jokes, the asides, and the homework simulators (<code>ostep-homework</code>) which are the best practice there is.</p></div>
-<div class="fig"><h4>3. Space it out</h4><p>Long-term retention comes from re-testing later, not from feeling fluent now. Redo a lesson's quiz two days later and again after a week; the <a href="reference/cheatsheets.html">cheat sheets</a> are for the fast pass, the <a href="reference/glossary.html">glossary</a> for vocabulary. Ask me in the chat for mixed quizzes across lessons.</p></div></div>
+<h2>Reading bytecode</h2>
+<div class="crux"><b>Instruction format (interpreter.md):</b> each <em>code unit</em> is 16 bits — an 8-bit <b>opcode</b> and an 8-bit <b>oparg</b>. Larger arguments are built with up to three <code>EXTENDED_ARG</code> prefixes (each contributes 8 more bits). Some instructions are followed by <b>inline cache entries</b> (2-byte units, shown by <code>dis</code> as <code>CACHE</code> when <code>show_caches=True</code>) used by specialization. Jump offsets are relative and counted in code units. 256 opcodes fit, and 3.13 uses them for a stack machine: <code>LOAD_FAST</code> pushes a local, <code>BINARY_OP</code> pops two and pushes one, <code>CALL n</code> pops the callable + self/NULL + n args, <code>RETURN_VALUE</code> pops the result.</div>
+<div class="fig"><h4>Anatomy of <code>LOAD_ATTR 3</code> with its caches</h4><div class="unit"><span class="op">opcode = LOAD_ATTR</span><span class="arg">oparg = 3 (index into co_names, shifted)</span><span class="cache">CACHE counter</span><span class="cache">CACHE version</span><span class="cache">CACHE …</span><span class="cache">CACHE …</span></div><div class="cap">One code unit of instruction followed by cache units; the whole family (<code>LOAD_ATTR</code>, <code>LOAD_ATTR_INSTANCE_VALUE</code>, <code>LOAD_ATTR_SLOT</code>, <code>LOAD_ATTR_MODULE</code>…) shares the same cache size, and the first cache entry is always the specialization counter.</div></div>
+<div id="py3"></div>
+<div class="two"><div class="fig"><h4>Zero-cost exceptions (3.11+)</h4><p>There is no <code>SETUP_FINALLY</code> anymore. The compiler emits an <b>exception table</b> (<code>co_exceptiontable</code>): for each protected range of instructions, where to jump, the stack depth to restore, and whether to push the "lasti" (for re-raise). Entering a <code>try</code> costs nothing; only when an exception is raised does the interpreter search the table. <code>dis.dis()</code> prints it as <code>ExceptionTable:</code> at the end.</p></div><div class="fig"><h4>What the optimizer does</h4><p>On the CFG (<code>Python/flowgraph.c</code>): constant folding (<code>1 + 2</code> → <code>3</code>, <code>"a" "b"</code> → <code>"ab"</code>), turning constant list/set literals in <code>in</code> tests into tuples/frozensets, jump threading and dead-code elimination, removing unreachable blocks after <code>return</code>, superinstructions like <code>LOAD_FAST_LOAD_FAST</code>. <code>compile(..., optimize=1)</code> removes <code>assert</code>s and sets <code>__debug__</code> False; <code>optimize=2</code> also strips docstrings.</p></div></div>
+<div id="py4"></div>
 
-<h2>What the book covers that this course does too</h2>
-<p>Chapters 1–2 (dialogue, introduction) → lesson 1. Chapters 3, 11, 12, 24, 25, 34, 35, 46, 47, 51, 52 are the book's short dialogues that open and close each part; their content is folded into the neighbouring lessons. The lab appendices (tutorial, systems and xv6 projects) and the deprecated monitors appendix are referenced in RESOURCES.md rather than taught.</p>
-<h2>Sister courses</h2><div class="how"><div class="fig"><h4><a href="python/index.html">Python 3.13</a></h4><p>The Language Reference, CPython internals (specializing interpreter, JIT, GC, GIL and free-threading), and pandas vs Polars — 20 interactive lessons with Python running in the browser.</p></div><div class="fig"><h4>Java 21</h4><p>Coming next: the JLS/JVMS, the JVM (class loading, bytecode, JIT, GC), and virtual threads internals.</p></div></div>
-<p class="tip">This workspace follows the <code>teach</code> skill layout: <code>MISSION.md</code> (why you're learning this), <code>RESOURCES.md</code> (sources), <code>NOTES.md</code>, <code>learning-records/</code>, <code>lessons/</code>, <code>reference/</code>, <code>assets/</code>. Tell me in the chat how a lesson landed and I'll adapt the next ones.</p>
+<h2>Flash cards</h2><div id="cards"></div>
+<h2>Retrieval practice</h2><div id="quiz"></div>
+<p class="tip">Want to read the bytecode of comprehensions (inlined since 3.12), generators, or a match statement? Paste code into the runner and ask me in the chat to annotate the output.</p>
 </div>
 <script>
 /* OSTEP course — shared components. Every page loads this file (inlined by build.py). */
@@ -217,34 +226,38 @@ window.OS = (function () {
   /* ---------- persistent storage (localStorage on a real site; in-memory fallback in sandboxes) ---------- */
   const mem = {};
   const store = {
-    get(k) { try { const v = localStorage.getItem('ostep:' + k); return v === null ? (mem[k] ?? null) : JSON.parse(v); } catch (e) { return mem[k] ?? null; } },
-    set(k, v) { mem[k] = v; try { localStorage.setItem('ostep:' + k, JSON.stringify(v)); } catch (e) {} },
-    del(k) { delete mem[k]; try { localStorage.removeItem('ostep:' + k); } catch (e) {} },
-    keys(prefix) { const out = new Set(Object.keys(mem).filter(k => k.startsWith(prefix))); try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith('ostep:' + prefix)) out.add(k.slice(6)); } } catch (e) {} return [...out]; },
-    available() { try { localStorage.setItem('ostep:test', '1'); localStorage.removeItem('ostep:test'); return true; } catch (e) { return false; } }
+    get(k) { try { const v = localStorage.getItem('py313:' + k); return v === null ? (mem[k] ?? null) : JSON.parse(v); } catch (e) { return mem[k] ?? null; } },
+    set(k, v) { mem[k] = v; try { localStorage.setItem('py313:' + k, JSON.stringify(v)); } catch (e) {} },
+    del(k) { delete mem[k]; try { localStorage.removeItem('py313:' + k); } catch (e) {} },
+    keys(prefix) { const out = new Set(Object.keys(mem).filter(k => k.startsWith(prefix))); try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith('py313:' + prefix)) out.add(k.slice(6)); } } catch (e) {} return [...out]; },
+    available() { try { localStorage.setItem('py313:test', '1'); localStorage.removeItem('py313:test'); return true; } catch (e) { return false; } }
   };
 
   /* ---------- course structure ---------- */
   const PIECES = [
-    ['intro', 'Introduction', [['0001-three-easy-pieces', 'Three easy pieces', 'ch 1–2']]],
-    ['virt', 'Virtualization', [
-      ['0002-processes', 'Processes & the process API', 'ch 4–5'],
-      ['0003-limited-direct-execution', 'Limited direct execution', 'ch 6'],
-      ['0004-scheduling', 'Scheduling', 'ch 7–10'],
-      ['0005-address-spaces', 'Address spaces & segments', 'ch 13–16'],
-      ['0006-paging-and-tlbs', 'Paging & TLBs', 'ch 17–20'],
-      ['0007-swapping', 'Swapping & policies', 'ch 21–23']]],
-    ['conc', 'Concurrency', [
-      ['0008-threads-and-locks', 'Threads & locks', 'ch 26–28'],
-      ['0009-cvs-and-semaphores', 'CVs & semaphores', 'ch 29–31'],
-      ['0010-bugs-and-events', 'Bugs & events', 'ch 32–33']]],
-    ['pers', 'Persistence', [
-      ['0011-devices-disks-raid', 'Devices, disks, RAID', 'ch 36–38'],
-      ['0012-files-and-vsfs', 'Files & a simple FS', 'ch 39–40'],
-      ['0013-ffs-journaling-lfs', 'FFS, journaling, LFS', 'ch 41–43'],
-      ['0014-ssd-and-integrity', 'SSDs & integrity', 'ch 44–45'],
-      ['0015-distributed-nfs-afs', 'Distributed FS', 'ch 48–50']]],
-    ['sec', 'Security', [['0016-security-and-vmms', 'Security & VMMs', 'ch 53–57, App B']]]
+    ['spec', 'The language, as specified', [
+      ['0001-objects-values-types', 'Objects, values and types', 'Ref §3.1–3.2'],
+      ['0002-lexical-structure-and-expressions', 'Lexical structure & expressions', 'Ref §2, §6'],
+      ['0003-execution-model', 'Execution model: names, scopes, closures', 'Ref §4'],
+      ['0004-data-model-special-methods', 'Data model I: special methods', 'Ref §3.3'],
+      ['0005-attribute-access-and-descriptors', 'Data model II: attributes & descriptors', 'Ref §3.3.2, HOWTO'],
+      ['0006-classes-mro-metaclasses', 'Classes, MRO, metaclasses', 'Ref §3.3.3, HOWTO'],
+      ['0007-functions-generators-coroutines', 'Functions, generators, coroutines', 'Ref §6.3, §3.4'],
+      ['0008-statements-and-pattern-matching', 'Statements, exceptions, pattern matching', 'Ref §7–8'],
+      ['0009-import-system', 'The import system', 'Ref §5'],
+      ['0010-typing', 'Typing: the PEP 484 lineage to 3.13', 'PEPs 484…742']]],
+    ['internals', 'CPython 3.13 internals', [
+      ['0011-compiler-and-bytecode', 'From source to bytecode', 'InternalDocs compiler, dis'],
+      ['0012-eval-loop-and-specialization', 'The eval loop, specialization, JIT', 'InternalDocs interpreter, PEPs 659/744'],
+      ['0013-memory-refcounting-gc', 'Memory, refcounting, garbage collection', 'InternalDocs GC, PEP 683'],
+      ['0014-gil-and-free-threading', 'The GIL and free-threaded Python', 'PEP 703, HOWTO']]],
+    ['data', 'DataFrames: pandas vs Polars', [
+      ['0015-dataframe-data-models', 'Two data models', 'pandas dsintro, Polars concepts'],
+      ['0016-selection-and-indexing', 'Selecting, filtering, assigning', 'pandas indexing, Polars expressions'],
+      ['0017-expressions-and-lazy', 'Expressions, contexts, lazy queries', 'Polars lazy, pandas chaining'],
+      ['0018-groupby-joins-reshaping', 'Groupby, joins, reshaping', 'pandas groupby/merging, Polars transformations'],
+      ['0019-time-series', 'Time series', 'pandas timeseries, Polars time-series'],
+      ['0020-performance-and-scale', 'Performance, memory, scale', 'pandas enhancingperf/scale, Modern Polars']]]
   ];
   const LESSONS = PIECES.flatMap(p => p[2].map(l => [l[0], l[1], p[0], l[2]]));
   const title = id => (LESSONS.find(l => l[0] === id) || [])[1] || id;
@@ -257,7 +270,7 @@ window.OS = (function () {
     const isLesson = i >= 0;
     const top = document.createElement('header'); top.className = 'topbar';
     top.innerHTML = `<button class="menu" aria-label="Open directory" aria-expanded="false">☰<span>Directory</span></button>
-      <a class="brand" href="${root}index.html"><span class="dot"></span>OSTEP course</a>
+      <a class="brand" href="${root}index.html"><span class="dot"></span>Python 3.13 course</a>
       <nav class="links"><a href="${root}reference/glossary.html">Glossary</a><a href="${root}reference/cheatsheets.html">Cheat sheets</a><a href="${root}notes.html">My notes</a></nav>
       ${isLesson ? `<span class="where">${i+1} / ${LESSONS.length}</span>` : ''}`;
     document.body.prepend(top);
@@ -341,6 +354,42 @@ window.OS = (function () {
     });
   }
 
+
+  /* ---------- runnable Python (Pyodide, loaded on first use) ---------- */
+  const pyodideP = {};
+  function loadPy(status, version) {
+    version = version || '0.28.3';
+    if (pyodideP[version]) return pyodideP[version];
+    status('loading Python (Pyodide ' + version + ', ~10 MB, once per page)…');
+    pyodideP[version] = new Promise((res, rej) => {
+      const s = document.createElement('script'); s.src = 'https://cdn.jsdelivr.net/pyodide/v' + version + '/full/pyodide.js';
+      s.onload = () => window.loadPyodide({ indexURL: 'https://cdn.jsdelivr.net/pyodide/v' + version + '/full/' }).then(res, rej);
+      s.onerror = () => rej(new Error('Could not load Pyodide (offline, or blocked by this preview).'));
+      document.head.append(s);
+    });
+    return pyodideP[version];
+  }
+  function py(el, code, opts) {
+    el = typeof el === 'string' ? document.getElementById(el) : el; opts = opts || {};
+    el.classList.add('pyrun');
+    el.innerHTML = `<div class="pyhead"><span>Python${opts.note ? ' · ' + esc(opts.note) : ''}</span><span class="pystatus"></span><button class="primary run">▶ Run</button><button class="reset">Reset</button></div><textarea spellcheck="false">${esc(code.trim())}</textarea><pre class="pyout" hidden></pre>`;
+    const ta = el.querySelector('textarea'), out = el.querySelector('.pyout'), st = el.querySelector('.pystatus');
+    const fit = () => { ta.style.height = 'auto'; ta.style.height = Math.min(480, ta.scrollHeight + 4) + 'px'; }; fit(); ta.addEventListener('input', fit);
+    el.querySelector('.reset').onclick = () => { ta.value = code.trim(); fit(); out.hidden = true; };
+    el.querySelector('.run').onclick = async () => {
+      out.hidden = false; out.textContent = ''; st.textContent = '';
+      try {
+        const pyo = await loadPy(m => st.textContent = m, opts.pyodide || ((opts.packages||[]).includes('polars') ? '0.27.7' : '0.28.3'));
+        if (opts.packages) { st.textContent = 'loading ' + opts.packages.join(', ') + '…'; await pyo.loadPackage(opts.packages).catch(() => {}); }
+        st.textContent = 'running…';
+        pyo.setStdout({ batched: s => out.textContent += s + '\n' }); pyo.setStderr({ batched: s => out.textContent += s + '\n' });
+        const r = await pyo.runPythonAsync(ta.value);
+        if (r !== undefined && r !== null && String(r) !== 'None') out.textContent += String(r);
+        st.textContent = 'done · CPython ' + pyo.runPython('import sys; f"{sys.version_info.major}.{sys.version_info.minor}"') + ' in WebAssembly';
+      } catch (e) { out.textContent += String(e); st.textContent = 'error'; }
+    };
+  }
+
   /* ---------- flip cards ---------- */
   function cards(el, list) {
     el = typeof el === 'string' ? document.getElementById(el) : el;
@@ -385,17 +434,71 @@ window.OS = (function () {
     el.querySelectorAll('input').forEach(c => c.onchange = () => { const s = [...el.querySelectorAll('input:checked')].map(x => +x.dataset.i); if (pageId) store.set('obj:' + pageId, s); });
   }
 
-  return { chrome, quiz, cards, stepper, gantt, objectives, esc, store, LESSONS, PIECES, title };
+  return { chrome, quiz, cards, stepper, gantt, objectives, py, esc, store, LESSONS, PIECES, title };
 })();
 
 </script>
 <script>
-OS.chrome('index','');
-const P=[['intro','Introduction','What an OS is: the three pieces, design goals, history.',['0001-three-easy-pieces','Three easy pieces','ch 1–2']],
-['virt','Virtualization','The CPU and memory made private and plentiful.',['0002-processes','Processes & the process API','ch 4–5'],['0003-limited-direct-execution','Limited direct execution','ch 6'],['0004-scheduling','Scheduling: FIFO to CFS and multi-CPU','ch 7–10'],['0005-address-spaces','Address spaces, base/bounds, segments','ch 13–16'],['0006-paging-and-tlbs','Free space, paging, TLBs, small tables','ch 17–20'],['0007-swapping','Swapping, replacement, VAX/VMS & Linux','ch 21–23']],
-['conc','Concurrency','Threads and the primitives that make them safe.',['0008-threads-and-locks','Threads, thread API, locks','ch 26–28'],['0009-cvs-and-semaphores','Locked structures, CVs, semaphores','ch 29–31'],['0010-bugs-and-events','Concurrency bugs & event-based servers','ch 32–33']],
-['pers','Persistence + Security','Storage from the device up; then protecting it all.',['0011-devices-disks-raid','Devices, disks, RAID','ch 36–38'],['0012-files-and-vsfs','Files, directories, a simple file system','ch 39–40'],['0013-ffs-journaling-lfs','FFS, crash consistency, LFS','ch 41–43'],['0014-ssd-and-integrity','SSDs & data integrity','ch 44–45'],['0015-distributed-nfs-afs','Distributed systems, NFS, AFS','ch 48–50'],['0016-security-and-vmms','Security (ch 53–57) & VMMs','ch 53–57, App B']]];
-const m=document.getElementById('map');let idx=0;const S=OS.store;
-m.innerHTML=P.map(([cls,name,desc,...ls])=>`<div class="piece piece-${cls}"><h3>${name}</h3><p>${desc}</p>${ls.map(l=>{idx++;const q=S.get('quiz:'+l[0]),nt=(S.get('notes:'+l[0])||{}).text;return `<a href="lessons/${l[0]}.html" data-id="${l[0]}" class="${q&&q.score===q.total?'done':''}">${idx}. ${l[1]}<small>${l[2]}${q?` · quiz ${q.score}/${q.total}`:''}${nt?' · ✎ notes':''}</small></a>`;}).join('')}</div>`).join('');
-const done=OS.LESSONS.filter(l=>S.get('quiz:'+l[0])).length;const ph=document.createElement('p');ph.className='cap';ph.textContent=done?`${done} of 16 lesson quizzes attempted — see My notes & progress for details.`:'Quiz scores, checked objectives and notes are saved in this browser as you go.';document.getElementById('map').after(ph);
+OS.chrome('0011-compiler-and-bytecode');
+OS.objectives('obj',['Name the compiler stages and the CPython source file for each.','Describe the code object\'s main fields and why code objects can be marshalled to .pyc.','Decode the 16-bit code-unit format, EXTENDED_ARG and inline caches.','Read dis output for calls, attribute access, loops and try blocks, including the exception table.','List the peephole/CFG optimizations and the effect of optimize levels.']);
+const ST=[['Tokenize','Parser/lexer, Parser/tokenizer','Source bytes → tokens (NAME, NUMBER, OP, INDENT/DEDENT, NEWLINE…). Python\'s tokenize module exposes a compatible pure-Python tokenizer.'],['Parse (PEG)','Parser/parser.c ← Grammar/python.gram via Tools/peg_generator','Since 3.9 (PEP 617) a PEG parser over the token stream; each grammar rule is a C function creating AST nodes with _PyAST_xx helpers. Handles soft keywords and the "match" ambiguity by unlimited lookahead with memoization.'],['AST','Parser/Python.asdl → Python/Python-ast.c','Abstract syntax tree defined in ASDL (Zephyr). The ast module gives you the same tree; the compiler runs ast optimizations before codegen.'],['Symbol table','Python/symtable.c','Walks the AST to classify every name per block: local, global (implicit/explicit), free, cell — the compile-time rule of lesson 3. The symtable module exposes it.'],['CFG + optimize','Python/compile.c → Python/flowgraph.c','Codegen emits an instruction sequence with pseudo-instructions and labels into a control-flow graph of basic blocks; the flowgraph optimizer folds constants, threads jumps, removes dead code, computes stack depth.'],['Assemble','Python/assemble.c → code object','Resolves jump targets, packs code units, builds co_linetable (positions) and co_exceptiontable, and creates the PyCodeObject. .pyc = marshal.dumps(code) with a header (magic, flags, mtime/size or source hash).']];
+document.getElementById('pipe').innerHTML=ST.map((s,i)=>`<div data-i="${i}"><b>${s[0]}</b>${s[1]}</div>`).join('');document.querySelectorAll('.pipe div').forEach(d=>d.onclick=()=>{document.querySelectorAll('.pipe div').forEach(x=>x.classList.remove('on'));d.classList.add('on');document.getElementById('pmsg').innerHTML=`<b>${ST[+d.dataset.i][0]}</b> — ${ST[+d.dataset.i][2]}`;});document.querySelector('.pipe div').click();
+OS.py('py1',`
+import ast, symtable, tokenize, io
+src = "def area(r):\\n    pi = 3.14159\\n    return pi * r ** 2\\n"
+print("TOKENS:", [tokenize.tok_name[t.type] for t in tokenize.generate_tokens(io.StringIO(src).readline)][:14], "…")
+tree = ast.parse(src)
+print("AST:", ast.dump(tree.body[0], include_attributes=False)[:120], "…")
+st = symtable.symtable(src, "<s>", "exec").get_children()[0]
+print("SYMTABLE for area:", {n: ("param" if st.lookup(n).is_parameter() else "local") for n in st.get_locals()})
+code = compile(src, "<s>", "exec").co_consts[0]      # the nested code object for 'area'
+print("CODE OBJECT:", code.co_name, "| consts:", code.co_consts, "| varnames:", code.co_varnames, "| stacksize:", code.co_stacksize)`);
+OS.py('py2',`
+import marshal, types, dis
+def f(a, b=2, *args, k, **kw):
+    "doc"
+    x = a + b
+    return x
+c = f.__code__
+for name in ["co_argcount", "co_posonlyargcount", "co_kwonlyargcount", "co_nlocals", "co_stacksize", "co_flags", "co_consts", "co_names", "co_varnames", "co_qualname"]:
+    print(f"{name:<20}", getattr(c, name))
+print("flags decoded:", dis.pretty_flags(c.co_flags))
+print("co_code (bytes):", c.co_code[:12].hex(" "), "… length", len(c.co_code), "=", len(c.co_code)//2, "code units")
+print("positions (line, endline, col, endcol) for first instructions:", list(c.co_positions())[:3])
+data = marshal.dumps(c)                       # exactly what a .pyc body contains
+print("marshalled:", len(data), "bytes; round-trips:", marshal.loads(data) == c)
+print("code objects are immutable and hashable:", hash(c) != 0, "| replace():", c.replace(co_name="g").co_name)`);
+OS.py('py3',`
+import dis
+class P:
+    def __init__(self): self.x = 1
+def f(p, items):
+    total = p.x
+    for i in items:
+        total += i
+    return len(items) + total
+dis.dis(f, show_caches=True)     # CACHE lines are the inline cache entries of specializable instructions
+print("opcode/oparg pairs:", [(i.opname, i.arg) for i in dis.get_instructions(f)][:6])`);
+OS.py('py4',`
+import dis
+def g(x):
+    try:
+        return 1 / x
+    except ZeroDivisionError:
+        return float("inf")
+    finally:
+        print("cleanup")
+dis.dis(g)                        # note the ExceptionTable at the end: no setup instructions in the try body
+print("constant folding:", dis.Bytecode("y = 2 * 60 * 60 + 'a' 'b'.__len__()").codeobj.co_consts)
+print("'in' on a constant list becomes a tuple:", dis.Bytecode("x in [1, 2, 3]").codeobj.co_consts)
+print("optimize=2 strips docstring & asserts:", compile("'''doc'''\\nassert False", "<s>", "exec", optimize=2).co_consts)`);
+OS.cards('cards',[['PEG parser','Since 3.9 (PEP 617): parser generated from Grammar/python.gram, operating on tokens with memoized unlimited lookahead.'],['ASDL','Zephyr Abstract Syntax Description Language; Parser/Python.asdl defines every AST node type.'],['Symbol table','Compile-time classification of names per block (local/global/free/cell); exposed by the symtable module.'],['Control-flow graph','Basic blocks + jumps; the representation where flowgraph.c optimizes and computes stack depth.'],['Code unit','16 bits: 8-bit opcode + 8-bit oparg; EXTENDED_ARG prefixes extend the oparg, up to 32 bits.'],['Inline cache','Extra code units after an instruction (shown as CACHE) used by the specializing interpreter; first entry is the counter.'],['co_code vs co_code_adaptive','The public immutable bytes vs the private, mutable copy the eval loop runs and specialization rewrites.'],['Exception table','co_exceptiontable: ranges → handler target, stack depth, lasti flag; makes try blocks free until an exception occurs.'],['marshal / .pyc','Code objects contain no mutable references, so marshal serializes them; .pyc = header + marshalled code.']]);
+OS.quiz('quiz',[
+{q:'Which stage classifies each name as local, global, free or cell?',o:['the tokenizer','the symbol table pass','the assembler','the PEG parser'],a:1,why:'Python/symtable.c walks the AST once per block before code generation — the compile-time rule behind UnboundLocalError.'},
+{q:'How large is one CPython code unit?',o:['8 bits','16 bits: opcode + oparg','32 bits','variable length'],a:1,why:'Each instruction is an 8-bit opcode and an 8-bit argument; EXTENDED_ARG prefixes supply more argument bits.'},
+{q:'What are the CACHE entries printed by dis.dis(f, show_caches=True)?',o:['unused padding for alignment','inline cache units for specialization','debug line-number markers','constants inlined into the code'],a:1,why:'Specializable instructions reserve following code units as inline caches (counter, type versions, indices) that the adaptive interpreter fills at runtime.'},
+{q:'Why can code objects be written to .pyc files with marshal?',o:['they are strings internally','they are immutable and contain no mutable references','marshal handles any object','they store only source text'],a:1,why:'The reference: code objects are immutable and contain no references (direct or indirect) to mutable objects, so a flat serialization suffices.'},
+{q:'Since 3.11, what does entering a try block cost at runtime?',o:['a SETUP_FINALLY instruction','nothing; handlers are found via the exception table only on raise','a stack push per protected range','a function call'],a:1,why:'Zero-cost exceptions: co_exceptiontable maps instruction ranges to handlers; the table is consulted only when an exception propagates.'},
+{q:'compile(src, "<s>", "exec", optimize=2) additionally:',o:['inlines small functions','removes docstrings (and asserts)','enables the JIT','disables constant folding'],a:1,why:'optimize=1 removes assert statements and sets __debug__ False; optimize=2 also discards docstrings.'},
+{q:'x in [1, 2, 3] compiles the list literal to:',o:['a list built at runtime','a constant tuple','a set built at runtime','three comparisons'],a:1,why:'The flowgraph optimizer converts constant list/set literals in membership tests to tuple/frozenset constants.'}]);
 </script></body></html>

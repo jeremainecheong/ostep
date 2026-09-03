@@ -1,0 +1,503 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>14 · The GIL and free-threaded Python — Python 3.13 course</title><style>
+/* OSTEP course — shared stylesheet. Three pieces, three hues. */
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+:root{
+  --ink:#151b2f; --ink-2:#1e2540; --ink-3:#28304f; --line:#3a4368;
+  --paper:#eef0f7; --muted:#a9b1cf; --faint:#6e779a;
+  --virt:#e8b84a; --conc:#5bc8f5; --pers:#6bcb77; --sec:#f47fa0; --intro:#c9a8ff; --spec:#ffd166; --internals:#5bc8f5; --data:#6bcb77;
+  --ok:#6bcb77; --bad:#ff6b6b;
+  --accent:var(--virt);
+  --radius:6px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--ink);color:var(--paper);font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:17px;line-height:1.6}
+a{color:var(--accent)}
+code,pre,kbd,.mono{font-family:'IBM Plex Mono',ui-monospace,monospace}
+code{background:var(--ink-3);padding:1px 5px;border-radius:4px;font-size:.9em}
+pre{background:#0f1424;border:1px solid var(--line);border-left:4px solid var(--accent);padding:14px 16px;overflow:auto;border-radius:var(--radius);font-size:.86em;line-height:1.5}
+pre code{background:none;padding:0;font-size:inherit}
+h1,h2,h3,h4{font-family:'Fraunces',Georgia,serif;font-weight:700;line-height:1.15;margin:0 0 .4em}
+h1{font-size:2.6rem;letter-spacing:-.01em}
+h2{font-size:1.9rem;margin-top:2.6rem;padding-top:1.2rem;border-top:1px solid var(--line)}
+h3{font-size:1.3rem;margin-top:1.8rem;color:var(--accent)}
+h4{font-size:1.05rem;margin-top:1.2rem}
+p,li{max-width:72ch}
+.wrap{max-width:1100px;margin:0 auto;padding:0 28px 96px}
+.hero{padding:44px 0 16px}
+.hero .chapters{color:var(--muted);font-size:.95rem;margin-bottom:6px}
+.lede{font-size:1.2rem;color:var(--muted);max-width:66ch}
+.piece-spec{--accent:var(--spec)} .piece-internals{--accent:var(--internals)} .piece-data{--accent:var(--data)} .piece-virt{--accent:var(--virt)} .piece-conc{--accent:var(--conc)} .piece-pers{--accent:var(--pers)} .piece-sec{--accent:var(--sec)} .piece-intro{--accent:var(--intro)}
+.fig{background:var(--ink-2);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;margin:22px 0}
+.fig figcaption,.cap{color:var(--muted);font-size:.9rem;margin-top:10px}
+.fig svg{max-width:100%;height:auto;display:block}
+svg text{font-family:'IBM Plex Sans',sans-serif}
+svg .mono{font-family:'IBM Plex Mono',monospace}
+.crux{border:1px solid var(--accent);border-radius:var(--radius);padding:14px 18px;margin:22px 0;background:color-mix(in srgb,var(--accent) 8%,transparent)}
+.crux b{color:var(--accent)}
+.tip{border-left:4px solid var(--muted);padding:6px 16px;margin:18px 0;color:var(--muted)}
+.tip b{color:var(--paper)}
+table{border-collapse:collapse;width:100%;margin:16px 0;font-size:.95rem}
+th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{color:var(--muted);font-weight:500}
+td.mono,th.mono{font-family:'IBM Plex Mono',monospace}
+button,.btn{font:inherit;font-size:.9rem;background:var(--ink-3);color:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:7px 13px;cursor:pointer}
+button:hover{border-color:var(--accent)}
+button.primary{background:var(--accent);color:#111;border-color:var(--accent);font-weight:600}
+button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+input[type=range]{accent-color:var(--accent)}
+input[type=text],input[type=number],select{font:inherit;background:#0f1424;color:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:6px 10px}
+.controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:10px 0}
+.controls label{font-size:.9rem;color:var(--muted)}
+details{border:1px solid var(--line);border-radius:var(--radius);margin:10px 0;background:var(--ink-2)}
+summary{cursor:pointer;padding:12px 16px;font-weight:600;list-style:none}
+summary::before{content:"+";display:inline-block;width:1.2em;color:var(--accent)}
+details[open] summary::before{content:"–"}
+details>div{padding:0 16px 14px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;margin:16px 0}
+.card{perspective:900px;min-height:140px;cursor:pointer}
+.card .inner{position:relative;width:100%;height:100%;min-height:140px;transition:transform .45s;transform-style:preserve-3d}
+.card.flipped .inner{transform:rotateY(180deg)}
+.card .face{position:absolute;inset:0;padding:14px;border-radius:var(--radius);border:1px solid var(--line);background:var(--ink-2);backface-visibility:hidden;display:flex;align-items:center;justify-content:center;text-align:center;font-size:.95rem}
+.card .back{transform:rotateY(180deg);background:var(--ink-3);border-color:var(--accent);font-size:.88rem;line-height:1.45}
+.card .front{font-weight:600}
+@media (prefers-reduced-motion:reduce){.card .inner{transition:none}}
+.quiz .q{border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin:12px 0;background:var(--ink-2)}
+.quiz .q p{margin:0 0 10px;font-weight:600}
+.quiz .opts{display:grid;gap:8px}
+.quiz .opt{text-align:left;background:var(--ink);width:100%}
+.quiz .opt.right{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 15%,var(--ink))}
+.quiz .opt.wrong{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 15%,var(--ink))}
+.quiz .why{margin-top:10px;color:var(--muted);font-size:.93rem;display:none}
+.quiz .q.done .why{display:block}
+.quiz .score{margin-top:12px;font-weight:600}
+.stepper .stage{min-height:60px;background:#0f1424;border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin:10px 0}
+.stepper .idx{color:var(--muted);font-size:.85rem}
+.gantt{display:grid;gap:6px;margin:10px 0}
+.gantt .row{display:grid;grid-template-columns:60px 1fr;align-items:center;gap:8px;font-size:.85rem}
+.gantt .track{position:relative;height:26px;background:#0f1424;border-radius:4px;overflow:hidden}
+.gantt .seg{position:absolute;top:0;bottom:0;display:flex;align-items:center;justify-content:center;font-size:.75rem;color:#111;font-weight:600;border-right:1px solid rgba(0,0,0,.3)}
+.cells{display:grid;gap:4px;margin:10px 0}
+.cell{background:#0f1424;border:1px solid var(--line);border-radius:4px;padding:6px;text-align:center;font-family:'IBM Plex Mono',monospace;font-size:.8rem;min-height:36px;display:flex;align-items:center;justify-content:center}
+.cell.hit{background:color-mix(in srgb,var(--ok) 35%,#0f1424);border-color:var(--ok)}
+.cell.miss{background:color-mix(in srgb,var(--bad) 35%,#0f1424);border-color:var(--bad)}
+.cell.active{outline:2px solid var(--accent)}
+.cell.free{opacity:.45}
+.hl{background:color-mix(in srgb,var(--accent) 30%,transparent);padding:1px 5px;border-radius:3px}
+.k{color:var(--accent);font-weight:600}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media (max-width:760px){.two{grid-template-columns:1fr}.topbar{gap:10px}h1{font-size:2rem}}
+.nav-bottom{display:flex;justify-content:space-between;gap:16px;margin-top:56px;padding-top:20px;border-top:1px solid var(--line)}
+.nav-bottom a{text-decoration:none;padding:12px 16px;border:1px solid var(--line);border-radius:var(--radius);color:var(--paper)}
+.source{background:var(--ink-2);border-radius:var(--radius);padding:14px 18px;margin:22px 0;font-size:.95rem}
+.source b{color:var(--accent)}
+.objectives li{list-style:none;margin:6px 0}
+.objectives input{margin-right:8px;accent-color:var(--accent)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.85rem;color:var(--muted)}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:5px;vertical-align:-2px}
+.tag{display:inline-block;font-size:.75rem;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted);margin-right:6px}
+.log{font-family:'IBM Plex Mono',monospace;font-size:.82rem;background:#0f1424;border:1px solid var(--line);border-radius:var(--radius);padding:10px 12px;max-height:220px;overflow:auto;white-space:pre-wrap}
+@media print{body{background:#fff;color:#111}.topbar,.nav-bottom,button{display:none}.fig,.crux,details,.source{border-color:#bbb;background:#fff}pre{background:#f5f5f5;color:#111}}
+
+/* ---------- site chrome: sticky header + directory drawer ---------- */
+.topbar{position:sticky;top:0;z-index:30;display:flex;gap:14px;align-items:center;padding:10px 16px;background:color-mix(in srgb,var(--ink) 92%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);font-size:.9rem}
+.topbar .menu{display:flex;align-items:center;gap:8px;padding:8px 12px;font-size:1rem}
+.topbar .menu span{font-size:.85rem}
+.topbar .brand{color:var(--paper);text-decoration:none;font-weight:600;display:flex;align-items:center;gap:8px}
+.topbar .dot{width:10px;height:10px;border-radius:50%;background:var(--accent);display:inline-block}
+.topbar .links{display:flex;gap:16px;margin-left:8px}
+.topbar .links a{color:var(--muted);text-decoration:none}
+.topbar .links a:hover{color:var(--paper)}
+.topbar .where{margin-left:auto;color:var(--faint);font-variant-numeric:tabular-nums}
+.drawer{position:fixed;top:0;left:0;bottom:0;width:min(340px,88vw);background:var(--ink-2);border-right:1px solid var(--line);z-index:50;transform:translateX(-102%);transition:transform .25s;overflow-y:auto;padding:0 0 24px;box-shadow:0 0 40px rgba(0,0,0,.5)}
+.drawer-open .drawer{transform:none}
+.scrim{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:40;opacity:0;pointer-events:none;transition:opacity .2s}
+.drawer-open .scrim{opacity:1;pointer-events:auto}
+.drawer .dhead{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--ink-2)}
+.drawer .close,.notes-sheet .close{font-size:1.3rem;line-height:1;padding:4px 10px}
+.drawer .dgroup{padding:8px 0 4px}
+.drawer .dname{padding:8px 16px 4px;color:var(--accent);font-family:'Fraunces',serif;font-weight:700}
+.drawer .ditem{display:flex;gap:10px;align-items:center;padding:9px 16px;color:var(--paper);text-decoration:none;border-left:3px solid transparent;font-size:.92rem}
+.drawer .ditem:hover{background:var(--ink-3)}
+.drawer .ditem.cur{border-left-color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
+.drawer .ditem .n{color:var(--faint);min-width:1.4em;font-variant-numeric:tabular-nums}
+.drawer .ditem .t{flex:1;line-height:1.25}
+.drawer .ditem .t small{display:block;color:var(--faint);font-size:.75rem}
+.drawer .badges{display:flex;gap:6px;align-items:center}
+.drawer .badges i{font-style:normal;color:var(--accent)}
+.drawer .badges em{font-style:normal;font-size:.75rem;padding:1px 6px;border-radius:999px;background:var(--ink-3);color:var(--muted);font-variant-numeric:tabular-nums}
+.drawer .dfoot{padding:16px;color:var(--faint);font-size:.8rem}
+/* ---------- notes: floating button + bottom sheet ---------- */
+.notes-fab{position:fixed;right:16px;bottom:16px;z-index:35;display:flex;gap:8px;align-items:center;padding:12px 16px;border-radius:999px;background:var(--accent);color:#111;border:none;font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,.4)}
+.notes-sheet{position:fixed;left:0;right:0;bottom:0;z-index:45;background:var(--ink-2);border-top:1px solid var(--line);border-radius:14px 14px 0 0;transform:translateY(105%);transition:transform .25s;box-shadow:0 -10px 40px rgba(0,0,0,.5);max-width:900px;margin:0 auto;padding-bottom:env(safe-area-inset-bottom)}
+.notes-open .notes-sheet{transform:none}
+.notes-open .notes-fab{display:none}
+.notes-sheet .nhead{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line)}
+.notes-sheet .nhead b{flex:1;font-size:.95rem}
+.notes-sheet .nstatus{color:var(--faint);font-size:.8rem}
+.notes-sheet textarea{display:block;width:100%;min-height:36vh;max-height:60vh;resize:vertical;border:none;background:#0f1424;color:var(--paper);font:inherit;font-size:1rem;line-height:1.5;padding:14px 16px;outline:none}
+.notes-sheet .nfoot{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;font-size:.85rem;color:var(--muted)}
+/* ---------- wide widgets scroll sideways instead of breaking the page ---------- */
+.tw{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:16px 0}
+.tw table{margin:0;min-width:520px}
+.fig{overflow-x:auto}
+@media (prefers-reduced-motion:reduce){.drawer,.notes-sheet,.scrim{transition:none}}
+/* ---------- phones ---------- */
+@media (max-width:760px){
+  body{font-size:16px}
+  .wrap{padding:0 16px 110px}
+  h1{font-size:1.85rem} h2{font-size:1.45rem;margin-top:2rem} h3{font-size:1.15rem}
+  .lede{font-size:1.05rem}
+  .topbar{padding:8px 12px;gap:10px}
+  .topbar .links{display:none}
+  .topbar .menu span{display:none}
+  .topbar .menu{padding:8px 11px}
+  .fig{padding:12px 12px;margin:16px -4px;border-radius:8px}
+  .crux,.source{padding:12px 14px}
+  pre{font-size:.8em;padding:12px 12px}
+  button,.btn{padding:10px 14px;font-size:.92rem}
+  .controls{gap:8px}
+  .controls label{display:flex;align-items:center;gap:6px}
+  input[type=number]{max-width:96px}
+  .cards{grid-template-columns:1fr 1fr;gap:8px}
+  .card,.card .inner{min-height:120px}
+  .card .face{font-size:.88rem;padding:10px}
+  .cells{min-width:420px}
+  .quiz .opt{padding:12px 12px;line-height:1.35}
+  .nav-bottom{flex-direction:column}
+  .nav-bottom a{text-align:center}
+  .notes-fab span{display:none}
+  .notes-fab{padding:14px;right:12px;bottom:12px}
+  .notes-sheet textarea{min-height:44vh}
+  .stepper .stage{padding:12px}
+  .gantt .row{grid-template-columns:44px 1fr;font-size:.75rem}
+  /* lesson-specific grids collapse */
+  .lde,.il,.two,.cry,.flash,.dl,.fdt,.how,.cards.wide,.vm{grid-template-columns:1fr}
+  .map{grid-template-columns:1fr}
+  .net{grid-template-columns:1fr}.net .arrow{padding:0;transform:rotate(90deg)}
+  .phil{grid-template-columns:repeat(2,1fr)}
+  .jobs{max-width:100%}
+  .trace{min-width:620px}.tl{min-width:720px}.disk{min-width:560px}
+}
+@media (max-width:420px){.cards{grid-template-columns:1fr}}
+
+/* ---------- runnable Python ---------- */
+.pyrun{border:1px solid var(--line);border-radius:var(--radius);background:#0f1424;margin:18px 0;overflow:hidden}
+.pyrun .pyhead{display:flex;gap:10px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--line);font-size:.85rem;color:var(--muted);background:var(--ink-2)}
+.pyrun .pyhead span:first-child{flex:1;font-weight:600;color:var(--paper)}
+.pyrun .pystatus{font-size:.78rem}
+.pyrun textarea{display:block;width:100%;border:none;background:#0f1424;color:var(--paper);font-family:'IBM Plex Mono',monospace;font-size:.86rem;line-height:1.5;padding:12px 14px;resize:vertical;outline:none;min-height:60px;tab-size:4}
+.pyrun .pyout{margin:0;border:none;border-top:1px solid var(--line);border-left:none;border-radius:0;background:#0a0e1a;color:#cfe3ff;max-height:320px}
+
+</style>
+<style>.tl{display:grid;gap:6px}.tl .row{display:grid;grid-template-columns:70px 1fr;gap:8px;align-items:center;font-size:.85rem}.tl .track{position:relative;height:26px;background:#0f1424;border-radius:4px;overflow:hidden}.tl .seg{position:absolute;top:0;bottom:0;display:flex;align-items:center;justify-content:center;font-size:.7rem;color:#111;font-weight:600}.tl .run{background:#5bc8f5}.tl .wait{background:#3a4368;color:var(--muted)}.tl .io{background:#6bcb77}.tl .par{background:#e8b84a}.rc{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.rc div{background:#0f1424;border:1px solid var(--line);border-radius:6px;padding:10px;font-size:.85rem}.rc b{display:block;color:var(--accent)}@media(max-width:700px){.rc{grid-template-columns:1fr}}</style></head>
+<body class="piece-internals"><div class="wrap">
+<header class="hero"><div class="chapters">Glossary: global interpreter lock · Python/ceval_gil.c · PEP 703 Making the GIL optional · HOWTO: free threading (3.13) · What's New 3.13</div>
+<h1>The GIL: what it is, why it exists, and how 3.13 makes it optional</h1>
+<p class="lede">The global interpreter lock lets only one thread execute Python bytecode at a time. It exists because reference counting and the built-in containers were never designed for concurrent mutation; it is the reason CPU-bound threads don't speed up on multiple cores, and the reason C extensions are easy to write. 3.13 ships the first <em>free-threaded</em> build (PEP 703): the GIL becomes optional, at the price of a whole new refcounting scheme, per-object locks, a different allocator and — for now — a single-thread performance cost. This lesson covers both worlds with the actual numbers.</p></header>
+<div class="source"><b>Primary sources:</b> <a href="https://docs.python.org/3.13/glossary.html#term-global-interpreter-lock">glossary entry</a>; the design comment at the top of <code>Python/ceval_gil.c</code> (3.13) and <code>DEFAULT_INTERVAL</code>; <code>sys.getswitchinterval</code>; <a href="https://peps.python.org/pep-0703/">PEP 703</a>; <a href="https://docs.python.org/3.13/howto/free-threading-python.html">Free-threading HOWTO</a>; <a href="https://docs.python.org/3.13/whatsnew/3.13.html#free-threaded-cpython">What's New 3.13</a>; <code>Python/gc_free_threading.c</code>. The runner below runs in WebAssembly where real OS threads are unavailable, so the parallelism demos are simulations; the API calls are real.</div>
+<h2>What you'll be able to do</h2><ul id="obj"></ul>
+
+<h2>What the GIL is</h2>
+<div class="crux"><b>Glossary:</b> "the mechanism used by the CPython interpreter to assure that only one thread executes Python bytecode at a time. This simplifies the CPython implementation by making the object model (including critical built-in types such as dict) implicitly safe against concurrent access… at the expense of much of the parallelism afforded by multi-processor machines." Extensions may release it around heavy work (compression, hashing) and <b>the GIL is always released when doing I/O</b>.</div>
+<p><b>Mechanically</b> (<code>ceval_gil.c</code>): the GIL is a boolean <code>locked</code> guarded by a mutex and signalled with a condition variable. A thread that wants it waits up to the <b>switch interval</b> — <code>DEFAULT_INTERVAL 5000</code> µs, i.e. 5 ms, readable and settable with <code>sys.getswitchinterval()</code>/<code>setswitchinterval()</code> — then sets <code>gil_drop_request</code> (folded into the <code>eval_breaker</code> flag the eval loop checks at <code>JUMP_BACKWARD</code>/<code>RESUME</code>). The holder notices, releases, and with <em>forced switching</em> waits until <em>another</em> thread has actually taken the GIL, so a releasing thread on a multi-core machine cannot immediately re-grab it and starve the others. Which waiter wins is the OS's decision. The interval is a target, not a guarantee: a single long-running C operation can hold the GIL as long as it likes. C code releases it explicitly with <code>Py_BEGIN_ALLOW_THREADS</code>/<code>Py_END_ALLOW_THREADS</code> (e.g. <code>zlib</code>, <code>hashlib</code>, every blocking I/O call).</p>
+<div class="fig"><h4>Two threads, one GIL — pick a workload</h4><div class="controls"><button class="primary" data-w="cpu">CPU-bound (pure Python)</button><button data-w="io">I/O-bound</button><button data-w="ext">C extension that releases the GIL</button><button data-w="ft">free-threaded build (3.13t)</button></div><div class="tl" id="gtl"></div><div class="cap" id="gmsg"></div></div>
+<div id="py1"></div>
+
+<h2>Why the GIL exists: reference counting</h2>
+<p>Every <code>Py_INCREF</code> is a read-modify-write of <code>ob_refcnt</code>. Two threads doing that concurrently on the same object lose updates (exactly the counter race of an OS course) — and a lost decrement leaks, a lost increment frees a live object and crashes. Making every refcount operation atomic slows the single-threaded case badly. The GIL solves this globally: one thread runs, so no atomics are needed anywhere, and dicts, lists and the allocator get thread-safety for free. That is also why removing it was hard for thirty years: <b>every</b> object, container and internal structure relied on it.</p>
+
+<h2>PEP 703: making the GIL optional</h2>
+<div class="rc"><div><b>Biased reference counting</b>Two counts per object: <code>ob_ref_local</code> (owned by the creating thread, stored in <code>ob_tid</code>; non-atomic fast path) and <code>ob_ref_shared</code> (atomic, for other threads). The true count is their sum; deallocation happens when both are zero, after a merge.</div><div><b>Immortalization</b>Objects used by every thread — <code>None</code>, small ints, interned strings, and in 3.13 also module-level functions, code objects, modules, method descriptors and type objects (immortalized when a second thread starts) — get a fixed refcount, so no contention. Cost: more memory in programs creating many such objects; slated for 3.14 fixes.</div><div><b>Deferred reference counting</b>A limited form for functions, code, modules and types that are frequently accessed but shouldn't be immortal: their refcount is not tracked precisely by the interpreter; the tracing GC finds the missing references and only it can free them.</div></div>
+<div class="rc" style="margin-top:8px"><div><b>Per-object locks</b>A one-byte <code>ob_mutex</code> in each object; <code>dict</code>, <code>list</code>, <code>set</code> internals are protected by <em>critical sections</em> (<code>Py_BEGIN_CRITICAL_SECTION</code>) which are automatically suspended when the thread blocks, so nested locking cannot deadlock the way plain mutexes would.</div><div><b>mimalloc</b>A thread-safe general allocator replaces pymalloc. Its heap structure lets the GC enumerate all objects without the per-generation linked lists, and helps dict/list readers avoid locks safely (memory isn't reused while a reader may still see it — QSBR).</div><div><b>Stop-the-world GC</b>Collection pauses all threads; the free-threaded collector is <em>non-generational</em>: every collection scans the whole heap. Extensions declare support with the <code>Py_mod_gil</code> slot; importing an unmarked extension re-enables the GIL (with a warning) unless overridden.</div></div>
+<div id="py2"></div>
+
+<h2>3.13 status, in numbers</h2>
+<ul><li>Separate executable <code>python3.13t</code> (build option <code>--disable-gil</code>); <code>sys.version</code> contains "experimental free-threading build"; <code>sys._is_gil_enabled()</code> tells you the current state.</li><li>Runtime toggle: <code>PYTHON_GIL=0/1</code> or <code>-X gil=0/1</code>. Default in the free-threaded binary is GIL off — until an incompatible extension is imported.</li><li><b>Single-threaded overhead ≈ 40%</b> on pyperformance in 3.13, mostly because the specializing adaptive interpreter (lesson 12) is <em>disabled</em> in the free-threaded build; the goal is ≤ 10%, with specialization re-enabled thread-safely in 3.14.</li><li>Thread-safety promise: built-in containers use internal locks and "behave similarly to the GIL", but the HOWTO calls this a description of the current implementation, not a guarantee — use <code>threading.Lock</code>. Sharing one iterator across threads is unsafe; frame objects must not cross threads.</li><li>Ecosystem tracking: py-free-threading.github.io/tracking and hugovk.github.io/free-threaded-wheels.</li></ul>
+<div id="py3"></div>
+<div class="tip"><b>What to do today.</b> Threads are still the right tool for I/O-bound concurrency (the GIL is released while waiting) and for calling GIL-releasing native code (NumPy, hashing, compression). For CPU-bound pure Python: <code>multiprocessing</code>/<code>concurrent.futures.ProcessPoolExecutor</code>, or sub-interpreters (PEP 684 gave each interpreter its own GIL in 3.12; PEP 734's stdlib module lands later), or test the free-threaded build with proper locking. Write thread-safe code regardless — the GIL never made <code>x += 1</code> atomic in Python.</div>
+
+<h2>Flash cards</h2><div id="cards"></div>
+<h2>Retrieval practice</h2><div id="quiz"></div>
+<p class="tip">Want to benchmark a real CPU-bound workload across threads vs processes vs 3.13t on your machine, or read PEP 703's biased-refcount C code with me? Ask in the chat. This ends the internals track — next: DataFrames.</p>
+</div>
+<script>
+/* OSTEP course — shared components. Every page loads this file (inlined by build.py). */
+window.OS = (function () {
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+  /* ---------- persistent storage (localStorage on a real site; in-memory fallback in sandboxes) ---------- */
+  const mem = {};
+  const store = {
+    get(k) { try { const v = localStorage.getItem('py313:' + k); return v === null ? (mem[k] ?? null) : JSON.parse(v); } catch (e) { return mem[k] ?? null; } },
+    set(k, v) { mem[k] = v; try { localStorage.setItem('py313:' + k, JSON.stringify(v)); } catch (e) {} },
+    del(k) { delete mem[k]; try { localStorage.removeItem('py313:' + k); } catch (e) {} },
+    keys(prefix) { const out = new Set(Object.keys(mem).filter(k => k.startsWith(prefix))); try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith('py313:' + prefix)) out.add(k.slice(6)); } } catch (e) {} return [...out]; },
+    available() { try { localStorage.setItem('py313:test', '1'); localStorage.removeItem('py313:test'); return true; } catch (e) { return false; } }
+  };
+
+  /* ---------- course structure ---------- */
+  const PIECES = [
+    ['spec', 'The language, as specified', [
+      ['0001-objects-values-types', 'Objects, values and types', 'Ref §3.1–3.2'],
+      ['0002-lexical-structure-and-expressions', 'Lexical structure & expressions', 'Ref §2, §6'],
+      ['0003-execution-model', 'Execution model: names, scopes, closures', 'Ref §4'],
+      ['0004-data-model-special-methods', 'Data model I: special methods', 'Ref §3.3'],
+      ['0005-attribute-access-and-descriptors', 'Data model II: attributes & descriptors', 'Ref §3.3.2, HOWTO'],
+      ['0006-classes-mro-metaclasses', 'Classes, MRO, metaclasses', 'Ref §3.3.3, HOWTO'],
+      ['0007-functions-generators-coroutines', 'Functions, generators, coroutines', 'Ref §6.3, §3.4'],
+      ['0008-statements-and-pattern-matching', 'Statements, exceptions, pattern matching', 'Ref §7–8'],
+      ['0009-import-system', 'The import system', 'Ref §5'],
+      ['0010-typing', 'Typing: the PEP 484 lineage to 3.13', 'PEPs 484…742']]],
+    ['internals', 'CPython 3.13 internals', [
+      ['0011-compiler-and-bytecode', 'From source to bytecode', 'InternalDocs compiler, dis'],
+      ['0012-eval-loop-and-specialization', 'The eval loop, specialization, JIT', 'InternalDocs interpreter, PEPs 659/744'],
+      ['0013-memory-refcounting-gc', 'Memory, refcounting, garbage collection', 'InternalDocs GC, PEP 683'],
+      ['0014-gil-and-free-threading', 'The GIL and free-threaded Python', 'PEP 703, HOWTO']]],
+    ['data', 'DataFrames: pandas vs Polars', [
+      ['0015-dataframe-data-models', 'Two data models', 'pandas dsintro, Polars concepts'],
+      ['0016-selection-and-indexing', 'Selecting, filtering, assigning', 'pandas indexing, Polars expressions'],
+      ['0017-expressions-and-lazy', 'Expressions, contexts, lazy queries', 'Polars lazy, pandas chaining'],
+      ['0018-groupby-joins-reshaping', 'Groupby, joins, reshaping', 'pandas groupby/merging, Polars transformations'],
+      ['0019-time-series', 'Time series', 'pandas timeseries, Polars time-series'],
+      ['0020-performance-and-scale', 'Performance, memory, scale', 'pandas enhancingperf/scale, Modern Polars']]]
+  ];
+  const LESSONS = PIECES.flatMap(p => p[2].map(l => [l[0], l[1], p[0], l[2]]));
+  const title = id => (LESSONS.find(l => l[0] === id) || [])[1] || id;
+  let pageId = null, root = '../';
+
+  /* ---------- chrome: sticky header, slide-out directory, notes drawer, prev/next ---------- */
+  function chrome(id, rootPath) {
+    pageId = id; root = rootPath === undefined ? '../' : rootPath;
+    const i = LESSONS.findIndex(l => l[0] === id);
+    const isLesson = i >= 0;
+    const top = document.createElement('header'); top.className = 'topbar';
+    top.innerHTML = `<button class="menu" aria-label="Open directory" aria-expanded="false">☰<span>Directory</span></button>
+      <a class="brand" href="${root}index.html"><span class="dot"></span>Python 3.13 course</a>
+      <nav class="links"><a href="${root}reference/glossary.html">Glossary</a><a href="${root}reference/cheatsheets.html">Cheat sheets</a><a href="${root}notes.html">My notes</a></nav>
+      ${isLesson ? `<span class="where">${i+1} / ${LESSONS.length}</span>` : ''}`;
+    document.body.prepend(top);
+    // directory drawer
+    const drawer = document.createElement('aside'); drawer.className = 'drawer'; drawer.setAttribute('aria-label', 'Course directory');
+    const scores = Object.fromEntries(LESSONS.map(l => [l[0], store.get('quiz:' + l[0])]));
+    const notes = new Set(store.keys('notes:').map(k => k.slice(6)).filter(k => (store.get('notes:' + k) || {}).text));
+    drawer.innerHTML = `<div class="dhead"><b>Directory</b><button class="close" aria-label="Close">×</button></div>
+      <a class="ditem ${id === 'index' ? 'cur' : ''}" href="${root}index.html">Course hub</a>
+      ${PIECES.map(([cls, name, ls]) => `<div class="dgroup piece-${cls}"><div class="dname">${name}</div>${ls.map(l => {
+        const n = LESSONS.findIndex(x => x[0] === l[0]) + 1, s = scores[l[0]];
+        return `<a class="ditem ${l[0] === id ? 'cur' : ''}" href="${root}lessons/${l[0]}.html"><span class="n">${n}</span><span class="t">${l[1]}<small>${l[3]}</small></span><span class="badges">${notes.has(l[0]) ? '<i title="you have notes">✎</i>' : ''}${s ? `<em title="best quiz score">${s.score}/${s.total}</em>` : ''}</span></a>`; }).join('')}</div>`).join('')}
+      <div class="dgroup piece-intro"><div class="dname">Reference</div>
+        <a class="ditem ${id === 'glossary' ? 'cur' : ''}" href="${root}reference/glossary.html"><span class="t">Glossary</span></a>
+        <a class="ditem ${id === 'cheatsheets' ? 'cur' : ''}" href="${root}reference/cheatsheets.html"><span class="t">Cheat sheets</span></a>
+        <a class="ditem ${id === 'notes' ? 'cur' : ''}" href="${root}notes.html"><span class="t">My notes &amp; progress</span></a></div>
+      <div class="dfoot">${store.available() ? 'Notes and scores are saved in this browser.' : 'Notes and scores are kept for this session only (storage unavailable here).'}</div>`;
+    document.body.append(drawer);
+    const scrim = document.createElement('div'); scrim.className = 'scrim'; document.body.append(scrim);
+    const open = o => { document.body.classList.toggle('drawer-open', o); top.querySelector('.menu').setAttribute('aria-expanded', o); if (o) drawer.querySelector('.cur, .ditem')?.focus(); };
+    top.querySelector('.menu').onclick = () => open(!document.body.classList.contains('drawer-open'));
+    drawer.querySelector('.close').onclick = () => open(false); scrim.onclick = () => open(false);
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') { open(false); notesOpen(false); } });
+    // prev/next for lessons
+    if (isLesson) {
+      const nav = document.createElement('div'); nav.className = 'nav-bottom';
+      const prev = LESSONS[i-1], next = LESSONS[i+1];
+      nav.innerHTML = (prev ? `<a href="${prev[0]}.html">← ${i}. ${prev[1]}</a>` : '<span></span>') +
+                      (next ? `<a href="${next[0]}.html">${i+2}. ${next[1]} →</a>` : `<a href="${root}index.html">Back to course hub →</a>`);
+      document.querySelector('.wrap').append(nav);
+    }
+    // wrap tables so they scroll sideways on phones
+    document.querySelectorAll('.wrap table').forEach(t => { if (t.parentElement.classList.contains('tw')) return; const w = document.createElement('div'); w.className = 'tw'; t.replaceWith(w); w.append(t); });
+    // notes drawer (every page except the notes page itself)
+    if (id !== 'notes') notesUI(id, isLesson ? `${i+1}. ${LESSONS[i][1]}` : (document.title.split(' — ')[0]));
+  }
+
+  /* ---------- notes: floating button + bottom sheet, autosaved ---------- */
+  let notesOpen = () => {};
+  function notesUI(id, label) {
+    const btn = document.createElement('button'); btn.className = 'notes-fab'; btn.innerHTML = '✎ <span>Notes</span>'; btn.setAttribute('aria-label', 'Open notes');
+    const sheet = document.createElement('section'); sheet.className = 'notes-sheet'; sheet.setAttribute('aria-label', 'Notes for this page');
+    const saved = store.get('notes:' + id) || {};
+    sheet.innerHTML = `<div class="nhead"><b>Notes · ${esc(label)}</b><span class="nstatus"></span><button class="close" aria-label="Close notes">×</button></div>
+      <textarea placeholder="Your notes for this page. Markdown is fine. Saved automatically.">${esc(saved.text || '')}</textarea>
+      <div class="nfoot"><span class="ncount"></span><a href="${root}notes.html">All notes &amp; export →</a></div>`;
+    document.body.append(btn, sheet);
+    const ta = sheet.querySelector('textarea'), status = sheet.querySelector('.nstatus'), count = sheet.querySelector('.ncount');
+    const upd = () => { count.textContent = ta.value.trim() ? ta.value.trim().split(/\s+/).length + ' words' : ''; };
+    let t; ta.addEventListener('input', () => { status.textContent = 'saving…'; clearTimeout(t); t = setTimeout(() => { store.set('notes:' + id, { text: ta.value, title: label, updated: new Date().toISOString() }); status.textContent = 'saved'; upd(); }, 400); });
+    upd();
+    notesOpen = o => { document.body.classList.toggle('notes-open', o); if (o) ta.focus(); };
+    btn.onclick = () => notesOpen(!document.body.classList.contains('notes-open'));
+    sheet.querySelector('.close').onclick = () => notesOpen(false);
+  }
+
+  /* ---------- quiz: immediate feedback; best score persisted ---------- */
+  function quiz(el, qs) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('quiz');
+    let score = 0, answered = 0;
+    const best = pageId ? store.get('quiz:' + pageId) : null;
+    el.innerHTML = qs.map((q, i) => `<div class="q" data-i="${i}"><p>${i+1}. ${q.q}</p>
+      <div class="opts">${q.o.map((o, j) => `<button class="opt" data-j="${j}">${esc(o)}</button>`).join('')}</div>
+      <div class="why">${q.why}</div></div>`).join('') + `<div class="score">${best ? `Best so far: ${best.score}/${best.total} (${new Date(best.date).toLocaleDateString()})` : ''}</div>`;
+    el.querySelectorAll('.q').forEach(qd => {
+      const q = qs[+qd.dataset.i];
+      qd.querySelectorAll('.opt').forEach(b => b.addEventListener('click', () => {
+        if (qd.classList.contains('done')) return;
+        qd.classList.add('done'); answered++;
+        const j = +b.dataset.j;
+        if (j === q.a) { b.classList.add('right'); score++; }
+        else { b.classList.add('wrong'); qd.querySelectorAll('.opt')[q.a].classList.add('right'); }
+        const s = el.querySelector('.score');
+        s.textContent = `${score} / ${answered} correct`;
+        if (answered === qs.length) {
+          s.textContent += score === qs.length ? ' — all of them. Retry from memory in two days.' : ' — reread the sections you missed, then retry.';
+          if (pageId && (!best || score >= best.score)) store.set('quiz:' + pageId, { score, total: qs.length, date: new Date().toISOString() });
+        }
+      }));
+    });
+  }
+
+
+  /* ---------- runnable Python (Pyodide, loaded on first use) ---------- */
+  const pyodideP = {};
+  function loadPy(status, version) {
+    version = version || '0.28.3';
+    if (pyodideP[version]) return pyodideP[version];
+    status('loading Python (Pyodide ' + version + ', ~10 MB, once per page)…');
+    pyodideP[version] = new Promise((res, rej) => {
+      const s = document.createElement('script'); s.src = 'https://cdn.jsdelivr.net/pyodide/v' + version + '/full/pyodide.js';
+      s.onload = () => window.loadPyodide({ indexURL: 'https://cdn.jsdelivr.net/pyodide/v' + version + '/full/' }).then(res, rej);
+      s.onerror = () => rej(new Error('Could not load Pyodide (offline, or blocked by this preview).'));
+      document.head.append(s);
+    });
+    return pyodideP[version];
+  }
+  function py(el, code, opts) {
+    el = typeof el === 'string' ? document.getElementById(el) : el; opts = opts || {};
+    el.classList.add('pyrun');
+    el.innerHTML = `<div class="pyhead"><span>Python${opts.note ? ' · ' + esc(opts.note) : ''}</span><span class="pystatus"></span><button class="primary run">▶ Run</button><button class="reset">Reset</button></div><textarea spellcheck="false">${esc(code.trim())}</textarea><pre class="pyout" hidden></pre>`;
+    const ta = el.querySelector('textarea'), out = el.querySelector('.pyout'), st = el.querySelector('.pystatus');
+    const fit = () => { ta.style.height = 'auto'; ta.style.height = Math.min(480, ta.scrollHeight + 4) + 'px'; }; fit(); ta.addEventListener('input', fit);
+    el.querySelector('.reset').onclick = () => { ta.value = code.trim(); fit(); out.hidden = true; };
+    el.querySelector('.run').onclick = async () => {
+      out.hidden = false; out.textContent = ''; st.textContent = '';
+      try {
+        const pyo = await loadPy(m => st.textContent = m, opts.pyodide || ((opts.packages||[]).includes('polars') ? '0.27.7' : '0.28.3'));
+        if (opts.packages) { st.textContent = 'loading ' + opts.packages.join(', ') + '…'; await pyo.loadPackage(opts.packages).catch(() => {}); }
+        st.textContent = 'running…';
+        pyo.setStdout({ batched: s => out.textContent += s + '\n' }); pyo.setStderr({ batched: s => out.textContent += s + '\n' });
+        const r = await pyo.runPythonAsync(ta.value);
+        if (r !== undefined && r !== null && String(r) !== 'None') out.textContent += String(r);
+        st.textContent = 'done · CPython ' + pyo.runPython('import sys; f"{sys.version_info.major}.{sys.version_info.minor}"') + ' in WebAssembly';
+      } catch (e) { out.textContent += String(e); st.textContent = 'error'; }
+    };
+  }
+
+  /* ---------- flip cards ---------- */
+  function cards(el, list) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('cards');
+    el.innerHTML = list.map(([f, b]) => `<div class="card" tabindex="0" role="button" aria-label="flip card"><div class="inner"><div class="face front">${f}</div><div class="face back">${b}</div></div></div>`).join('');
+    el.querySelectorAll('.card').forEach(c => {
+      const t = () => c.classList.toggle('flipped');
+      c.addEventListener('click', t);
+      c.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); t(); } });
+    });
+  }
+
+  /* ---------- stepper ---------- */
+  function stepper(el, steps, render) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('stepper');
+    let i = 0;
+    el.innerHTML = `<div class="controls"><button class="prev">← Back</button><button class="next primary">Next step →</button><span class="idx"></span></div><div class="stage"></div><div class="extra"></div>`;
+    const stage = el.querySelector('.stage'), idx = el.querySelector('.idx'), extra = el.querySelector('.extra');
+    const draw = () => { stage.innerHTML = steps[i]; idx.textContent = `step ${i+1} / ${steps.length}`; if (render) render(i, extra); };
+    el.querySelector('.prev').onclick = () => { i = Math.max(0, i-1); draw(); };
+    el.querySelector('.next').onclick = () => { i = Math.min(steps.length-1, i+1); draw(); };
+    draw();
+  }
+
+  /* ---------- gantt ---------- */
+  function gantt(el, rows, total, colors) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('gantt');
+    const pal = colors || ['#e8b84a','#5bc8f5','#6bcb77','#f47fa0','#c9a8ff','#ffb86b'];
+    el.innerHTML = rows.map((r, i) => `<div class="row"><span>${esc(r.name)}</span><div class="track">${r.segs.map(s =>
+      `<div class="seg" style="left:${100*s.start/total}%;width:${100*(s.end-s.start)/total}%;background:${pal[i%pal.length]}" title="${s.start}–${s.end}">${(s.end-s.start)/total > .06 ? (s.end-s.start) : ''}</div>`).join('')}</div></div>`).join('') +
+      `<div class="row"><span></span><div style="display:flex;justify-content:space-between;font-size:.75rem;color:var(--muted)"><span>0</span><span>${total}</span></div></div>`;
+  }
+
+  /* ---------- objectives checklist (persisted) ---------- */
+  function objectives(el, items) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('objectives');
+    const saved = (pageId && store.get('obj:' + pageId)) || [];
+    el.innerHTML = items.map((t, i) => `<li><label><input type="checkbox" data-i="${i}" ${saved.includes(i) ? 'checked' : ''}>${t}</label></li>`).join('');
+    el.querySelectorAll('input').forEach(c => c.onchange = () => { const s = [...el.querySelectorAll('input:checked')].map(x => +x.dataset.i); if (pageId) store.set('obj:' + pageId, s); });
+  }
+
+  return { chrome, quiz, cards, stepper, gantt, objectives, py, esc, store, LESSONS, PIECES, title };
+})();
+
+</script>
+<script>
+OS.chrome('0014-gil-and-free-threading');
+OS.objectives('obj',['Define the GIL and describe its mechanics: locked flag, switch interval (5 ms), gil_drop_request/eval_breaker, forced switching.','Explain why reference counting motivates the GIL and why atomics alone are a poor fix.','Describe PEP 703\'s techniques: biased RC, immortalization, deferred RC, per-object locks, mimalloc, stop-the-world non-generational GC.','State the 3.13 free-threaded status: python3.13t, PYTHON_GIL/-X gil, ~40% overhead and its cause, thread-safety expectations.','Choose the right concurrency tool for CPU-bound vs I/O-bound work.']);
+const W={cpu:{rows:[['T1',[[0,5,'run'],[5,10,'wait'],[10,15,'run'],[15,20,'wait'],[20,25,'run']]],['T2',[[0,5,'wait'],[5,10,'run'],[10,15,'wait'],[15,20,'run'],[20,25,'wait']]]],m:'Pure-Python CPU work: the threads take turns in ~5 ms timeslices (sys.getswitchinterval()). Total wall time ≈ the sum of both jobs — no speedup on two cores, plus switching overhead.'},io:{rows:[['T1',[[0,3,'run'],[3,14,'io'],[14,17,'run']]],['T2',[[0,3,'wait'],[3,6,'run'],[6,17,'io'],[17,20,'run']]]],m:'I/O releases the GIL (Py_BEGIN_ALLOW_THREADS inside the socket/file call), so while T1 waits for the network T2 runs Python. Threads give real concurrency for I/O-bound programs.'},ext:{rows:[['T1',[[0,2,'run'],[2,14,'par'],[14,16,'run']]],['T2',[[0,2,'wait'],[2,4,'run'],[4,16,'par'],[16,18,'run']]]],m:'A C extension releasing the GIL around a long computation (zlib, hashlib, NumPy kernels): both threads compute in parallel on two cores; only the Python glue serializes.'},ft:{rows:[['T1',[[0,13,'par']]],['T2',[[0,13,'par']]]],m:'Free-threaded 3.13t: no GIL; both threads run bytecode in parallel. Each thread is slower (~40% single-thread overhead in 3.13, specializer disabled), but total throughput scales with cores if the code is not contending on shared objects.'}};
+function gtl(k){const w=W[k];document.getElementById('gtl').innerHTML=w.rows.map(([n,segs])=>`<div class="row"><span>${n}</span><div class="track">${segs.map(s=>`<div class="seg ${s[2]}" style="left:${100*s[0]/25}%;width:${100*(s[1]-s[0])/25}%">${{run:'bytecode',wait:'waiting for GIL',io:'I/O (GIL released)',par:'parallel'}[s[2]]}</div>`).join('')}</div></div>`).join('');document.getElementById('gmsg').textContent=w.m;}
+document.querySelectorAll('[data-w]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-w]').forEach(x=>x.classList.remove('primary'));b.classList.add('primary');gtl(b.dataset.w);});gtl('cpu');
+OS.py('py1',`
+import sys, threading
+print("switch interval:", sys.getswitchinterval(), "s  (DEFAULT_INTERVAL 5000 µs in ceval_gil.c)")
+print("free-threading build?", "free-threading" in sys.version, "| GIL enabled:", getattr(sys, "_is_gil_enabled", lambda: True)())
+print("flags.gil (3.13; 1 = enabled):", getattr(sys.flags, "gil", "n/a"))
+# The GIL never made Python-level operations atomic. Under the GIL, threads interleave at bytecode boundaries;
+# x += 1 is several bytecodes (LOAD, BINARY_OP, STORE), so a switch in between loses an update.
+import dis
+def inc(): global counter; counter += 1
+dis.dis(inc)
+print("threads available here?", threading.active_count(), "active; Pyodide (wasm) cannot start real OS threads, so run the race on your machine:")
+print("""
+import threading
+counter = 0
+def work():
+    global counter
+    for _ in range(100_000): counter += 1
+ts = [threading.Thread(target=work) for _ in range(4)]; [t.start() for t in ts]; [t.join() for t in ts]
+print(counter)   # often < 400000 — with or without a GIL, use a Lock
+""")`);
+OS.py('py2',`
+import sys, sysconfig
+print("built with --disable-gil?", bool(sysconfig.get_config_var("Py_GIL_DISABLED")))
+print("interpreter flag -X gil / PYTHON_GIL value:", getattr(sys.flags, "gil", "n/a"))
+# Immortalization is visible from Python: immortal objects have a fixed, huge refcount
+print("refcount(None):", sys.getrefcount(None), "| refcount of a fresh object:", sys.getrefcount(object()))
+# Biased refcounting layout (PEP 703): ob_tid, ob_flags, ob_mutex, ob_gc_bits, ob_ref_local, ob_ref_shared, ob_type
+print("object header size (default build: ob_refcnt + ob_type):", object.__basicsize__, "bytes")
+print("a free-threaded build shows a larger header here (extra ob_tid/ob_ref_local/ob_ref_shared/ob_mutex fields)")`);
+OS.py('py3',`
+# Decision guide, as executable checks you can paste into any interpreter
+import os, sys
+cores = os.cpu_count()
+ft = "free-threading" in sys.version
+print(f"cores: {cores} | free-threaded build: {ft}")
+plan = {
+  "I/O-bound (HTTP, DB, files)": "threading / asyncio — GIL released while waiting",
+  "CPU-bound, native libraries": "threading — NumPy/zlib/hashlib release the GIL",
+  "CPU-bound, pure Python": "multiprocessing or ProcessPoolExecutor" + (" — or threads on this 3.13t build" if ft else ""),
+  "many isolated tasks": "sub-interpreters (PEP 684: per-interpreter GIL since 3.12)",
+}
+for k, v in plan.items(): print(f"  {k:<30} → {v}")`);
+OS.cards('cards',[['GIL','Mutex ensuring one thread executes Python bytecode at a time; makes the object model implicitly thread-safe; released during I/O.'],['Switch interval','Target timeslice before a waiting thread requests the GIL: 5 ms default (DEFAULT_INTERVAL 5000 µs); sys.setswitchinterval().'],['gil_drop_request / eval_breaker','Flags checked by the eval loop (at RESUME/JUMP_BACKWARD) telling the holder to release the GIL, handle signals, run GC, etc.'],['Forced switching','After releasing, the old holder waits until another thread has taken the GIL, preventing immediate re-acquisition.'],['Biased reference counting','PEP 703: owner-thread local count (non-atomic) + shared atomic count; object freed when both reach zero.'],['Deferred reference counting','Skip precise counting for functions, code, modules, types; the tracing GC accounts for them and frees them.'],['Critical section','Per-object lock region (ob_mutex) that is suspended while the thread blocks, avoiding deadlocks in nested container operations.'],['Py_mod_gil','Extension-module slot declaring free-threading support; without it the GIL is re-enabled on import (with a warning).'],['python3.13t','The free-threaded executable; PYTHON_GIL / -X gil toggle; ~40% slower single-threaded in 3.13, specializer disabled.']]);
+OS.quiz('quiz',[
+{q:'The default GIL switch interval in CPython 3.13 is:',o:['100 ms','5 ms','1 ms','one bytecode instruction'],a:1,why:'DEFAULT_INTERVAL is 5000 µs in Python/ceval_gil.c; sys.getswitchinterval() returns 0.005. It is a target, not a guarantee.'},
+{q:'Why does the GIL make CPython\'s object model thread-safe "for free"?',o:['it makes refcount updates atomic','only one thread runs bytecode, so no concurrent mutation of objects','it copies objects per thread','it locks every dict individually'],a:1,why:'With one thread executing at a time, non-atomic refcount and container operations cannot interleave, so no per-object synchronization is needed.'},
+{q:'A pure-Python CPU-bound program with 4 threads on 4 cores under the default build runs:',o:['about 4× faster','no faster than one thread (often slightly slower)','2× faster','faster only after warm-up'],a:1,why:'Threads alternate holding the GIL in ~5 ms slices; only one executes bytecode at any moment, and switching adds overhead.'},
+{q:'Which PEP 703 technique avoids refcount contention on objects that every thread touches (like None or module functions)?',o:['biased reference counting','immortalization','stop-the-world GC','mimalloc'],a:1,why:'Immortal objects have a fixed refcount that is never modified, so threads never contend on them; 3.13 immortalizes functions, code, modules and types when threading starts.'},
+{q:'In biased reference counting, which count is non-atomic?',o:['ob_ref_shared','ob_ref_local (owner thread)','both counts','neither'],a:1,why:'The owning thread (identified by ob_tid) updates ob_ref_local without atomics; other threads use the atomic ob_ref_shared.'},
+{q:'The ~40% single-threaded slowdown of 3.13t is mostly due to:',o:['mimalloc being slower','the specializing adaptive interpreter being disabled','per-object locks on every access','the non-generational GC'],a:1,why:'The free-threading HOWTO attributes the largest impact to PEP 659 specialization being turned off; re-enabling it thread-safely is planned for 3.14.'},
+{q:'How does the free-threaded build\'s GC differ from the default one?',o:['it is incremental and concurrent','it is non-generational and stop-the-world','it is disabled','it runs in a separate process'],a:1,why:'garbage_collector.md: the free-threaded collector scans the entire heap each collection after pausing all threads; mimalloc provides the heap walk.'},
+{q:'What happens when a free-threaded 3.13 interpreter imports a C extension lacking the Py_mod_gil slot?',o:['ImportError','the GIL is re-enabled with a warning','the extension runs unlocked','the process forks'],a:1,why:'For safety, the runtime enables the GIL (unless PYTHON_GIL=0 forces it off) and prints a warning, since the extension has not declared thread-safety.'}]);
+</script></body></html>

@@ -1,11 +1,11 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>OSTEP course — Operating Systems: Three Easy Pieces, taught interactively</title><style>
+<title>10 · Typing — Python 3.13 course</title><style>
 /* OSTEP course — shared stylesheet. Three pieces, three hues. */
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
 :root{
   --ink:#151b2f; --ink-2:#1e2540; --ink-3:#28304f; --line:#3a4368;
   --paper:#eef0f7; --muted:#a9b1cf; --faint:#6e779a;
-  --virt:#e8b84a; --conc:#5bc8f5; --pers:#6bcb77; --sec:#f47fa0; --intro:#c9a8ff;
+  --virt:#e8b84a; --conc:#5bc8f5; --pers:#6bcb77; --sec:#f47fa0; --intro:#c9a8ff; --spec:#ffd166; --internals:#5bc8f5; --data:#6bcb77;
   --ok:#6bcb77; --bad:#ff6b6b;
   --accent:var(--virt);
   --radius:6px;
@@ -28,7 +28,7 @@ p,li{max-width:72ch}
 .hero{padding:44px 0 16px}
 .hero .chapters{color:var(--muted);font-size:.95rem;margin-bottom:6px}
 .lede{font-size:1.2rem;color:var(--muted);max-width:66ch}
-.piece-virt{--accent:var(--virt)} .piece-conc{--accent:var(--conc)} .piece-pers{--accent:var(--pers)} .piece-sec{--accent:var(--sec)} .piece-intro{--accent:var(--intro)}
+.piece-spec{--accent:var(--spec)} .piece-internals{--accent:var(--internals)} .piece-data{--accent:var(--data)} .piece-virt{--accent:var(--virt)} .piece-conc{--accent:var(--conc)} .piece-pers{--accent:var(--pers)} .piece-sec{--accent:var(--sec)} .piece-intro{--accent:var(--intro)}
 .fig{background:var(--ink-2);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;margin:22px 0}
 .fig figcaption,.cap{color:var(--muted);font-size:.9rem;margin-top:10px}
 .fig svg{max-width:100%;height:auto;display:block}
@@ -182,32 +182,42 @@ details>div{padding:0 16px 14px}
 }
 @media (max-width:420px){.cards{grid-template-columns:1fr}}
 
+/* ---------- runnable Python ---------- */
+.pyrun{border:1px solid var(--line);border-radius:var(--radius);background:#0f1424;margin:18px 0;overflow:hidden}
+.pyrun .pyhead{display:flex;gap:10px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--line);font-size:.85rem;color:var(--muted);background:var(--ink-2)}
+.pyrun .pyhead span:first-child{flex:1;font-weight:600;color:var(--paper)}
+.pyrun .pystatus{font-size:.78rem}
+.pyrun textarea{display:block;width:100%;border:none;background:#0f1424;color:var(--paper);font-family:'IBM Plex Mono',monospace;font-size:.86rem;line-height:1.5;padding:12px 14px;resize:vertical;outline:none;min-height:60px;tab-size:4}
+.pyrun .pyout{margin:0;border:none;border-top:1px solid var(--line);border-left:none;border-radius:0;background:#0a0e1a;color:#cfe3ff;max-height:320px}
+
 </style>
-<style>.map{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:24px 0}.piece{border:1px solid var(--line);border-radius:8px;padding:16px;background:var(--ink-2);border-top:4px solid var(--accent)}.piece h3{margin:0 0 4px;color:var(--accent)}.piece p{font-size:.9rem;color:var(--muted);margin:0 0 10px}.piece a{display:block;text-decoration:none;color:var(--paper);padding:6px 0;border-top:1px solid var(--line);font-size:.92rem}.piece a:hover{color:var(--accent)}.piece a small{display:block;color:var(--faint);font-size:.78rem}.piece a.done::after{content:" ✓";color:var(--ok)}.how{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}.how .fig{margin:0}.how h4{margin:0 0 6px}@media(max-width:900px){.map{grid-template-columns:1fr 1fr}.how{grid-template-columns:1fr}}@media(max-width:600px){.map{grid-template-columns:1fr}}.big{font-size:1.05rem}</style></head>
-<body class="piece-intro"><div class="wrap">
-<header class="hero"><div class="chapters">Operating Systems: Three Easy Pieces · Remzi H. and Andrea C. Arpaci-Dusseau (v1.10, 2023) · security chapters by Peter Reiher</div>
-<h1>The whole book, as sixteen interactive lessons</h1>
-<p class="lede big">Built from the text of all 57 chapters plus the VMM appendix — every "crux", every summary, every number in the figures was extracted from the chapter PDFs, not recalled. Each lesson is short, visual, and ends in retrieval practice. Do them in order; the book's pieces build on each other.</p></header>
+<style>.tl{display:grid;grid-template-columns:70px 1fr;gap:6px 12px;font-size:.9rem}.tl b{color:var(--accent);font-family:'IBM Plex Mono',monospace}.tl div{padding:6px 0;border-bottom:1px solid var(--line)}.tl div.hl{background:color-mix(in srgb,var(--accent) 12%,transparent)}</style></head>
+<body class="piece-spec"><div class="wrap">
+<header class="hero"><div class="chapters">PEPs 484 → 742 · typing module docs (3.13) · What's New in 3.13</div>
+<h1>Typing: a gradual type system layered on a dynamic language</h1>
+<p class="lede">Python's type hints are a decade-long series of PEPs, not a single design. The runtime does <em>not</em> enforce them — annotations are ordinary expressions stored in <code>__annotations__</code> — while static checkers read them to prove properties before running. This lesson gives you the lineage, the runtime facts you can rely on, and the 3.13 additions: type-parameter defaults, <code>TypeIs</code>, <code>ReadOnly</code>, <code>@deprecated</code>.</p></header>
+<div class="source"><b>Primary sources:</b> <a href="https://docs.python.org/3.13/library/typing.html">typing module (3.13)</a>; PEPs <a href="https://peps.python.org/pep-0484/">484</a>, 526, 544, 585, 604, 612, 646, 695, 696, 702, 705, 742; <a href="https://docs.python.org/3.13/whatsnew/3.13.html">What's New 3.13</a> ("New typing features"); §3.13 of the reference for annotations. Versions below are the <code>Python-Version</code> field of each PEP.</div>
+<h2>What you'll be able to do</h2><ul id="obj"></ul>
 
-<figure class="fig"><svg viewBox="0 0 900 150" role="img" aria-label="three pieces">
-<rect x="20" y="30" width="270" height="90" rx="8" fill="#e8b84a"/><text x="155" y="68" text-anchor="middle" fill="#111" font-size="20" font-weight="700" font-family="Fraunces,serif">Virtualization</text><text x="155" y="95" text-anchor="middle" fill="#111" font-size="13">CPU (ch 4–10) · Memory (ch 13–23)</text>
-<rect x="315" y="30" width="270" height="90" rx="8" fill="#5bc8f5"/><text x="450" y="68" text-anchor="middle" fill="#111" font-size="20" font-weight="700" font-family="Fraunces,serif">Concurrency</text><text x="450" y="95" text-anchor="middle" fill="#111" font-size="13">threads, locks, CVs, semaphores, bugs (ch 26–33)</text>
-<rect x="610" y="30" width="270" height="90" rx="8" fill="#6bcb77"/><text x="745" y="68" text-anchor="middle" fill="#111" font-size="20" font-weight="700" font-family="Fraunces,serif">Persistence</text><text x="745" y="95" text-anchor="middle" fill="#111" font-size="13">devices, disks, file systems, distributed (ch 36–50)</text>
-<text x="450" y="140" text-anchor="middle" fill="#a9b1cf" font-size="13">+ Security (ch 53–57) and Virtual Machine Monitors (Appendix B)</text></svg></figure>
+<h2>The runtime truth</h2>
+<div class="crux"><b>From the typing docs:</b> "The Python runtime does not enforce function and variable type annotations." Annotations are evaluated when the <code>def</code>/<code>class</code>/assignment executes (in 3.13; PEP 649's deferred evaluation is targeted at 3.14), stored in <code>__annotations__</code>, and otherwise ignored by the interpreter. <code>from __future__ import annotations</code> (PEP 563) stores them as strings instead. <code>typing</code> provides <em>runtime support</em> — generic aliases, <code>get_type_hints()</code>, <code>Protocol</code> machinery — for tools such as type checkers, dataclasses, and validators.</div>
+<div id="py1"></div>
 
-<h2>Course map</h2>
-<div class="map" id="map"></div>
+<h2>The lineage</h2>
+<div class="fig"><div class="tl" id="tl"></div></div>
 
-<h2>How to use this course</h2>
-<div class="how">
-<div class="fig"><h4>1. One lesson per sitting</h4><p>Each takes 25–45 minutes: read, play with the simulator until you can predict its output, flip the cards, then do the quiz <em>from memory</em>. Check off the objectives at the top only when you could explain them to someone else.</p></div>
-<div class="fig"><h4>2. Then read the chapter</h4><p>Every lesson links its primary source — the free chapter PDFs at <a href="https://pages.cs.wisc.edu/~remzi/OSTEP/">ostep.org</a>. The lesson gives you the map; the chapter has the jokes, the asides, and the homework simulators (<code>ostep-homework</code>) which are the best practice there is.</p></div>
-<div class="fig"><h4>3. Space it out</h4><p>Long-term retention comes from re-testing later, not from feeling fluent now. Redo a lesson's quiz two days later and again after a week; the <a href="reference/cheatsheets.html">cheat sheets</a> are for the fast pass, the <a href="reference/glossary.html">glossary</a> for vocabulary. Ask me in the chat for mixed quizzes across lessons.</p></div></div>
+<h2>Core concepts</h2>
+<div class="two"><div class="fig"><h4>Gradual typing &amp; Any</h4><p>Unannotated code has type <code>Any</code>, which is compatible with every type in both directions — the escape hatch that lets typed and untyped code mix. <code>object</code> is different: everything is an <code>object</code>, but an <code>object</code> is not usable as an <code>int</code>. Checkers infer types of locals; you annotate boundaries (parameters, returns, attributes).</p></div><div class="fig"><h4>Nominal vs structural</h4><p>Classes are <b>nominal</b>: <code>Sub</code> is a <code>Base</code> only by inheritance. <code>Protocol</code> (PEP 544) is <b>structural</b>: anything with the right methods conforms, statically — duck typing made checkable. <code>@runtime_checkable</code> lets <code>isinstance</code> check method <em>presence</em> (not signatures). <code>collections.abc</code> types are structural too via <code>__subclasshook__</code>.</p></div></div>
+<div class="two"><div class="fig"><h4>Generics</h4><p>PEP 585 made built-ins generic: <code>list[int]</code>, <code>dict[str, float]</code> (runtime: a <code>types.GenericAlias</code> whose <code>__origin__</code> is <code>list</code>; subscription goes through <code>__class_getitem__</code>). PEP 604: <code>int | None</code> builds a <code>types.UnionType</code>, usable in <code>isinstance</code>. PEP 695 (3.12) added syntax — <code>def first[T](xs: list[T]) -> T</code>, <code>class Stack[T]:</code>, <code>type Pairs[K, V] = list[tuple[K, V]]</code> — creating <code>TypeVar</code>s implicitly in annotation scopes; variance is <em>inferred</em>. PEP 696 (3.13): defaults, <code>class Box[T = int]</code>.</p></div><div class="fig"><h4>Narrowing</h4><p>Checkers narrow types through <code>isinstance</code>, <code>is None</code>, truthiness, <code>match</code>. User-defined narrowing: <code>TypeGuard[T]</code> (PEP 647) narrows only in the positive branch; <b><code>TypeIs[T]</code></b> (PEP 742, 3.13) narrows both branches like <code>isinstance</code>, intersecting with the declared type — "more intuitive" per What's New. <code>assert_never()</code> proves exhaustiveness; <code>reveal_type()</code> asks the checker what it thinks.</p></div></div>
+<div id="py2"></div>
 
-<h2>What the book covers that this course does too</h2>
-<p>Chapters 1–2 (dialogue, introduction) → lesson 1. Chapters 3, 11, 12, 24, 25, 34, 35, 46, 47, 51, 52 are the book's short dialogues that open and close each part; their content is folded into the neighbouring lessons. The lab appendices (tutorial, systems and xv6 projects) and the deprecated monitors appendix are referenced in RESOURCES.md rather than taught.</p>
-<h2>Sister courses</h2><div class="how"><div class="fig"><h4><a href="python/index.html">Python 3.13</a></h4><p>The Language Reference, CPython internals (specializing interpreter, JIT, GC, GIL and free-threading), and pandas vs Polars — 20 interactive lessons with Python running in the browser.</p></div><div class="fig"><h4>Java 21</h4><p>Coming next: the JLS/JVMS, the JVM (class loading, bytecode, JIT, GC), and virtual threads internals.</p></div></div>
-<p class="tip">This workspace follows the <code>teach</code> skill layout: <code>MISSION.md</code> (why you're learning this), <code>RESOURCES.md</code> (sources), <code>NOTES.md</code>, <code>learning-records/</code>, <code>lessons/</code>, <code>reference/</code>, <code>assets/</code>. Tell me in the chat how a lesson landed and I'll adapt the next ones.</p>
+<h2>Everyday special forms</h2>
+<table><tr><th>Form</th><th>Meaning</th></tr><tr><td><code>Optional[X]</code> = <code>X | None</code></td><td>may be None — nothing else about "optional arguments"</td></tr><tr><td><code>Literal["r", "w"]</code></td><td>exactly these values</td></tr><tr><td><code>Final</code>, <code>@final</code></td><td>no reassignment / no subclassing or overriding</td></tr><tr><td><code>ClassVar[X]</code></td><td>class attribute, not instance</td></tr><tr><td><code>TypedDict</code> (+ <code>NotRequired</code>, <code>Required</code>, <b><code>ReadOnly</code></b> 3.13)</td><td>dict with fixed string keys and per-key types</td></tr><tr><td><code>NamedTuple</code>, <code>@dataclass</code></td><td>record types the checker understands</td></tr><tr><td><code>Callable[[int, str], bool]</code>, <code>ParamSpec</code>, <code>Concatenate</code></td><td>callable signatures; decorators that preserve them</td></tr><tr><td><code>Self</code> (PEP 673, 3.11)</td><td>"the type of the current class", correct in subclasses</td></tr><tr><td><code>Never</code>/<code>NoReturn</code></td><td>function never returns normally</td></tr><tr><td><code>Annotated[X, meta]</code></td><td>attach metadata for other tools</td></tr><tr><td><code>@overload</code></td><td>several signatures, one implementation</td></tr><tr><td><code>@warnings.deprecated("…")</code> (PEP 702, 3.13)</td><td>checker + runtime deprecation warnings</td></tr></table>
+<div id="py3"></div>
+
+<h2>Flash cards</h2><div id="cards"></div>
+<h2>Retrieval practice</h2><div id="quiz"></div>
+<p class="tip">Want to type a real decorator with ParamSpec, design a Protocol for a plugin API, or see how mypy/pyright disagree on a snippet? Ask me in the chat.</p>
 </div>
 <script>
 /* OSTEP course — shared components. Every page loads this file (inlined by build.py). */
@@ -217,34 +227,38 @@ window.OS = (function () {
   /* ---------- persistent storage (localStorage on a real site; in-memory fallback in sandboxes) ---------- */
   const mem = {};
   const store = {
-    get(k) { try { const v = localStorage.getItem('ostep:' + k); return v === null ? (mem[k] ?? null) : JSON.parse(v); } catch (e) { return mem[k] ?? null; } },
-    set(k, v) { mem[k] = v; try { localStorage.setItem('ostep:' + k, JSON.stringify(v)); } catch (e) {} },
-    del(k) { delete mem[k]; try { localStorage.removeItem('ostep:' + k); } catch (e) {} },
-    keys(prefix) { const out = new Set(Object.keys(mem).filter(k => k.startsWith(prefix))); try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith('ostep:' + prefix)) out.add(k.slice(6)); } } catch (e) {} return [...out]; },
-    available() { try { localStorage.setItem('ostep:test', '1'); localStorage.removeItem('ostep:test'); return true; } catch (e) { return false; } }
+    get(k) { try { const v = localStorage.getItem('py313:' + k); return v === null ? (mem[k] ?? null) : JSON.parse(v); } catch (e) { return mem[k] ?? null; } },
+    set(k, v) { mem[k] = v; try { localStorage.setItem('py313:' + k, JSON.stringify(v)); } catch (e) {} },
+    del(k) { delete mem[k]; try { localStorage.removeItem('py313:' + k); } catch (e) {} },
+    keys(prefix) { const out = new Set(Object.keys(mem).filter(k => k.startsWith(prefix))); try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith('py313:' + prefix)) out.add(k.slice(6)); } } catch (e) {} return [...out]; },
+    available() { try { localStorage.setItem('py313:test', '1'); localStorage.removeItem('py313:test'); return true; } catch (e) { return false; } }
   };
 
   /* ---------- course structure ---------- */
   const PIECES = [
-    ['intro', 'Introduction', [['0001-three-easy-pieces', 'Three easy pieces', 'ch 1–2']]],
-    ['virt', 'Virtualization', [
-      ['0002-processes', 'Processes & the process API', 'ch 4–5'],
-      ['0003-limited-direct-execution', 'Limited direct execution', 'ch 6'],
-      ['0004-scheduling', 'Scheduling', 'ch 7–10'],
-      ['0005-address-spaces', 'Address spaces & segments', 'ch 13–16'],
-      ['0006-paging-and-tlbs', 'Paging & TLBs', 'ch 17–20'],
-      ['0007-swapping', 'Swapping & policies', 'ch 21–23']]],
-    ['conc', 'Concurrency', [
-      ['0008-threads-and-locks', 'Threads & locks', 'ch 26–28'],
-      ['0009-cvs-and-semaphores', 'CVs & semaphores', 'ch 29–31'],
-      ['0010-bugs-and-events', 'Bugs & events', 'ch 32–33']]],
-    ['pers', 'Persistence', [
-      ['0011-devices-disks-raid', 'Devices, disks, RAID', 'ch 36–38'],
-      ['0012-files-and-vsfs', 'Files & a simple FS', 'ch 39–40'],
-      ['0013-ffs-journaling-lfs', 'FFS, journaling, LFS', 'ch 41–43'],
-      ['0014-ssd-and-integrity', 'SSDs & integrity', 'ch 44–45'],
-      ['0015-distributed-nfs-afs', 'Distributed FS', 'ch 48–50']]],
-    ['sec', 'Security', [['0016-security-and-vmms', 'Security & VMMs', 'ch 53–57, App B']]]
+    ['spec', 'The language, as specified', [
+      ['0001-objects-values-types', 'Objects, values and types', 'Ref §3.1–3.2'],
+      ['0002-lexical-structure-and-expressions', 'Lexical structure & expressions', 'Ref §2, §6'],
+      ['0003-execution-model', 'Execution model: names, scopes, closures', 'Ref §4'],
+      ['0004-data-model-special-methods', 'Data model I: special methods', 'Ref §3.3'],
+      ['0005-attribute-access-and-descriptors', 'Data model II: attributes & descriptors', 'Ref §3.3.2, HOWTO'],
+      ['0006-classes-mro-metaclasses', 'Classes, MRO, metaclasses', 'Ref §3.3.3, HOWTO'],
+      ['0007-functions-generators-coroutines', 'Functions, generators, coroutines', 'Ref §6.3, §3.4'],
+      ['0008-statements-and-pattern-matching', 'Statements, exceptions, pattern matching', 'Ref §7–8'],
+      ['0009-import-system', 'The import system', 'Ref §5'],
+      ['0010-typing', 'Typing: the PEP 484 lineage to 3.13', 'PEPs 484…742']]],
+    ['internals', 'CPython 3.13 internals', [
+      ['0011-compiler-and-bytecode', 'From source to bytecode', 'InternalDocs compiler, dis'],
+      ['0012-eval-loop-and-specialization', 'The eval loop, specialization, JIT', 'InternalDocs interpreter, PEPs 659/744'],
+      ['0013-memory-refcounting-gc', 'Memory, refcounting, garbage collection', 'InternalDocs GC, PEP 683'],
+      ['0014-gil-and-free-threading', 'The GIL and free-threaded Python', 'PEP 703, HOWTO']]],
+    ['data', 'DataFrames: pandas vs Polars', [
+      ['0015-dataframe-data-models', 'Two data models', 'pandas dsintro, Polars concepts'],
+      ['0016-selection-and-indexing', 'Selecting, filtering, assigning', 'pandas indexing, Polars expressions'],
+      ['0017-expressions-and-lazy', 'Expressions, contexts, lazy queries', 'Polars lazy, pandas chaining'],
+      ['0018-groupby-joins-reshaping', 'Groupby, joins, reshaping', 'pandas groupby/merging, Polars transformations'],
+      ['0019-time-series', 'Time series', 'pandas timeseries, Polars time-series'],
+      ['0020-performance-and-scale', 'Performance, memory, scale', 'pandas enhancingperf/scale, Modern Polars']]]
   ];
   const LESSONS = PIECES.flatMap(p => p[2].map(l => [l[0], l[1], p[0], l[2]]));
   const title = id => (LESSONS.find(l => l[0] === id) || [])[1] || id;
@@ -257,7 +271,7 @@ window.OS = (function () {
     const isLesson = i >= 0;
     const top = document.createElement('header'); top.className = 'topbar';
     top.innerHTML = `<button class="menu" aria-label="Open directory" aria-expanded="false">☰<span>Directory</span></button>
-      <a class="brand" href="${root}index.html"><span class="dot"></span>OSTEP course</a>
+      <a class="brand" href="${root}index.html"><span class="dot"></span>Python 3.13 course</a>
       <nav class="links"><a href="${root}reference/glossary.html">Glossary</a><a href="${root}reference/cheatsheets.html">Cheat sheets</a><a href="${root}notes.html">My notes</a></nav>
       ${isLesson ? `<span class="where">${i+1} / ${LESSONS.length}</span>` : ''}`;
     document.body.prepend(top);
@@ -341,6 +355,42 @@ window.OS = (function () {
     });
   }
 
+
+  /* ---------- runnable Python (Pyodide, loaded on first use) ---------- */
+  const pyodideP = {};
+  function loadPy(status, version) {
+    version = version || '0.28.3';
+    if (pyodideP[version]) return pyodideP[version];
+    status('loading Python (Pyodide ' + version + ', ~10 MB, once per page)…');
+    pyodideP[version] = new Promise((res, rej) => {
+      const s = document.createElement('script'); s.src = 'https://cdn.jsdelivr.net/pyodide/v' + version + '/full/pyodide.js';
+      s.onload = () => window.loadPyodide({ indexURL: 'https://cdn.jsdelivr.net/pyodide/v' + version + '/full/' }).then(res, rej);
+      s.onerror = () => rej(new Error('Could not load Pyodide (offline, or blocked by this preview).'));
+      document.head.append(s);
+    });
+    return pyodideP[version];
+  }
+  function py(el, code, opts) {
+    el = typeof el === 'string' ? document.getElementById(el) : el; opts = opts || {};
+    el.classList.add('pyrun');
+    el.innerHTML = `<div class="pyhead"><span>Python${opts.note ? ' · ' + esc(opts.note) : ''}</span><span class="pystatus"></span><button class="primary run">▶ Run</button><button class="reset">Reset</button></div><textarea spellcheck="false">${esc(code.trim())}</textarea><pre class="pyout" hidden></pre>`;
+    const ta = el.querySelector('textarea'), out = el.querySelector('.pyout'), st = el.querySelector('.pystatus');
+    const fit = () => { ta.style.height = 'auto'; ta.style.height = Math.min(480, ta.scrollHeight + 4) + 'px'; }; fit(); ta.addEventListener('input', fit);
+    el.querySelector('.reset').onclick = () => { ta.value = code.trim(); fit(); out.hidden = true; };
+    el.querySelector('.run').onclick = async () => {
+      out.hidden = false; out.textContent = ''; st.textContent = '';
+      try {
+        const pyo = await loadPy(m => st.textContent = m, opts.pyodide || ((opts.packages||[]).includes('polars') ? '0.27.7' : '0.28.3'));
+        if (opts.packages) { st.textContent = 'loading ' + opts.packages.join(', ') + '…'; await pyo.loadPackage(opts.packages).catch(() => {}); }
+        st.textContent = 'running…';
+        pyo.setStdout({ batched: s => out.textContent += s + '\n' }); pyo.setStderr({ batched: s => out.textContent += s + '\n' });
+        const r = await pyo.runPythonAsync(ta.value);
+        if (r !== undefined && r !== null && String(r) !== 'None') out.textContent += String(r);
+        st.textContent = 'done · CPython ' + pyo.runPython('import sys; f"{sys.version_info.major}.{sys.version_info.minor}"') + ' in WebAssembly';
+      } catch (e) { out.textContent += String(e); st.textContent = 'error'; }
+    };
+  }
+
   /* ---------- flip cards ---------- */
   function cards(el, list) {
     el = typeof el === 'string' ? document.getElementById(el) : el;
@@ -385,17 +435,78 @@ window.OS = (function () {
     el.querySelectorAll('input').forEach(c => c.onchange = () => { const s = [...el.querySelectorAll('input:checked')].map(x => +x.dataset.i); if (pageId) store.set('obj:' + pageId, s); });
   }
 
-  return { chrome, quiz, cards, stepper, gantt, objectives, esc, store, LESSONS, PIECES, title };
+  return { chrome, quiz, cards, stepper, gantt, objectives, py, esc, store, LESSONS, PIECES, title };
 })();
 
 </script>
 <script>
-OS.chrome('index','');
-const P=[['intro','Introduction','What an OS is: the three pieces, design goals, history.',['0001-three-easy-pieces','Three easy pieces','ch 1–2']],
-['virt','Virtualization','The CPU and memory made private and plentiful.',['0002-processes','Processes & the process API','ch 4–5'],['0003-limited-direct-execution','Limited direct execution','ch 6'],['0004-scheduling','Scheduling: FIFO to CFS and multi-CPU','ch 7–10'],['0005-address-spaces','Address spaces, base/bounds, segments','ch 13–16'],['0006-paging-and-tlbs','Free space, paging, TLBs, small tables','ch 17–20'],['0007-swapping','Swapping, replacement, VAX/VMS & Linux','ch 21–23']],
-['conc','Concurrency','Threads and the primitives that make them safe.',['0008-threads-and-locks','Threads, thread API, locks','ch 26–28'],['0009-cvs-and-semaphores','Locked structures, CVs, semaphores','ch 29–31'],['0010-bugs-and-events','Concurrency bugs & event-based servers','ch 32–33']],
-['pers','Persistence + Security','Storage from the device up; then protecting it all.',['0011-devices-disks-raid','Devices, disks, RAID','ch 36–38'],['0012-files-and-vsfs','Files, directories, a simple file system','ch 39–40'],['0013-ffs-journaling-lfs','FFS, crash consistency, LFS','ch 41–43'],['0014-ssd-and-integrity','SSDs & data integrity','ch 44–45'],['0015-distributed-nfs-afs','Distributed systems, NFS, AFS','ch 48–50'],['0016-security-and-vmms','Security (ch 53–57) & VMMs','ch 53–57, App B']]];
-const m=document.getElementById('map');let idx=0;const S=OS.store;
-m.innerHTML=P.map(([cls,name,desc,...ls])=>`<div class="piece piece-${cls}"><h3>${name}</h3><p>${desc}</p>${ls.map(l=>{idx++;const q=S.get('quiz:'+l[0]),nt=(S.get('notes:'+l[0])||{}).text;return `<a href="lessons/${l[0]}.html" data-id="${l[0]}" class="${q&&q.score===q.total?'done':''}">${idx}. ${l[1]}<small>${l[2]}${q?` · quiz ${q.score}/${q.total}`:''}${nt?' · ✎ notes':''}</small></a>`;}).join('')}</div>`).join('');
-const done=OS.LESSONS.filter(l=>S.get('quiz:'+l[0])).length;const ph=document.createElement('p');ph.className='cap';ph.textContent=done?`${done} of 16 lesson quizzes attempted — see My notes & progress for details.`:'Quiz scores, checked objectives and notes are saved in this browser as you go.';document.getElementById('map').after(ph);
+OS.chrome('0010-typing');
+OS.objectives('obj',['State what the runtime does and does not do with annotations, and where they are stored.','Place the major typing PEPs on a version timeline.','Explain Any vs object, nominal vs structural (Protocol), and how built-in generics work at runtime.','Use PEP 695 syntax including bounds and 3.13 defaults, and know that variance is inferred.','Distinguish TypeGuard from TypeIs and describe 3.13\'s ReadOnly and @deprecated.']);
+const TL=[['3.5','PEP 484 — type hints: the typing module, TypeVar/Generic, Optional, Any, stub files; PEP 3107 annotations get a meaning'],['3.6','PEP 526 — variable annotations: x: int = 0, ClassVar'],['3.7','PEP 563 — postponed evaluation via from __future__ import annotations; PEP 560 — __class_getitem__/__mro_entries__ to make typing cheaper'],['3.8','PEP 544 — Protocol (structural subtyping); PEP 586 Literal; PEP 589 TypedDict; PEP 591 Final'],['3.9','PEP 585 — built-in generics list[int]; PEP 593 Annotated'],['3.10','PEP 604 — X | Y unions; PEP 612 ParamSpec; PEP 613 TypeAlias; PEP 647 TypeGuard'],['3.11','PEP 646 TypeVarTuple (variadic generics); PEP 673 Self; PEP 675 LiteralString; PEP 655 Required/NotRequired'],['3.12','PEP 695 — type parameter syntax def f[T](), class C[T], type statement; PEP 698 @override'],['3.13','PEP 696 type-parameter defaults · PEP 702 @warnings.deprecated · PEP 705 ReadOnly · PEP 742 TypeIs · typing.NoDefault, get_protocol_members()'],['3.14','PEP 649/749 — deferred evaluation of annotations (annotationlib); referenced by the 3.13 reference as upcoming']];
+document.getElementById('tl').innerHTML=TL.map(([v,t])=>`<b>${v}</b><div class="${v==='3.13'?'hl':''}">${t}</div>`).join('');
+OS.py('py1',`
+def greet(name: str, times: int = 1) -> str:
+    return name * times
+print("annotations are stored, not enforced:", greet.__annotations__)
+print(greet(3, 2), "← ints passed for str/int, runtime does not care")
+x: int = "not an int"          # a checker rejects this; the interpreter runs it
+print(__annotations__)
+import typing
+print("runtime helpers:", typing.get_type_hints(greet))
+print("list[int] at runtime:", type(list[int]).__name__, list[int].__origin__, list[int].__args__)
+print("int | None:", type(int | None).__name__, "| isinstance works:", isinstance(None, int | None))`);
+OS.py('py2',`
+from typing import Protocol, runtime_checkable, TypeIs, TypeGuard, reveal_type
+@runtime_checkable
+class Closer(Protocol):
+    def close(self) -> None: ...
+class File:
+    def close(self): print("  closed")
+print("structural: isinstance(File(), Closer) =", isinstance(File(), Closer), "(checks method presence only)")
+
+def first[T](xs: list[T]) -> T:            # PEP 695: implicit TypeVar, variance inferred
+    return xs[0]
+class Box[T = int]:                        # PEP 696 (3.13): default type parameter
+    def __init__(self, item: T): self.item = item
+print("type params:", first.__type_params__, Box.__type_params__, "| default:", Box.__type_params__[0].__default__)
+type Pairs[K, V] = list[tuple[K, V]]
+print("alias:", Pairs, "| value:", Pairs.__value__)
+
+def is_str(x: object) -> TypeIs[str]:      # PEP 742: narrows BOTH branches like isinstance
+    return isinstance(x, str)
+def is_str_guard(x: object) -> TypeGuard[str]:   # PEP 647: narrows only the positive branch
+    return isinstance(x, str)
+print("both are plain functions at runtime:", is_str("a"), is_str_guard(1))`);
+OS.py('py3',`
+from typing import TypedDict, ReadOnly, NotRequired, Literal, Final, Self, overload
+from warnings import deprecated
+import warnings
+class Movie(TypedDict):
+    title: ReadOnly[str]            # PEP 705 (3.13): checkers forbid reassignment
+    year: NotRequired[int]
+m: Movie = {"title": "Metropolis"}
+print("TypedDict is a plain dict at runtime:", type(m).__name__, "| keys info:", Movie.__readonly_keys__, Movie.__optional_keys__)
+MODE: Final = "r"
+class Shape:
+    def scaled(self, k: float) -> Self: return self     # Self: correct type in subclasses
+@deprecated("use new_api() instead")                    # PEP 702 (3.13): static + runtime warning
+def old_api(): return 1
+with warnings.catch_warnings(record=True) as w:
+    warnings.simplefilter("always"); old_api()
+    print("runtime DeprecationWarning:", w[0].message)
+@overload
+def dbl(x: int) -> int: ...
+@overload
+def dbl(x: str) -> str: ...
+def dbl(x): return x * 2
+print(dbl(2), dbl("ab"), "| overloads at runtime:", __import__("typing").get_overloads(dbl).__len__())`);
+OS.cards('cards',[['Annotation','An expression attached to a parameter, return or variable; evaluated at definition time (3.13) and stored in __annotations__; ignored by the interpreter.'],['Any','Compatible with every type in both directions; the gradual-typing escape hatch. Not the same as object.'],['Protocol','Structural type: conformance by having the right members; @runtime_checkable enables isinstance on member presence.'],['GenericAlias','Runtime object for list[int] etc. (PEP 585): __origin__, __args__; created via __class_getitem__.'],['PEP 695 syntax','def f[T](), class C[T], type A = …: implicit type variables in annotation scopes; variance inferred.'],['Type parameter default','PEP 696 (3.13): class Box[T = int]; TypeVar(..., default=...); typing.NoDefault sentinel.'],['TypeGuard vs TypeIs','TypeGuard narrows only when true; TypeIs (3.13) narrows both branches and intersects with the declared type.'],['ReadOnly','PEP 705 (3.13): TypedDict item that checkers treat as immutable.'],['@deprecated','PEP 702 (3.13): warnings.deprecated marks APIs for checkers and emits DeprecationWarning at runtime.']]);
+OS.quiz('quiz',[
+{q:'What does CPython 3.13 do with a wrong annotation such as x: int = "s"?',o:['raises TypeError','nothing; annotations are not enforced','coerces "s" to int','emits a SyntaxWarning'],a:1,why:'The runtime stores annotations and ignores them; only static checkers report the mismatch.'},
+{q:'Which PEP made list[int] valid without importing typing.List?',o:['PEP 484','PEP 585','PEP 604','PEP 695'],a:1,why:'PEP 585 (3.9) made standard collections generic via __class_getitem__, producing types.GenericAlias objects.'},
+{q:'isinstance(obj, SomeRuntimeCheckableProtocol) checks:',o:['full method signatures','that the required members exist','inheritance from the Protocol','the __annotations__ of obj'],a:1,why:'Runtime protocol checks are structural but shallow: they verify the presence of members, not their types.'},
+{q:'In def first[T](xs: list[T]) -> T (PEP 695), how is T\'s variance determined?',o:['explicitly via covariant=True','it is inferred by the checker','it is always invariant','it is always covariant'],a:1,why:'PEP 695 type parameters have inferred variance; the old TypeVar(covariant=True) flags are not used with the new syntax.'},
+{q:'Which 3.13 feature narrows a type in BOTH branches of an if, like isinstance?',o:['TypeGuard','TypeIs','ReadOnly','Never'],a:1,why:'PEP 742: TypeIs narrows to the intersection in the positive branch and excludes it in the negative branch; TypeGuard narrows only the positive one.'},
+{q:'What does class Box[T = int] rely on?',o:['PEP 484 defaults','PEP 696 type-parameter defaults (3.13)','PEP 544 protocols','PEP 649 deferred annotations'],a:1,why:'PEP 696 added defaults to TypeVar, ParamSpec and TypeVarTuple and to the PEP 695 syntax in 3.13.'},
+{q:'Where does PEP 649 (deferred evaluation of annotations) land, per the 3.13 reference?',o:['3.12','3.14','3.13','never; it was rejected'],a:1,why:'The 3.13 execution model notes annotations are expected to use annotation scopes when PEP 649 is implemented; its Python-Version is 3.14.'}]);
 </script></body></html>

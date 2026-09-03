@@ -1,0 +1,549 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>8 · Statements, exceptions, pattern matching — Python 3.13 course</title><style>
+/* OSTEP course — shared stylesheet. Three pieces, three hues. */
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+:root{
+  --ink:#151b2f; --ink-2:#1e2540; --ink-3:#28304f; --line:#3a4368;
+  --paper:#eef0f7; --muted:#a9b1cf; --faint:#6e779a;
+  --virt:#e8b84a; --conc:#5bc8f5; --pers:#6bcb77; --sec:#f47fa0; --intro:#c9a8ff; --spec:#ffd166; --internals:#5bc8f5; --data:#6bcb77;
+  --ok:#6bcb77; --bad:#ff6b6b;
+  --accent:var(--virt);
+  --radius:6px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--ink);color:var(--paper);font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:17px;line-height:1.6}
+a{color:var(--accent)}
+code,pre,kbd,.mono{font-family:'IBM Plex Mono',ui-monospace,monospace}
+code{background:var(--ink-3);padding:1px 5px;border-radius:4px;font-size:.9em}
+pre{background:#0f1424;border:1px solid var(--line);border-left:4px solid var(--accent);padding:14px 16px;overflow:auto;border-radius:var(--radius);font-size:.86em;line-height:1.5}
+pre code{background:none;padding:0;font-size:inherit}
+h1,h2,h3,h4{font-family:'Fraunces',Georgia,serif;font-weight:700;line-height:1.15;margin:0 0 .4em}
+h1{font-size:2.6rem;letter-spacing:-.01em}
+h2{font-size:1.9rem;margin-top:2.6rem;padding-top:1.2rem;border-top:1px solid var(--line)}
+h3{font-size:1.3rem;margin-top:1.8rem;color:var(--accent)}
+h4{font-size:1.05rem;margin-top:1.2rem}
+p,li{max-width:72ch}
+.wrap{max-width:1100px;margin:0 auto;padding:0 28px 96px}
+.hero{padding:44px 0 16px}
+.hero .chapters{color:var(--muted);font-size:.95rem;margin-bottom:6px}
+.lede{font-size:1.2rem;color:var(--muted);max-width:66ch}
+.piece-spec{--accent:var(--spec)} .piece-internals{--accent:var(--internals)} .piece-data{--accent:var(--data)} .piece-virt{--accent:var(--virt)} .piece-conc{--accent:var(--conc)} .piece-pers{--accent:var(--pers)} .piece-sec{--accent:var(--sec)} .piece-intro{--accent:var(--intro)}
+.fig{background:var(--ink-2);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;margin:22px 0}
+.fig figcaption,.cap{color:var(--muted);font-size:.9rem;margin-top:10px}
+.fig svg{max-width:100%;height:auto;display:block}
+svg text{font-family:'IBM Plex Sans',sans-serif}
+svg .mono{font-family:'IBM Plex Mono',monospace}
+.crux{border:1px solid var(--accent);border-radius:var(--radius);padding:14px 18px;margin:22px 0;background:color-mix(in srgb,var(--accent) 8%,transparent)}
+.crux b{color:var(--accent)}
+.tip{border-left:4px solid var(--muted);padding:6px 16px;margin:18px 0;color:var(--muted)}
+.tip b{color:var(--paper)}
+table{border-collapse:collapse;width:100%;margin:16px 0;font-size:.95rem}
+th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{color:var(--muted);font-weight:500}
+td.mono,th.mono{font-family:'IBM Plex Mono',monospace}
+button,.btn{font:inherit;font-size:.9rem;background:var(--ink-3);color:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:7px 13px;cursor:pointer}
+button:hover{border-color:var(--accent)}
+button.primary{background:var(--accent);color:#111;border-color:var(--accent);font-weight:600}
+button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+input[type=range]{accent-color:var(--accent)}
+input[type=text],input[type=number],select{font:inherit;background:#0f1424;color:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:6px 10px}
+.controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:10px 0}
+.controls label{font-size:.9rem;color:var(--muted)}
+details{border:1px solid var(--line);border-radius:var(--radius);margin:10px 0;background:var(--ink-2)}
+summary{cursor:pointer;padding:12px 16px;font-weight:600;list-style:none}
+summary::before{content:"+";display:inline-block;width:1.2em;color:var(--accent)}
+details[open] summary::before{content:"–"}
+details>div{padding:0 16px 14px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;margin:16px 0}
+.card{perspective:900px;min-height:140px;cursor:pointer}
+.card .inner{position:relative;width:100%;height:100%;min-height:140px;transition:transform .45s;transform-style:preserve-3d}
+.card.flipped .inner{transform:rotateY(180deg)}
+.card .face{position:absolute;inset:0;padding:14px;border-radius:var(--radius);border:1px solid var(--line);background:var(--ink-2);backface-visibility:hidden;display:flex;align-items:center;justify-content:center;text-align:center;font-size:.95rem}
+.card .back{transform:rotateY(180deg);background:var(--ink-3);border-color:var(--accent);font-size:.88rem;line-height:1.45}
+.card .front{font-weight:600}
+@media (prefers-reduced-motion:reduce){.card .inner{transition:none}}
+.quiz .q{border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin:12px 0;background:var(--ink-2)}
+.quiz .q p{margin:0 0 10px;font-weight:600}
+.quiz .opts{display:grid;gap:8px}
+.quiz .opt{text-align:left;background:var(--ink);width:100%}
+.quiz .opt.right{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 15%,var(--ink))}
+.quiz .opt.wrong{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 15%,var(--ink))}
+.quiz .why{margin-top:10px;color:var(--muted);font-size:.93rem;display:none}
+.quiz .q.done .why{display:block}
+.quiz .score{margin-top:12px;font-weight:600}
+.stepper .stage{min-height:60px;background:#0f1424;border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin:10px 0}
+.stepper .idx{color:var(--muted);font-size:.85rem}
+.gantt{display:grid;gap:6px;margin:10px 0}
+.gantt .row{display:grid;grid-template-columns:60px 1fr;align-items:center;gap:8px;font-size:.85rem}
+.gantt .track{position:relative;height:26px;background:#0f1424;border-radius:4px;overflow:hidden}
+.gantt .seg{position:absolute;top:0;bottom:0;display:flex;align-items:center;justify-content:center;font-size:.75rem;color:#111;font-weight:600;border-right:1px solid rgba(0,0,0,.3)}
+.cells{display:grid;gap:4px;margin:10px 0}
+.cell{background:#0f1424;border:1px solid var(--line);border-radius:4px;padding:6px;text-align:center;font-family:'IBM Plex Mono',monospace;font-size:.8rem;min-height:36px;display:flex;align-items:center;justify-content:center}
+.cell.hit{background:color-mix(in srgb,var(--ok) 35%,#0f1424);border-color:var(--ok)}
+.cell.miss{background:color-mix(in srgb,var(--bad) 35%,#0f1424);border-color:var(--bad)}
+.cell.active{outline:2px solid var(--accent)}
+.cell.free{opacity:.45}
+.hl{background:color-mix(in srgb,var(--accent) 30%,transparent);padding:1px 5px;border-radius:3px}
+.k{color:var(--accent);font-weight:600}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media (max-width:760px){.two{grid-template-columns:1fr}.topbar{gap:10px}h1{font-size:2rem}}
+.nav-bottom{display:flex;justify-content:space-between;gap:16px;margin-top:56px;padding-top:20px;border-top:1px solid var(--line)}
+.nav-bottom a{text-decoration:none;padding:12px 16px;border:1px solid var(--line);border-radius:var(--radius);color:var(--paper)}
+.source{background:var(--ink-2);border-radius:var(--radius);padding:14px 18px;margin:22px 0;font-size:.95rem}
+.source b{color:var(--accent)}
+.objectives li{list-style:none;margin:6px 0}
+.objectives input{margin-right:8px;accent-color:var(--accent)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.85rem;color:var(--muted)}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:5px;vertical-align:-2px}
+.tag{display:inline-block;font-size:.75rem;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted);margin-right:6px}
+.log{font-family:'IBM Plex Mono',monospace;font-size:.82rem;background:#0f1424;border:1px solid var(--line);border-radius:var(--radius);padding:10px 12px;max-height:220px;overflow:auto;white-space:pre-wrap}
+@media print{body{background:#fff;color:#111}.topbar,.nav-bottom,button{display:none}.fig,.crux,details,.source{border-color:#bbb;background:#fff}pre{background:#f5f5f5;color:#111}}
+
+/* ---------- site chrome: sticky header + directory drawer ---------- */
+.topbar{position:sticky;top:0;z-index:30;display:flex;gap:14px;align-items:center;padding:10px 16px;background:color-mix(in srgb,var(--ink) 92%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);font-size:.9rem}
+.topbar .menu{display:flex;align-items:center;gap:8px;padding:8px 12px;font-size:1rem}
+.topbar .menu span{font-size:.85rem}
+.topbar .brand{color:var(--paper);text-decoration:none;font-weight:600;display:flex;align-items:center;gap:8px}
+.topbar .dot{width:10px;height:10px;border-radius:50%;background:var(--accent);display:inline-block}
+.topbar .links{display:flex;gap:16px;margin-left:8px}
+.topbar .links a{color:var(--muted);text-decoration:none}
+.topbar .links a:hover{color:var(--paper)}
+.topbar .where{margin-left:auto;color:var(--faint);font-variant-numeric:tabular-nums}
+.drawer{position:fixed;top:0;left:0;bottom:0;width:min(340px,88vw);background:var(--ink-2);border-right:1px solid var(--line);z-index:50;transform:translateX(-102%);transition:transform .25s;overflow-y:auto;padding:0 0 24px;box-shadow:0 0 40px rgba(0,0,0,.5)}
+.drawer-open .drawer{transform:none}
+.scrim{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:40;opacity:0;pointer-events:none;transition:opacity .2s}
+.drawer-open .scrim{opacity:1;pointer-events:auto}
+.drawer .dhead{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--ink-2)}
+.drawer .close,.notes-sheet .close{font-size:1.3rem;line-height:1;padding:4px 10px}
+.drawer .dgroup{padding:8px 0 4px}
+.drawer .dname{padding:8px 16px 4px;color:var(--accent);font-family:'Fraunces',serif;font-weight:700}
+.drawer .ditem{display:flex;gap:10px;align-items:center;padding:9px 16px;color:var(--paper);text-decoration:none;border-left:3px solid transparent;font-size:.92rem}
+.drawer .ditem:hover{background:var(--ink-3)}
+.drawer .ditem.cur{border-left-color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
+.drawer .ditem .n{color:var(--faint);min-width:1.4em;font-variant-numeric:tabular-nums}
+.drawer .ditem .t{flex:1;line-height:1.25}
+.drawer .ditem .t small{display:block;color:var(--faint);font-size:.75rem}
+.drawer .badges{display:flex;gap:6px;align-items:center}
+.drawer .badges i{font-style:normal;color:var(--accent)}
+.drawer .badges em{font-style:normal;font-size:.75rem;padding:1px 6px;border-radius:999px;background:var(--ink-3);color:var(--muted);font-variant-numeric:tabular-nums}
+.drawer .dfoot{padding:16px;color:var(--faint);font-size:.8rem}
+/* ---------- notes: floating button + bottom sheet ---------- */
+.notes-fab{position:fixed;right:16px;bottom:16px;z-index:35;display:flex;gap:8px;align-items:center;padding:12px 16px;border-radius:999px;background:var(--accent);color:#111;border:none;font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,.4)}
+.notes-sheet{position:fixed;left:0;right:0;bottom:0;z-index:45;background:var(--ink-2);border-top:1px solid var(--line);border-radius:14px 14px 0 0;transform:translateY(105%);transition:transform .25s;box-shadow:0 -10px 40px rgba(0,0,0,.5);max-width:900px;margin:0 auto;padding-bottom:env(safe-area-inset-bottom)}
+.notes-open .notes-sheet{transform:none}
+.notes-open .notes-fab{display:none}
+.notes-sheet .nhead{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line)}
+.notes-sheet .nhead b{flex:1;font-size:.95rem}
+.notes-sheet .nstatus{color:var(--faint);font-size:.8rem}
+.notes-sheet textarea{display:block;width:100%;min-height:36vh;max-height:60vh;resize:vertical;border:none;background:#0f1424;color:var(--paper);font:inherit;font-size:1rem;line-height:1.5;padding:14px 16px;outline:none}
+.notes-sheet .nfoot{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;font-size:.85rem;color:var(--muted)}
+/* ---------- wide widgets scroll sideways instead of breaking the page ---------- */
+.tw{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:16px 0}
+.tw table{margin:0;min-width:520px}
+.fig{overflow-x:auto}
+@media (prefers-reduced-motion:reduce){.drawer,.notes-sheet,.scrim{transition:none}}
+/* ---------- phones ---------- */
+@media (max-width:760px){
+  body{font-size:16px}
+  .wrap{padding:0 16px 110px}
+  h1{font-size:1.85rem} h2{font-size:1.45rem;margin-top:2rem} h3{font-size:1.15rem}
+  .lede{font-size:1.05rem}
+  .topbar{padding:8px 12px;gap:10px}
+  .topbar .links{display:none}
+  .topbar .menu span{display:none}
+  .topbar .menu{padding:8px 11px}
+  .fig{padding:12px 12px;margin:16px -4px;border-radius:8px}
+  .crux,.source{padding:12px 14px}
+  pre{font-size:.8em;padding:12px 12px}
+  button,.btn{padding:10px 14px;font-size:.92rem}
+  .controls{gap:8px}
+  .controls label{display:flex;align-items:center;gap:6px}
+  input[type=number]{max-width:96px}
+  .cards{grid-template-columns:1fr 1fr;gap:8px}
+  .card,.card .inner{min-height:120px}
+  .card .face{font-size:.88rem;padding:10px}
+  .cells{min-width:420px}
+  .quiz .opt{padding:12px 12px;line-height:1.35}
+  .nav-bottom{flex-direction:column}
+  .nav-bottom a{text-align:center}
+  .notes-fab span{display:none}
+  .notes-fab{padding:14px;right:12px;bottom:12px}
+  .notes-sheet textarea{min-height:44vh}
+  .stepper .stage{padding:12px}
+  .gantt .row{grid-template-columns:44px 1fr;font-size:.75rem}
+  /* lesson-specific grids collapse */
+  .lde,.il,.two,.cry,.flash,.dl,.fdt,.how,.cards.wide,.vm{grid-template-columns:1fr}
+  .map{grid-template-columns:1fr}
+  .net{grid-template-columns:1fr}.net .arrow{padding:0;transform:rotate(90deg)}
+  .phil{grid-template-columns:repeat(2,1fr)}
+  .jobs{max-width:100%}
+  .trace{min-width:620px}.tl{min-width:720px}.disk{min-width:560px}
+}
+@media (max-width:420px){.cards{grid-template-columns:1fr}}
+
+/* ---------- runnable Python ---------- */
+.pyrun{border:1px solid var(--line);border-radius:var(--radius);background:#0f1424;margin:18px 0;overflow:hidden}
+.pyrun .pyhead{display:flex;gap:10px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--line);font-size:.85rem;color:var(--muted);background:var(--ink-2)}
+.pyrun .pyhead span:first-child{flex:1;font-weight:600;color:var(--paper)}
+.pyrun .pystatus{font-size:.78rem}
+.pyrun textarea{display:block;width:100%;border:none;background:#0f1424;color:var(--paper);font-family:'IBM Plex Mono',monospace;font-size:.86rem;line-height:1.5;padding:12px 14px;resize:vertical;outline:none;min-height:60px;tab-size:4}
+.pyrun .pyout{margin:0;border:none;border-top:1px solid var(--line);border-left:none;border-radius:0;background:#0a0e1a;color:#cfe3ff;max-height:320px}
+
+</style>
+<style>.flow{display:grid;gap:6px}.flow div{padding:8px 12px;border-radius:6px;border:1px solid var(--line);background:#0f1424;font-size:.88rem;font-family:'IBM Plex Mono',monospace}.flow div.run{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 14%,#0f1424)}.flow div.skip{opacity:.4}.pat td:first-child{font-family:'IBM Plex Mono',monospace;color:var(--accent);white-space:nowrap}</style></head>
+<body class="piece-spec"><div class="wrap">
+<header class="hero"><div class="chapters">Language Reference §7 Simple statements · §8 Compound statements (try, with, match, type)</div>
+<h1>Statements: assignment targets, the try machine, and structural pattern matching</h1>
+<p class="lede">Expressions compute; statements bind, branch and clean up. The parts people get wrong are precisely specified: what an assignment target is and how unpacking works, the exact order of <code>try</code>/<code>except</code>/<code>else</code>/<code>finally</code> (and what <code>return</code> inside <code>finally</code> does to a live exception), exception groups with <code>except*</code>, and the pattern kinds of <code>match</code> — each with its own success rule.</p></header>
+<div class="source"><b>Primary sources:</b> <a href="https://docs.python.org/3.13/reference/simple_stmts.html">§7</a> (assignment, augmented assignment, <code>del</code>, <code>raise</code>, <code>type</code>) and <a href="https://docs.python.org/3.13/reference/compound_stmts.html">§8</a> (<code>try</code>, <code>with</code>, <code>match</code>). PEPs: 634–636 (pattern matching), 654 (exception groups), 3132 (extended unpacking).</div>
+<h2>What you'll be able to do</h2><ul id="obj"></ul>
+
+<h2>Assignment</h2>
+<p>§7.2: an assignment evaluates the expression list (a tuple if there are commas) and assigns the single result to each target list, <em>left to right</em>. Target kinds: a name (bound in the current scope per lesson 3), an attribute reference (<code>obj.attr = v</code> → <code>setattr</code>/<code>__setattr__</code>), a subscription (<code>obj[k] = v</code> → <code>__setitem__</code>; for sequences a negative index is adjusted and must be in range), a slicing (<code>__setitem__</code> with a slice object), or a parenthesized/bracketed target list — which triggers <b>unpacking</b>: the object must be an iterable with the right number of items, or, with a single starred target, at least as many items as the non-starred targets (the star collects the rest as a <code>list</code>). Augmented assignment (<code>x += 1</code>) evaluates the target once, calls <code>__iadd__</code> if present (falling back to <code>__add__</code>), and rebinds — so on a tuple element it can both mutate <em>and</em> raise. Annotated assignment (<code>x: int = 1</code>) evaluates the annotation and stores it in <code>__annotations__</code> (module/class level). <code>del</code> unbinds names or calls <code>__delattr__</code>/<code>__delitem__</code>.</p>
+<div id="py1"></div>
+
+<h2>The try statement, precisely</h2>
+<div class="crux"><b>§8.4:</b> the <code>try</code> suite runs; on an exception, <code>except</code> clauses are tried in order, the expression being evaluated only when needed, the first match handles it (nested handlers for the same exception: the inner wins). <code>as name</code> is <em>cleared</em> at the end of the clause (to break the frame↔traceback cycle). <code>else</code> runs only if the suite finished normally — no exception, no <code>return</code>/<code>break</code>/<code>continue</code> — and its exceptions are <em>not</em> handled by the preceding <code>except</code>s. <code>finally</code> runs on every exit; an unhandled exception is temporarily saved and re-raised after it; an exception raised <em>in</em> <code>finally</code> gets the saved one as its <code>__context__</code>; a <code>return</code>/<code>break</code>/<code>continue</code> in <code>finally</code> <b>discards the saved exception</b>.</div>
+<div class="fig"><h4>Which clauses run?</h4><div class="controls"><label>scenario <select id="sc"><option value="ok">try succeeds</option><option value="caught">try raises ValueError; except ValueError present</option><option value="uncaught">try raises KeyError; only except ValueError</option><option value="ret">try executes return</option><option value="finret">try raises; finally executes return</option></select></label></div><div class="flow" id="flow"></div><div class="cap" id="fmsg"></div></div>
+<div id="py2"></div>
+<div class="two"><div class="fig"><h4>raise and chaining</h4><p><code>raise</code> with no expression re-raises the exception currently being handled. <code>raise X from Y</code> sets <code>X.__cause__ = Y</code> (and <code>__suppress_context__</code>); <code>raise X from None</code> hides the context. An exception raised inside a handler automatically gets <code>__context__</code> set to the one being handled — "During handling of the above exception, another exception occurred". <code>except E as e</code> also lets you <code>e.add_note("…")</code> (3.11+). <code>sys.exception()</code> returns the handled exception.</p></div><div class="fig"><h4>except* and exception groups (PEP 654)</h4><p>Concurrent code can fail several ways at once, so <code>ExceptionGroup</code>/<code>BaseExceptionGroup</code> wrap a list of exceptions. A <code>try</code> may use <code>except</code> <em>or</em> <code>except*</code>, not both; <code>except*:</code> needs a type. Each <code>except*</code> clause <code>split()</code>s the group: the matching subgroup becomes the handled exception (always wrapped as a group, even a naked one), the rest continues to later clauses; leftovers are re-raised. <code>return</code>, <code>break</code>, <code>continue</code> are not allowed inside <code>except*</code>.</p></div></div>
+<div id="py3"></div>
+
+<h2>with: the protocol in six steps</h2>
+<p>§8.5 for one item: (1) evaluate the expression to get the context manager; (2) load <code>type(cm).__exit__</code> for later; (3) call <code>__enter__()</code>; (4) if there is an <code>as</code> target, assign the return value to it — if that assignment fails, <code>__exit__</code> is still called; (5) execute the suite; (6) call <code>__exit__(type, value, tb)</code> — with the exception if one occurred; a true return suppresses it, otherwise it propagates. Multiple items nest, and 3.10+ allows parentheses across lines.</p>
+
+<h2>match: structural pattern matching (§8.6)</h2>
+<p>Evaluate the subject once; try <code>case</code> blocks top to bottom; a pattern succeeds or fails and may bind names; if it succeeds, evaluate the guard (an expression, side effects allowed, only for cases whose pattern matched); the first case with a true guard runs and the statement ends. At most one <b>irrefutable</b> case (a capture or wildcard without guard) and it must be last. The pattern kinds:</p>
+<table class="pat"><tr><th>Pattern</th><th>Succeeds when</th><th>Binds</th></tr>
+<tr><td>literal <code>42</code>, <code>"s"</code>, <code>None</code></td><td><code>subject == literal</code>; <code>None</code>/<code>True</code>/<code>False</code> use <code>is</code></td><td>—</td></tr>
+<tr><td>capture <code>name</code></td><td>always</td><td><code>name</code> = subject</td></tr>
+<tr><td>wildcard <code>_</code></td><td>always</td><td>nothing</td></tr>
+<tr><td>value <code>Color.RED</code>, <code>math.pi</code></td><td>dotted name; <code>subject == value</code></td><td>—</td></tr>
+<tr><td>group <code>(p)</code>, OR <code>p1 | p2</code></td><td>first alternative that matches; all alternatives must bind the same names</td><td>per alternative</td></tr>
+<tr><td>AS <code>p as name</code></td><td><code>p</code> matches</td><td><code>name</code> = subject</td></tr>
+<tr><td>sequence <code>[a, *rest, b]</code></td><td>subject is a sequence (not <code>str</code>/<code>bytes</code>/<code>bytearray</code>) of matching length; one star allowed</td><td>subpatterns; star → list</td></tr>
+<tr><td>mapping <code>{"k": p, **rest}</code></td><td>subject is a mapping with those keys (<b>extra keys are ignored</b>); keys looked up via <code>.get</code>; duplicate literal keys are a SyntaxError</td><td>subpatterns; <code>**rest</code> → dict</td></tr>
+<tr><td>class <code>Point(x=0, y=py)</code></td><td><code>isinstance(subject, Point)</code>; keyword subpatterns match attributes; positional subpatterns are mapped via <code>__match_args__</code> (for built-ins like <code>int</code>, <code>str</code>, <code>list</code>… a single positional matches the whole subject)</td><td>subpatterns</td></tr></table>
+<div id="py4"></div>
+
+<h2>type statement (3.12+)</h2>
+<p><code>type Alias[T] = list[T]</code> creates a <code>typing.TypeAliasType</code>; the value is evaluated lazily in an annotation scope (lesson 3). Type parameters can be <code>T</code>, <code>*Ts</code> (TypeVarTuple), <code>**P</code> (ParamSpec), with bounds <code>T: int</code>, constraints <code>T: (int, str)</code>, and defaults <code>T = int</code> (3.13, PEP 696).</p>
+
+<h2>Flash cards</h2><div id="cards"></div>
+<h2>Retrieval practice</h2><div id="quiz"></div>
+<p class="tip">Want a set of match-statement katas (AST walkers, JSON shape checks), or to trace exception context/cause chains in a traceback? Ask me in the chat.</p>
+</div>
+<script>
+/* OSTEP course — shared components. Every page loads this file (inlined by build.py). */
+window.OS = (function () {
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+  /* ---------- persistent storage (localStorage on a real site; in-memory fallback in sandboxes) ---------- */
+  const mem = {};
+  const store = {
+    get(k) { try { const v = localStorage.getItem('py313:' + k); return v === null ? (mem[k] ?? null) : JSON.parse(v); } catch (e) { return mem[k] ?? null; } },
+    set(k, v) { mem[k] = v; try { localStorage.setItem('py313:' + k, JSON.stringify(v)); } catch (e) {} },
+    del(k) { delete mem[k]; try { localStorage.removeItem('py313:' + k); } catch (e) {} },
+    keys(prefix) { const out = new Set(Object.keys(mem).filter(k => k.startsWith(prefix))); try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith('py313:' + prefix)) out.add(k.slice(6)); } } catch (e) {} return [...out]; },
+    available() { try { localStorage.setItem('py313:test', '1'); localStorage.removeItem('py313:test'); return true; } catch (e) { return false; } }
+  };
+
+  /* ---------- course structure ---------- */
+  const PIECES = [
+    ['spec', 'The language, as specified', [
+      ['0001-objects-values-types', 'Objects, values and types', 'Ref §3.1–3.2'],
+      ['0002-lexical-structure-and-expressions', 'Lexical structure & expressions', 'Ref §2, §6'],
+      ['0003-execution-model', 'Execution model: names, scopes, closures', 'Ref §4'],
+      ['0004-data-model-special-methods', 'Data model I: special methods', 'Ref §3.3'],
+      ['0005-attribute-access-and-descriptors', 'Data model II: attributes & descriptors', 'Ref §3.3.2, HOWTO'],
+      ['0006-classes-mro-metaclasses', 'Classes, MRO, metaclasses', 'Ref §3.3.3, HOWTO'],
+      ['0007-functions-generators-coroutines', 'Functions, generators, coroutines', 'Ref §6.3, §3.4'],
+      ['0008-statements-and-pattern-matching', 'Statements, exceptions, pattern matching', 'Ref §7–8'],
+      ['0009-import-system', 'The import system', 'Ref §5'],
+      ['0010-typing', 'Typing: the PEP 484 lineage to 3.13', 'PEPs 484…742']]],
+    ['internals', 'CPython 3.13 internals', [
+      ['0011-compiler-and-bytecode', 'From source to bytecode', 'InternalDocs compiler, dis'],
+      ['0012-eval-loop-and-specialization', 'The eval loop, specialization, JIT', 'InternalDocs interpreter, PEPs 659/744'],
+      ['0013-memory-refcounting-gc', 'Memory, refcounting, garbage collection', 'InternalDocs GC, PEP 683'],
+      ['0014-gil-and-free-threading', 'The GIL and free-threaded Python', 'PEP 703, HOWTO']]],
+    ['data', 'DataFrames: pandas vs Polars', [
+      ['0015-dataframe-data-models', 'Two data models', 'pandas dsintro, Polars concepts'],
+      ['0016-selection-and-indexing', 'Selecting, filtering, assigning', 'pandas indexing, Polars expressions'],
+      ['0017-expressions-and-lazy', 'Expressions, contexts, lazy queries', 'Polars lazy, pandas chaining'],
+      ['0018-groupby-joins-reshaping', 'Groupby, joins, reshaping', 'pandas groupby/merging, Polars transformations'],
+      ['0019-time-series', 'Time series', 'pandas timeseries, Polars time-series'],
+      ['0020-performance-and-scale', 'Performance, memory, scale', 'pandas enhancingperf/scale, Modern Polars']]]
+  ];
+  const LESSONS = PIECES.flatMap(p => p[2].map(l => [l[0], l[1], p[0], l[2]]));
+  const title = id => (LESSONS.find(l => l[0] === id) || [])[1] || id;
+  let pageId = null, root = '../';
+
+  /* ---------- chrome: sticky header, slide-out directory, notes drawer, prev/next ---------- */
+  function chrome(id, rootPath) {
+    pageId = id; root = rootPath === undefined ? '../' : rootPath;
+    const i = LESSONS.findIndex(l => l[0] === id);
+    const isLesson = i >= 0;
+    const top = document.createElement('header'); top.className = 'topbar';
+    top.innerHTML = `<button class="menu" aria-label="Open directory" aria-expanded="false">☰<span>Directory</span></button>
+      <a class="brand" href="${root}index.html"><span class="dot"></span>Python 3.13 course</a>
+      <nav class="links"><a href="${root}reference/glossary.html">Glossary</a><a href="${root}reference/cheatsheets.html">Cheat sheets</a><a href="${root}notes.html">My notes</a></nav>
+      ${isLesson ? `<span class="where">${i+1} / ${LESSONS.length}</span>` : ''}`;
+    document.body.prepend(top);
+    // directory drawer
+    const drawer = document.createElement('aside'); drawer.className = 'drawer'; drawer.setAttribute('aria-label', 'Course directory');
+    const scores = Object.fromEntries(LESSONS.map(l => [l[0], store.get('quiz:' + l[0])]));
+    const notes = new Set(store.keys('notes:').map(k => k.slice(6)).filter(k => (store.get('notes:' + k) || {}).text));
+    drawer.innerHTML = `<div class="dhead"><b>Directory</b><button class="close" aria-label="Close">×</button></div>
+      <a class="ditem ${id === 'index' ? 'cur' : ''}" href="${root}index.html">Course hub</a>
+      ${PIECES.map(([cls, name, ls]) => `<div class="dgroup piece-${cls}"><div class="dname">${name}</div>${ls.map(l => {
+        const n = LESSONS.findIndex(x => x[0] === l[0]) + 1, s = scores[l[0]];
+        return `<a class="ditem ${l[0] === id ? 'cur' : ''}" href="${root}lessons/${l[0]}.html"><span class="n">${n}</span><span class="t">${l[1]}<small>${l[3]}</small></span><span class="badges">${notes.has(l[0]) ? '<i title="you have notes">✎</i>' : ''}${s ? `<em title="best quiz score">${s.score}/${s.total}</em>` : ''}</span></a>`; }).join('')}</div>`).join('')}
+      <div class="dgroup piece-intro"><div class="dname">Reference</div>
+        <a class="ditem ${id === 'glossary' ? 'cur' : ''}" href="${root}reference/glossary.html"><span class="t">Glossary</span></a>
+        <a class="ditem ${id === 'cheatsheets' ? 'cur' : ''}" href="${root}reference/cheatsheets.html"><span class="t">Cheat sheets</span></a>
+        <a class="ditem ${id === 'notes' ? 'cur' : ''}" href="${root}notes.html"><span class="t">My notes &amp; progress</span></a></div>
+      <div class="dfoot">${store.available() ? 'Notes and scores are saved in this browser.' : 'Notes and scores are kept for this session only (storage unavailable here).'}</div>`;
+    document.body.append(drawer);
+    const scrim = document.createElement('div'); scrim.className = 'scrim'; document.body.append(scrim);
+    const open = o => { document.body.classList.toggle('drawer-open', o); top.querySelector('.menu').setAttribute('aria-expanded', o); if (o) drawer.querySelector('.cur, .ditem')?.focus(); };
+    top.querySelector('.menu').onclick = () => open(!document.body.classList.contains('drawer-open'));
+    drawer.querySelector('.close').onclick = () => open(false); scrim.onclick = () => open(false);
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') { open(false); notesOpen(false); } });
+    // prev/next for lessons
+    if (isLesson) {
+      const nav = document.createElement('div'); nav.className = 'nav-bottom';
+      const prev = LESSONS[i-1], next = LESSONS[i+1];
+      nav.innerHTML = (prev ? `<a href="${prev[0]}.html">← ${i}. ${prev[1]}</a>` : '<span></span>') +
+                      (next ? `<a href="${next[0]}.html">${i+2}. ${next[1]} →</a>` : `<a href="${root}index.html">Back to course hub →</a>`);
+      document.querySelector('.wrap').append(nav);
+    }
+    // wrap tables so they scroll sideways on phones
+    document.querySelectorAll('.wrap table').forEach(t => { if (t.parentElement.classList.contains('tw')) return; const w = document.createElement('div'); w.className = 'tw'; t.replaceWith(w); w.append(t); });
+    // notes drawer (every page except the notes page itself)
+    if (id !== 'notes') notesUI(id, isLesson ? `${i+1}. ${LESSONS[i][1]}` : (document.title.split(' — ')[0]));
+  }
+
+  /* ---------- notes: floating button + bottom sheet, autosaved ---------- */
+  let notesOpen = () => {};
+  function notesUI(id, label) {
+    const btn = document.createElement('button'); btn.className = 'notes-fab'; btn.innerHTML = '✎ <span>Notes</span>'; btn.setAttribute('aria-label', 'Open notes');
+    const sheet = document.createElement('section'); sheet.className = 'notes-sheet'; sheet.setAttribute('aria-label', 'Notes for this page');
+    const saved = store.get('notes:' + id) || {};
+    sheet.innerHTML = `<div class="nhead"><b>Notes · ${esc(label)}</b><span class="nstatus"></span><button class="close" aria-label="Close notes">×</button></div>
+      <textarea placeholder="Your notes for this page. Markdown is fine. Saved automatically.">${esc(saved.text || '')}</textarea>
+      <div class="nfoot"><span class="ncount"></span><a href="${root}notes.html">All notes &amp; export →</a></div>`;
+    document.body.append(btn, sheet);
+    const ta = sheet.querySelector('textarea'), status = sheet.querySelector('.nstatus'), count = sheet.querySelector('.ncount');
+    const upd = () => { count.textContent = ta.value.trim() ? ta.value.trim().split(/\s+/).length + ' words' : ''; };
+    let t; ta.addEventListener('input', () => { status.textContent = 'saving…'; clearTimeout(t); t = setTimeout(() => { store.set('notes:' + id, { text: ta.value, title: label, updated: new Date().toISOString() }); status.textContent = 'saved'; upd(); }, 400); });
+    upd();
+    notesOpen = o => { document.body.classList.toggle('notes-open', o); if (o) ta.focus(); };
+    btn.onclick = () => notesOpen(!document.body.classList.contains('notes-open'));
+    sheet.querySelector('.close').onclick = () => notesOpen(false);
+  }
+
+  /* ---------- quiz: immediate feedback; best score persisted ---------- */
+  function quiz(el, qs) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('quiz');
+    let score = 0, answered = 0;
+    const best = pageId ? store.get('quiz:' + pageId) : null;
+    el.innerHTML = qs.map((q, i) => `<div class="q" data-i="${i}"><p>${i+1}. ${q.q}</p>
+      <div class="opts">${q.o.map((o, j) => `<button class="opt" data-j="${j}">${esc(o)}</button>`).join('')}</div>
+      <div class="why">${q.why}</div></div>`).join('') + `<div class="score">${best ? `Best so far: ${best.score}/${best.total} (${new Date(best.date).toLocaleDateString()})` : ''}</div>`;
+    el.querySelectorAll('.q').forEach(qd => {
+      const q = qs[+qd.dataset.i];
+      qd.querySelectorAll('.opt').forEach(b => b.addEventListener('click', () => {
+        if (qd.classList.contains('done')) return;
+        qd.classList.add('done'); answered++;
+        const j = +b.dataset.j;
+        if (j === q.a) { b.classList.add('right'); score++; }
+        else { b.classList.add('wrong'); qd.querySelectorAll('.opt')[q.a].classList.add('right'); }
+        const s = el.querySelector('.score');
+        s.textContent = `${score} / ${answered} correct`;
+        if (answered === qs.length) {
+          s.textContent += score === qs.length ? ' — all of them. Retry from memory in two days.' : ' — reread the sections you missed, then retry.';
+          if (pageId && (!best || score >= best.score)) store.set('quiz:' + pageId, { score, total: qs.length, date: new Date().toISOString() });
+        }
+      }));
+    });
+  }
+
+
+  /* ---------- runnable Python (Pyodide, loaded on first use) ---------- */
+  const pyodideP = {};
+  function loadPy(status, version) {
+    version = version || '0.28.3';
+    if (pyodideP[version]) return pyodideP[version];
+    status('loading Python (Pyodide ' + version + ', ~10 MB, once per page)…');
+    pyodideP[version] = new Promise((res, rej) => {
+      const s = document.createElement('script'); s.src = 'https://cdn.jsdelivr.net/pyodide/v' + version + '/full/pyodide.js';
+      s.onload = () => window.loadPyodide({ indexURL: 'https://cdn.jsdelivr.net/pyodide/v' + version + '/full/' }).then(res, rej);
+      s.onerror = () => rej(new Error('Could not load Pyodide (offline, or blocked by this preview).'));
+      document.head.append(s);
+    });
+    return pyodideP[version];
+  }
+  function py(el, code, opts) {
+    el = typeof el === 'string' ? document.getElementById(el) : el; opts = opts || {};
+    el.classList.add('pyrun');
+    el.innerHTML = `<div class="pyhead"><span>Python${opts.note ? ' · ' + esc(opts.note) : ''}</span><span class="pystatus"></span><button class="primary run">▶ Run</button><button class="reset">Reset</button></div><textarea spellcheck="false">${esc(code.trim())}</textarea><pre class="pyout" hidden></pre>`;
+    const ta = el.querySelector('textarea'), out = el.querySelector('.pyout'), st = el.querySelector('.pystatus');
+    const fit = () => { ta.style.height = 'auto'; ta.style.height = Math.min(480, ta.scrollHeight + 4) + 'px'; }; fit(); ta.addEventListener('input', fit);
+    el.querySelector('.reset').onclick = () => { ta.value = code.trim(); fit(); out.hidden = true; };
+    el.querySelector('.run').onclick = async () => {
+      out.hidden = false; out.textContent = ''; st.textContent = '';
+      try {
+        const pyo = await loadPy(m => st.textContent = m, opts.pyodide || ((opts.packages||[]).includes('polars') ? '0.27.7' : '0.28.3'));
+        if (opts.packages) { st.textContent = 'loading ' + opts.packages.join(', ') + '…'; await pyo.loadPackage(opts.packages).catch(() => {}); }
+        st.textContent = 'running…';
+        pyo.setStdout({ batched: s => out.textContent += s + '\n' }); pyo.setStderr({ batched: s => out.textContent += s + '\n' });
+        const r = await pyo.runPythonAsync(ta.value);
+        if (r !== undefined && r !== null && String(r) !== 'None') out.textContent += String(r);
+        st.textContent = 'done · CPython ' + pyo.runPython('import sys; f"{sys.version_info.major}.{sys.version_info.minor}"') + ' in WebAssembly';
+      } catch (e) { out.textContent += String(e); st.textContent = 'error'; }
+    };
+  }
+
+  /* ---------- flip cards ---------- */
+  function cards(el, list) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('cards');
+    el.innerHTML = list.map(([f, b]) => `<div class="card" tabindex="0" role="button" aria-label="flip card"><div class="inner"><div class="face front">${f}</div><div class="face back">${b}</div></div></div>`).join('');
+    el.querySelectorAll('.card').forEach(c => {
+      const t = () => c.classList.toggle('flipped');
+      c.addEventListener('click', t);
+      c.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); t(); } });
+    });
+  }
+
+  /* ---------- stepper ---------- */
+  function stepper(el, steps, render) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('stepper');
+    let i = 0;
+    el.innerHTML = `<div class="controls"><button class="prev">← Back</button><button class="next primary">Next step →</button><span class="idx"></span></div><div class="stage"></div><div class="extra"></div>`;
+    const stage = el.querySelector('.stage'), idx = el.querySelector('.idx'), extra = el.querySelector('.extra');
+    const draw = () => { stage.innerHTML = steps[i]; idx.textContent = `step ${i+1} / ${steps.length}`; if (render) render(i, extra); };
+    el.querySelector('.prev').onclick = () => { i = Math.max(0, i-1); draw(); };
+    el.querySelector('.next').onclick = () => { i = Math.min(steps.length-1, i+1); draw(); };
+    draw();
+  }
+
+  /* ---------- gantt ---------- */
+  function gantt(el, rows, total, colors) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('gantt');
+    const pal = colors || ['#e8b84a','#5bc8f5','#6bcb77','#f47fa0','#c9a8ff','#ffb86b'];
+    el.innerHTML = rows.map((r, i) => `<div class="row"><span>${esc(r.name)}</span><div class="track">${r.segs.map(s =>
+      `<div class="seg" style="left:${100*s.start/total}%;width:${100*(s.end-s.start)/total}%;background:${pal[i%pal.length]}" title="${s.start}–${s.end}">${(s.end-s.start)/total > .06 ? (s.end-s.start) : ''}</div>`).join('')}</div></div>`).join('') +
+      `<div class="row"><span></span><div style="display:flex;justify-content:space-between;font-size:.75rem;color:var(--muted)"><span>0</span><span>${total}</span></div></div>`;
+  }
+
+  /* ---------- objectives checklist (persisted) ---------- */
+  function objectives(el, items) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('objectives');
+    const saved = (pageId && store.get('obj:' + pageId)) || [];
+    el.innerHTML = items.map((t, i) => `<li><label><input type="checkbox" data-i="${i}" ${saved.includes(i) ? 'checked' : ''}>${t}</label></li>`).join('');
+    el.querySelectorAll('input').forEach(c => c.onchange = () => { const s = [...el.querySelectorAll('input:checked')].map(x => +x.dataset.i); if (pageId) store.set('obj:' + pageId, s); });
+  }
+
+  return { chrome, quiz, cards, stepper, gantt, objectives, py, esc, store, LESSONS, PIECES, title };
+})();
+
+</script>
+<script>
+OS.chrome('0008-statements-and-pattern-matching');
+OS.objectives('obj',['Enumerate assignment target kinds and the unpacking rules, including starred targets and augmented assignment pitfalls.','Predict exactly which of try/except/else/finally run, and what return in finally does to an exception.','Use raise from, __context__/__cause__, add_note, and except* with exception groups.','List the six steps of the with statement.','Classify every match pattern kind and state its success rule, including sequence/mapping/class specifics.']);
+const FL={ok:{run:['try suite','else clause','finally clause'],m:'No exception, no early exit → else runs, then finally. Exceptions raised in else are not caught by the excepts.'},caught:{run:['try suite','except ValueError as e (e cleared at end)','finally clause'],m:'The first matching except handles it; else is skipped; finally always runs.'},uncaught:{run:['try suite','finally clause','→ KeyError re-raised after finally'],m:'No clause matches: the exception is saved, finally runs, then the saved exception is re-raised.'},ret:{run:['try suite (return)','finally clause'],m:'return inside try still runs finally "on the way out"; else is skipped because control left the suite.'},finret:{run:['try suite (raises)','finally clause (return 42)','→ exception DISCARDED, function returns 42'],m:'A return/break/continue in finally throws away the saved exception. A common source of silently swallowed errors.'}};
+const ALL=['try suite','except ValueError as e (e cleared at end)','else clause','finally clause'];
+function flow(){const s=FL[document.getElementById('sc').value];const items=[...ALL.map(x=>s.run.find(r=>r.startsWith(x.split(' ')[0]))||x),...s.run.filter(r=>r.startsWith('→'))];document.getElementById('flow').innerHTML=items.map(x=>`<div class="${s.run.includes(x)?'run':'skip'}">${x}</div>`).join('');document.getElementById('fmsg').textContent=s.m;}
+document.getElementById('sc').onchange=flow;flow();
+OS.py('py1',`
+a, *middle, z = range(6)
+print(a, middle, z)                    # starred target collects a list
+(x, y), [p, q] = (1, 2), "pq"          # nested target lists unpack iterables
+print(x, y, p, q)
+try:
+    a, b = 1, 2, 3
+except ValueError as e: print("ValueError:", e)
+t = ([], 0)
+try:
+    t[0] += [1]                        # __iadd__ mutates the list, then the rebind into the tuple fails
+except TypeError as e: print("TypeError:", e, "| but the list changed:", t)
+class Box:
+    def __setattr__(self, n, v): print(f"  __setattr__({n!r})"); object.__setattr__(self, n, v)
+    def __delattr__(self, n): print(f"  __delattr__({n!r})"); object.__delattr__(self, n)
+b = Box(); b.v = 1; del b.v
+n: int = 3                              # annotated assignment at module level
+print(__annotations__)`);
+OS.py('py2',`
+def f(kind):
+    try:
+        print("  try")
+        if kind == "value": raise ValueError("bad value")
+        if kind == "key": raise KeyError("k")
+        if kind == "ret": return "returned from try"
+    except ValueError as e:
+        print("  except ValueError:", e)
+    else:
+        print("  else")
+    finally:
+        print("  finally")
+        if kind == "swallow": return "finally swallowed the exception"
+    return "end"
+for k in ["ok", "value", "ret"]: print(k, "→", f(k))
+try: f("key")
+except KeyError as e: print("key → KeyError re-raised after finally:", e)
+def g():
+    try: 1/0
+    finally: return "swallow"
+print("finally-return:", g())`);
+OS.py('py3',`
+try:
+    try: {}["k"]
+    except KeyError as e: raise ValueError("translated") from e     # explicit cause
+except ValueError as v:
+    print("cause:", repr(v.__cause__), "| context:", repr(v.__context__), "| suppress:", v.__suppress_context__)
+try:
+    try: 1/0
+    except ZeroDivisionError: raise RuntimeError("in handler")      # implicit context
+except RuntimeError as r:
+    r.add_note("extra note"); print("context:", repr(r.__context__), "| notes:", r.__notes__)
+try:
+    raise ExceptionGroup("batch", [ValueError(1), TypeError(2), ValueError(3)])
+except* ValueError as eg:
+    print("except* ValueError got", eg.exceptions)
+except* TypeError as eg:
+    print("except* TypeError got", eg.exceptions)`);
+OS.py('py4',`
+from dataclasses import dataclass
+@dataclass
+class Point:
+    x: int; y: int                       # dataclass sets __match_args__ = ('x', 'y')
+def describe(obj):
+    match obj:
+        case 0 | 1 as small:               print("small literal", small)
+        case None:                        print("None (matched with 'is')")
+        case [x, y, *rest]:               print("sequence", x, y, rest)
+        case {"type": "circle", "r": r}:  print("mapping, extra keys ignored, r =", r)
+        case Point(x=0, y=y):             print("point on the y axis, y =", y)
+        case Point(px, py) if px == py:   print("diagonal point via __match_args__", px)
+        case str() | bytes():             print("str/bytes are NOT sequences here:", obj)
+        case _:                           print("wildcard")
+for o in [1, None, [1, 2, 3, 4], {"type": "circle", "r": 2, "color": "red"}, Point(0, 5), Point(3, 3), "abc", 7.5]:
+    describe(o)
+print("Point.__match_args__ =", Point.__match_args__)`);
+OS.cards('cards',[['Target list','Names, attribute refs, subscriptions, slicings, or nested lists; assignment proceeds left to right after evaluating the RHS once.'],['Starred target','Collects surplus items as a list; at most one per target list; needs at least as many items as non-starred targets.'],['Augmented assignment','Evaluates the target once, tries __iadd__ then __add__, then rebinds — mutation may happen before a failing rebind.'],['else clause (try)','Runs only when the try suite completes without exception or return/break/continue; not protected by the excepts.'],['finally + return','A return/break/continue inside finally discards any pending exception.'],['__context__ vs __cause__','Implicit "during handling" chain vs explicit `raise X from Y`; `from None` suppresses the context display.'],['except*','Handles ExceptionGroup members by type via split(); cannot mix with except; no return/break/continue inside.'],['Irrefutable case','A capture or wildcard pattern without a guard; at most one, and it must be the last case.'],['__match_args__','Tuple naming which attributes positional class-pattern sub-patterns bind to; set automatically by dataclasses.']]);
+OS.quiz('quiz',[
+{q:'a, *m, z = range(2). Result?',o:['a=0, m=[], z=1','a=0, m=[1], z=None','ValueError','a=0, m=None, z=1'],a:0,why:'A starred target may collect zero items; it needs at least as many items as the non-starred targets (two here).'},
+{q:'In try: raise KeyError … finally: return 1 — what does the caller see?',o:['KeyError','the value 1','RuntimeError','1 then KeyError'],a:1,why:'A return in finally discards the saved exception; the function returns normally.'},
+{q:'When does the else clause of a try statement run?',o:['after every except clause','when the try suite ends with no exception and no return/break/continue','whenever finally runs','only if no except clauses exist'],a:1,why:'§8.4: else requires normal completion of the suite; its own exceptions are not handled by the preceding excepts.'},
+{q:'An exception raised inside an except handler gets which attribute set automatically?',o:['__cause__','__context__','__notes__','__suppress_context__ = True'],a:1,why:'Implicit chaining sets __context__ ("During handling of the above exception…"); __cause__ needs an explicit raise … from.'},
+{q:'Which is NOT allowed inside an except* clause?',o:['raise','return / break / continue','as name','a nested try'],a:1,why:'PEP 654 forbids return, break and continue in except* because the group\'s remaining exceptions still need processing.'},
+{q:'case [a, b]: is tried against the subject "ab". Result?',o:['a="a", b="b"','fails: str is not a sequence pattern subject','TypeError','a="ab"'],a:1,why:'Sequence patterns explicitly exclude str, bytes and bytearray subjects to avoid surprising matches.'},
+{q:'case {"k": v}: against {"k": 1, "extra": 2}:',o:['fails because of the extra key','succeeds; extra keys are ignored','SyntaxError','succeeds only with **rest'],a:1,why:'Mapping patterns check only the listed keys; extra keys are ignored unless you capture them with **rest.'},
+{q:'How are positional sub-patterns in a class pattern mapped to attributes?',o:['by definition order of __init__','via the class\'s __match_args__','alphabetically','they are not allowed'],a:1,why:'§8.6.4.9: positional patterns are converted to keyword patterns using __match_args__; dataclasses define it automatically.'}]);
+</script></body></html>

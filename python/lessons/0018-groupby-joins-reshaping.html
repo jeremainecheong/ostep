@@ -1,0 +1,528 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>18 · Group by, joins, reshaping — Python 3.13 course</title><style>
+/* OSTEP course — shared stylesheet. Three pieces, three hues. */
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+:root{
+  --ink:#151b2f; --ink-2:#1e2540; --ink-3:#28304f; --line:#3a4368;
+  --paper:#eef0f7; --muted:#a9b1cf; --faint:#6e779a;
+  --virt:#e8b84a; --conc:#5bc8f5; --pers:#6bcb77; --sec:#f47fa0; --intro:#c9a8ff; --spec:#ffd166; --internals:#5bc8f5; --data:#6bcb77;
+  --ok:#6bcb77; --bad:#ff6b6b;
+  --accent:var(--virt);
+  --radius:6px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--ink);color:var(--paper);font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:17px;line-height:1.6}
+a{color:var(--accent)}
+code,pre,kbd,.mono{font-family:'IBM Plex Mono',ui-monospace,monospace}
+code{background:var(--ink-3);padding:1px 5px;border-radius:4px;font-size:.9em}
+pre{background:#0f1424;border:1px solid var(--line);border-left:4px solid var(--accent);padding:14px 16px;overflow:auto;border-radius:var(--radius);font-size:.86em;line-height:1.5}
+pre code{background:none;padding:0;font-size:inherit}
+h1,h2,h3,h4{font-family:'Fraunces',Georgia,serif;font-weight:700;line-height:1.15;margin:0 0 .4em}
+h1{font-size:2.6rem;letter-spacing:-.01em}
+h2{font-size:1.9rem;margin-top:2.6rem;padding-top:1.2rem;border-top:1px solid var(--line)}
+h3{font-size:1.3rem;margin-top:1.8rem;color:var(--accent)}
+h4{font-size:1.05rem;margin-top:1.2rem}
+p,li{max-width:72ch}
+.wrap{max-width:1100px;margin:0 auto;padding:0 28px 96px}
+.hero{padding:44px 0 16px}
+.hero .chapters{color:var(--muted);font-size:.95rem;margin-bottom:6px}
+.lede{font-size:1.2rem;color:var(--muted);max-width:66ch}
+.piece-spec{--accent:var(--spec)} .piece-internals{--accent:var(--internals)} .piece-data{--accent:var(--data)} .piece-virt{--accent:var(--virt)} .piece-conc{--accent:var(--conc)} .piece-pers{--accent:var(--pers)} .piece-sec{--accent:var(--sec)} .piece-intro{--accent:var(--intro)}
+.fig{background:var(--ink-2);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;margin:22px 0}
+.fig figcaption,.cap{color:var(--muted);font-size:.9rem;margin-top:10px}
+.fig svg{max-width:100%;height:auto;display:block}
+svg text{font-family:'IBM Plex Sans',sans-serif}
+svg .mono{font-family:'IBM Plex Mono',monospace}
+.crux{border:1px solid var(--accent);border-radius:var(--radius);padding:14px 18px;margin:22px 0;background:color-mix(in srgb,var(--accent) 8%,transparent)}
+.crux b{color:var(--accent)}
+.tip{border-left:4px solid var(--muted);padding:6px 16px;margin:18px 0;color:var(--muted)}
+.tip b{color:var(--paper)}
+table{border-collapse:collapse;width:100%;margin:16px 0;font-size:.95rem}
+th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{color:var(--muted);font-weight:500}
+td.mono,th.mono{font-family:'IBM Plex Mono',monospace}
+button,.btn{font:inherit;font-size:.9rem;background:var(--ink-3);color:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:7px 13px;cursor:pointer}
+button:hover{border-color:var(--accent)}
+button.primary{background:var(--accent);color:#111;border-color:var(--accent);font-weight:600}
+button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+input[type=range]{accent-color:var(--accent)}
+input[type=text],input[type=number],select{font:inherit;background:#0f1424;color:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:6px 10px}
+.controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:10px 0}
+.controls label{font-size:.9rem;color:var(--muted)}
+details{border:1px solid var(--line);border-radius:var(--radius);margin:10px 0;background:var(--ink-2)}
+summary{cursor:pointer;padding:12px 16px;font-weight:600;list-style:none}
+summary::before{content:"+";display:inline-block;width:1.2em;color:var(--accent)}
+details[open] summary::before{content:"–"}
+details>div{padding:0 16px 14px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;margin:16px 0}
+.card{perspective:900px;min-height:140px;cursor:pointer}
+.card .inner{position:relative;width:100%;height:100%;min-height:140px;transition:transform .45s;transform-style:preserve-3d}
+.card.flipped .inner{transform:rotateY(180deg)}
+.card .face{position:absolute;inset:0;padding:14px;border-radius:var(--radius);border:1px solid var(--line);background:var(--ink-2);backface-visibility:hidden;display:flex;align-items:center;justify-content:center;text-align:center;font-size:.95rem}
+.card .back{transform:rotateY(180deg);background:var(--ink-3);border-color:var(--accent);font-size:.88rem;line-height:1.45}
+.card .front{font-weight:600}
+@media (prefers-reduced-motion:reduce){.card .inner{transition:none}}
+.quiz .q{border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin:12px 0;background:var(--ink-2)}
+.quiz .q p{margin:0 0 10px;font-weight:600}
+.quiz .opts{display:grid;gap:8px}
+.quiz .opt{text-align:left;background:var(--ink);width:100%}
+.quiz .opt.right{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 15%,var(--ink))}
+.quiz .opt.wrong{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 15%,var(--ink))}
+.quiz .why{margin-top:10px;color:var(--muted);font-size:.93rem;display:none}
+.quiz .q.done .why{display:block}
+.quiz .score{margin-top:12px;font-weight:600}
+.stepper .stage{min-height:60px;background:#0f1424;border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin:10px 0}
+.stepper .idx{color:var(--muted);font-size:.85rem}
+.gantt{display:grid;gap:6px;margin:10px 0}
+.gantt .row{display:grid;grid-template-columns:60px 1fr;align-items:center;gap:8px;font-size:.85rem}
+.gantt .track{position:relative;height:26px;background:#0f1424;border-radius:4px;overflow:hidden}
+.gantt .seg{position:absolute;top:0;bottom:0;display:flex;align-items:center;justify-content:center;font-size:.75rem;color:#111;font-weight:600;border-right:1px solid rgba(0,0,0,.3)}
+.cells{display:grid;gap:4px;margin:10px 0}
+.cell{background:#0f1424;border:1px solid var(--line);border-radius:4px;padding:6px;text-align:center;font-family:'IBM Plex Mono',monospace;font-size:.8rem;min-height:36px;display:flex;align-items:center;justify-content:center}
+.cell.hit{background:color-mix(in srgb,var(--ok) 35%,#0f1424);border-color:var(--ok)}
+.cell.miss{background:color-mix(in srgb,var(--bad) 35%,#0f1424);border-color:var(--bad)}
+.cell.active{outline:2px solid var(--accent)}
+.cell.free{opacity:.45}
+.hl{background:color-mix(in srgb,var(--accent) 30%,transparent);padding:1px 5px;border-radius:3px}
+.k{color:var(--accent);font-weight:600}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media (max-width:760px){.two{grid-template-columns:1fr}.topbar{gap:10px}h1{font-size:2rem}}
+.nav-bottom{display:flex;justify-content:space-between;gap:16px;margin-top:56px;padding-top:20px;border-top:1px solid var(--line)}
+.nav-bottom a{text-decoration:none;padding:12px 16px;border:1px solid var(--line);border-radius:var(--radius);color:var(--paper)}
+.source{background:var(--ink-2);border-radius:var(--radius);padding:14px 18px;margin:22px 0;font-size:.95rem}
+.source b{color:var(--accent)}
+.objectives li{list-style:none;margin:6px 0}
+.objectives input{margin-right:8px;accent-color:var(--accent)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.85rem;color:var(--muted)}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:5px;vertical-align:-2px}
+.tag{display:inline-block;font-size:.75rem;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted);margin-right:6px}
+.log{font-family:'IBM Plex Mono',monospace;font-size:.82rem;background:#0f1424;border:1px solid var(--line);border-radius:var(--radius);padding:10px 12px;max-height:220px;overflow:auto;white-space:pre-wrap}
+@media print{body{background:#fff;color:#111}.topbar,.nav-bottom,button{display:none}.fig,.crux,details,.source{border-color:#bbb;background:#fff}pre{background:#f5f5f5;color:#111}}
+
+/* ---------- site chrome: sticky header + directory drawer ---------- */
+.topbar{position:sticky;top:0;z-index:30;display:flex;gap:14px;align-items:center;padding:10px 16px;background:color-mix(in srgb,var(--ink) 92%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);font-size:.9rem}
+.topbar .menu{display:flex;align-items:center;gap:8px;padding:8px 12px;font-size:1rem}
+.topbar .menu span{font-size:.85rem}
+.topbar .brand{color:var(--paper);text-decoration:none;font-weight:600;display:flex;align-items:center;gap:8px}
+.topbar .dot{width:10px;height:10px;border-radius:50%;background:var(--accent);display:inline-block}
+.topbar .links{display:flex;gap:16px;margin-left:8px}
+.topbar .links a{color:var(--muted);text-decoration:none}
+.topbar .links a:hover{color:var(--paper)}
+.topbar .where{margin-left:auto;color:var(--faint);font-variant-numeric:tabular-nums}
+.drawer{position:fixed;top:0;left:0;bottom:0;width:min(340px,88vw);background:var(--ink-2);border-right:1px solid var(--line);z-index:50;transform:translateX(-102%);transition:transform .25s;overflow-y:auto;padding:0 0 24px;box-shadow:0 0 40px rgba(0,0,0,.5)}
+.drawer-open .drawer{transform:none}
+.scrim{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:40;opacity:0;pointer-events:none;transition:opacity .2s}
+.drawer-open .scrim{opacity:1;pointer-events:auto}
+.drawer .dhead{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--ink-2)}
+.drawer .close,.notes-sheet .close{font-size:1.3rem;line-height:1;padding:4px 10px}
+.drawer .dgroup{padding:8px 0 4px}
+.drawer .dname{padding:8px 16px 4px;color:var(--accent);font-family:'Fraunces',serif;font-weight:700}
+.drawer .ditem{display:flex;gap:10px;align-items:center;padding:9px 16px;color:var(--paper);text-decoration:none;border-left:3px solid transparent;font-size:.92rem}
+.drawer .ditem:hover{background:var(--ink-3)}
+.drawer .ditem.cur{border-left-color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
+.drawer .ditem .n{color:var(--faint);min-width:1.4em;font-variant-numeric:tabular-nums}
+.drawer .ditem .t{flex:1;line-height:1.25}
+.drawer .ditem .t small{display:block;color:var(--faint);font-size:.75rem}
+.drawer .badges{display:flex;gap:6px;align-items:center}
+.drawer .badges i{font-style:normal;color:var(--accent)}
+.drawer .badges em{font-style:normal;font-size:.75rem;padding:1px 6px;border-radius:999px;background:var(--ink-3);color:var(--muted);font-variant-numeric:tabular-nums}
+.drawer .dfoot{padding:16px;color:var(--faint);font-size:.8rem}
+/* ---------- notes: floating button + bottom sheet ---------- */
+.notes-fab{position:fixed;right:16px;bottom:16px;z-index:35;display:flex;gap:8px;align-items:center;padding:12px 16px;border-radius:999px;background:var(--accent);color:#111;border:none;font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,.4)}
+.notes-sheet{position:fixed;left:0;right:0;bottom:0;z-index:45;background:var(--ink-2);border-top:1px solid var(--line);border-radius:14px 14px 0 0;transform:translateY(105%);transition:transform .25s;box-shadow:0 -10px 40px rgba(0,0,0,.5);max-width:900px;margin:0 auto;padding-bottom:env(safe-area-inset-bottom)}
+.notes-open .notes-sheet{transform:none}
+.notes-open .notes-fab{display:none}
+.notes-sheet .nhead{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line)}
+.notes-sheet .nhead b{flex:1;font-size:.95rem}
+.notes-sheet .nstatus{color:var(--faint);font-size:.8rem}
+.notes-sheet textarea{display:block;width:100%;min-height:36vh;max-height:60vh;resize:vertical;border:none;background:#0f1424;color:var(--paper);font:inherit;font-size:1rem;line-height:1.5;padding:14px 16px;outline:none}
+.notes-sheet .nfoot{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;font-size:.85rem;color:var(--muted)}
+/* ---------- wide widgets scroll sideways instead of breaking the page ---------- */
+.tw{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:16px 0}
+.tw table{margin:0;min-width:520px}
+.fig{overflow-x:auto}
+@media (prefers-reduced-motion:reduce){.drawer,.notes-sheet,.scrim{transition:none}}
+/* ---------- phones ---------- */
+@media (max-width:760px){
+  body{font-size:16px}
+  .wrap{padding:0 16px 110px}
+  h1{font-size:1.85rem} h2{font-size:1.45rem;margin-top:2rem} h3{font-size:1.15rem}
+  .lede{font-size:1.05rem}
+  .topbar{padding:8px 12px;gap:10px}
+  .topbar .links{display:none}
+  .topbar .menu span{display:none}
+  .topbar .menu{padding:8px 11px}
+  .fig{padding:12px 12px;margin:16px -4px;border-radius:8px}
+  .crux,.source{padding:12px 14px}
+  pre{font-size:.8em;padding:12px 12px}
+  button,.btn{padding:10px 14px;font-size:.92rem}
+  .controls{gap:8px}
+  .controls label{display:flex;align-items:center;gap:6px}
+  input[type=number]{max-width:96px}
+  .cards{grid-template-columns:1fr 1fr;gap:8px}
+  .card,.card .inner{min-height:120px}
+  .card .face{font-size:.88rem;padding:10px}
+  .cells{min-width:420px}
+  .quiz .opt{padding:12px 12px;line-height:1.35}
+  .nav-bottom{flex-direction:column}
+  .nav-bottom a{text-align:center}
+  .notes-fab span{display:none}
+  .notes-fab{padding:14px;right:12px;bottom:12px}
+  .notes-sheet textarea{min-height:44vh}
+  .stepper .stage{padding:12px}
+  .gantt .row{grid-template-columns:44px 1fr;font-size:.75rem}
+  /* lesson-specific grids collapse */
+  .lde,.il,.two,.cry,.flash,.dl,.fdt,.how,.cards.wide,.vm{grid-template-columns:1fr}
+  .map{grid-template-columns:1fr}
+  .net{grid-template-columns:1fr}.net .arrow{padding:0;transform:rotate(90deg)}
+  .phil{grid-template-columns:repeat(2,1fr)}
+  .jobs{max-width:100%}
+  .trace{min-width:620px}.tl{min-width:720px}.disk{min-width:560px}
+}
+@media (max-width:420px){.cards{grid-template-columns:1fr}}
+
+/* ---------- runnable Python ---------- */
+.pyrun{border:1px solid var(--line);border-radius:var(--radius);background:#0f1424;margin:18px 0;overflow:hidden}
+.pyrun .pyhead{display:flex;gap:10px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--line);font-size:.85rem;color:var(--muted);background:var(--ink-2)}
+.pyrun .pyhead span:first-child{flex:1;font-weight:600;color:var(--paper)}
+.pyrun .pystatus{font-size:.78rem}
+.pyrun textarea{display:block;width:100%;border:none;background:#0f1424;color:var(--paper);font-family:'IBM Plex Mono',monospace;font-size:.86rem;line-height:1.5;padding:12px 14px;resize:vertical;outline:none;min-height:60px;tab-size:4}
+.pyrun .pyout{margin:0;border:none;border-top:1px solid var(--line);border-left:none;border-radius:0;background:#0a0e1a;color:#cfe3ff;max-height:320px}
+
+</style>
+<style>.jn{display:grid;grid-template-columns:1fr 1fr 1.4fr;gap:10px;font-family:'IBM Plex Mono',monospace;font-size:.8rem}.jn table{margin:0}.jn td,.jn th{padding:4px 8px}.jn tr.hit td{background:color-mix(in srgb,var(--ok) 20%,#0f1424)}.jn tr.miss td{opacity:.45}.rosetta td{font-family:'IBM Plex Mono',monospace;font-size:.78rem;vertical-align:top}.rosetta td:first-child{font-family:'IBM Plex Sans',sans-serif;font-size:.85rem;color:var(--muted)}@media(max-width:700px){.jn{grid-template-columns:1fr}}</style></head>
+<body class="piece-data"><div class="wrap">
+<header class="hero"><div class="chapters">pandas user guide: Group by (split-apply-combine), Merge/join/concatenate, Reshaping and pivot tables · Polars user guide: Aggregation, Joins, Concatenation, Pivot, Unpivot</div>
+<h1>Group by, joins, and reshaping: the relational core</h1>
+<p class="lede">Three operations do most of the work in data analysis: split a table into groups and summarize them, combine two tables on keys, and move data between wide and long layouts. Both libraries implement all three; pandas names them after its index-centric heritage (<code>groupby</code>, <code>merge</code>/<code>join</code>, <code>pivot</code>/<code>stack</code>/<code>melt</code>), Polars after SQL and expressions (<code>group_by().agg()</code>, <code>join(how=…)</code>, <code>pivot</code>/<code>unpivot</code>). The semantics — especially of joins and duplicates — are where the details matter.</p></header>
+<div class="source"><b>Primary sources:</b> pandas <a href="https://pandas.pydata.org/docs/user_guide/groupby.html">Group by: split-apply-combine</a>, <a href="https://pandas.pydata.org/docs/user_guide/merging.html">Merge, join, concatenate and compare</a>, <a href="https://pandas.pydata.org/docs/user_guide/reshaping.html">Reshaping and pivot tables</a>; Polars <a href="https://docs.pola.rs/user-guide/expressions/aggregation/">Aggregation</a>, <a href="https://docs.pola.rs/user-guide/transformations/joins/">Joins</a> (quick-reference table), <a href="https://docs.pola.rs/user-guide/transformations/concatenation/">Concatenation</a>, <a href="https://docs.pola.rs/user-guide/transformations/pivot/">Pivot</a>, <a href="https://docs.pola.rs/user-guide/transformations/unpivot/">Unpivot</a>.</div>
+<h2>What you'll be able to do</h2><ul id="obj"></ul>
+
+<h2>Split → apply → combine</h2>
+<div class="crux"><b>pandas' model:</b> <em>split</em> the data into groups by some criteria; <em>apply</em> a function to each group independently; <em>combine</em> the results. The apply step is one of three kinds: <b>aggregation</b> (one summary per group: <code>sum</code>, <code>size</code>, …), <b>transformation</b> (group-wise computation returning an object indexed like the original: z-scores, fills), <b>filtration</b> (drop whole groups by a group-wise test). No splitting happens until needed — <code>df.groupby("k")</code> only validates the mapping. Defaults worth knowing: keys are <b>sorted</b> (<code>sort=False</code> keeps first-appearance order and can be faster); NA keys are <b>dropped</b> (<code>dropna=False</code> keeps them); the keys become the <b>index</b> of the result (<code>as_index=False</code> keeps columns); for categoricals, <code>observed</code> controls whether unseen categories appear.</div>
+<p><b>Polars:</b> <code>group_by(exprs)</code> then <code>agg(exprs)</code>, where each aggregating expression can be anything — <code>pl.col("x").sum()</code>, <code>pl.col("x").filter(pl.col("y") &gt; 0).mean()</code>, <code>pl.col("name").sort_by("score").last()</code>, <code>pl.len()</code>, even a list of the group's values. Because expressions are independent, Polars evaluates them in parallel; there is no "apply to a Python group object" step unless you ask for <code>map_groups</code>. Transformation is <code>over()</code> (lesson 17); filtration is a <code>filter</code> with an <code>over()</code> expression. Keys stay ordinary columns; output order is not guaranteed unless <code>maintain_order=True</code> or you sort.</p>
+<div id="py1"></div>
+
+<h2>Joins</h2>
+<table><tr><th>Join</th><th>pandas <code>merge(how=…)</code></th><th>Polars <code>join(how=…)</code></th><th>Keeps</th></tr>
+<tr><td>inner</td><td><code>"inner"</code> (default)</td><td><code>"inner"</code> (default)</td><td>rows matched on both sides</td></tr>
+<tr><td>left</td><td><code>"left"</code></td><td><code>"left"</code></td><td>all left rows; unmatched right columns become NaN/null</td></tr>
+<tr><td>right</td><td><code>"right"</code></td><td><code>"right"</code></td><td>all right rows</td></tr>
+<tr><td>full outer</td><td><code>"outer"</code></td><td><code>"full"</code> (+ <code>coalesce=True</code> to merge key columns)</td><td>all rows from both sides</td></tr>
+<tr><td>cross</td><td><code>"cross"</code></td><td><code>"cross"</code></td><td>Cartesian product</td></tr>
+<tr><td>semi / anti</td><td>—  (use <code>isin</code> or <code>indicator=True</code>)</td><td><code>"semi"</code> / <code>"anti"</code></td><td>left rows with / without a match; no right columns</td></tr>
+<tr><td>as-of (nearest key)</td><td><code>pd.merge_asof</code></td><td><code>join_asof</code> (<code>strategy="backward"</code>…)</td><td>like left join on nearest key</td></tr>
+<tr><td>non-equi</td><td>cross + filter</td><td><code>join_where(predicates)</code></td><td>pairs satisfying predicates</td></tr></table>
+<div class="fig"><h4>Join explorer</h4><div class="controls"><button class="primary" data-j="inner">inner</button><button data-j="left">left</button><button data-j="full">full/outer</button><button data-j="semi">semi</button><button data-j="anti">anti</button><button data-j="m2m">many-to-many (duplicates)</button></div><div class="jn" id="jn"></div><div class="cap" id="jmsg"></div></div>
+<p>Two pandas specifics from the guide: when joining <em>columns on columns</em> the indexes of both frames are <b>discarded</b>; and in a many-to-many join a key that appears more than once on both sides produces the <b>Cartesian product</b> of the matching rows — so <code>validate="one_to_one"</code>/<code>"one_to_many"</code> exists to raise on unexpected duplicates. <code>indicator=True</code> adds a <code>_merge</code> column (left_only/right_only/both). <code>DataFrame.join</code> is <code>merge</code> on indexes. Polars: <code>validate</code> exists too, key columns from the right get a <code>_right</code> suffix unless coalesced, and you can join on <em>expressions</em> (<code>left_on=pl.col("a").str.to_lowercase()</code>).</p>
+<div id="py2"></div>
+
+<h2>Concatenation and reshaping</h2>
+<div class="two"><div class="fig"><h4>concat</h4><p><b>pandas</b> <code>pd.concat</code> along <code>axis=0</code> (rows) or <code>1</code> (columns) aligns on the other axis: <code>join="outer"</code> (union, default) or <code>"inner"</code>; <code>ignore_index=True</code> resets; <code>keys=</code> builds a MultiIndex. <b>Polars</b> <code>pl.concat(how=…)</code>: <code>"vertical"</code> (same columns, longer), <code>"horizontal"</code> (non-overlapping columns, wider), <code>"diagonal"</code> (different columns; missing cells become null), plus <code>_relaxed</code> variants that coerce types; <code>rechunk</code> controls whether the result is one contiguous chunk.</p></div><div class="fig"><h4>wide ↔ long</h4><p><b>pandas</b>: <code>pivot(index, columns, values)</code> requires unique index/column pairs (duplicates → use <code>pivot_table</code>, which aggregates, default mean); <code>stack</code>/<code>unstack</code> move the innermost column/index level; <code>melt(id_vars, value_vars)</code> goes wide→long and ignores the index; <code>explode</code> turns list-likes into rows; <code>crosstab</code>, <code>get_dummies</code>. <b>Polars</b>: <code>pivot(on, index, values, aggregate_function)</code> is <em>eager</em> because its output schema depends on the data; a LazyFrame can pivot only if you declare the resulting columns up front with <code>on_columns=</code> (the guide: "we don't want you to shoot yourself in the foot" — the cost should be clear), otherwise collect first; <code>unpivot(on, index)</code> ≈ melt, producing <code>variable</code>/<code>value</code>; <code>explode</code>; <code>to_dummies</code>.</p></div></div>
+<div id="py3"></div>
+
+<h2>Rosetta table</h2>
+<table class="rosetta"><tr><th>Task</th><th>pandas</th><th>Polars</th></tr>
+<tr><td>mean per group</td><td>df.groupby("k")["v"].mean()</td><td>df.group_by("k").agg(pl.col("v").mean())</td></tr>
+<tr><td>several aggregates, named</td><td>df.groupby("k").agg(total=("v","sum"), n=("v","size"))</td><td>df.group_by("k").agg(total=pl.col("v").sum(), n=pl.len())</td></tr>
+<tr><td>group-wise transform</td><td>df.groupby("k")["v"].transform("mean")</td><td>pl.col("v").mean().over("k")</td></tr>
+<tr><td>keep groups with ≥ 2 rows</td><td>df.groupby("k").filter(lambda g: len(g) &gt;= 2)</td><td>df.filter(pl.len().over("k") &gt;= 2)</td></tr>
+<tr><td>left join on key</td><td>pd.merge(a, b, on="k", how="left")</td><td>a.join(b, on="k", how="left")</td></tr>
+<tr><td>rows without a match</td><td>m = a.merge(b, on="k", how="left", indicator=True); m[m._merge=="left_only"]</td><td>a.join(b, on="k", how="anti")</td></tr>
+<tr><td>stack frames</td><td>pd.concat([a, b], ignore_index=True)</td><td>pl.concat([a, b])   # how="vertical"</td></tr>
+<tr><td>wide → long</td><td>df.melt(id_vars="id")</td><td>df.unpivot(index="id")</td></tr>
+<tr><td>long → wide</td><td>df.pivot(index="id", columns="var", values="val")</td><td>df.pivot(on="var", index="id", values="val")</td></tr></table>
+
+<h2>Flash cards</h2><div id="cards"></div>
+<h2>Retrieval practice</h2><div id="quiz"></div>
+<p class="tip">Want to work through a real many-to-many blow-up with validate=, or build a pivot table with margins in both libraries? Ask me in the chat.</p>
+</div>
+<script>
+/* OSTEP course — shared components. Every page loads this file (inlined by build.py). */
+window.OS = (function () {
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+  /* ---------- persistent storage (localStorage on a real site; in-memory fallback in sandboxes) ---------- */
+  const mem = {};
+  const store = {
+    get(k) { try { const v = localStorage.getItem('py313:' + k); return v === null ? (mem[k] ?? null) : JSON.parse(v); } catch (e) { return mem[k] ?? null; } },
+    set(k, v) { mem[k] = v; try { localStorage.setItem('py313:' + k, JSON.stringify(v)); } catch (e) {} },
+    del(k) { delete mem[k]; try { localStorage.removeItem('py313:' + k); } catch (e) {} },
+    keys(prefix) { const out = new Set(Object.keys(mem).filter(k => k.startsWith(prefix))); try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith('py313:' + prefix)) out.add(k.slice(6)); } } catch (e) {} return [...out]; },
+    available() { try { localStorage.setItem('py313:test', '1'); localStorage.removeItem('py313:test'); return true; } catch (e) { return false; } }
+  };
+
+  /* ---------- course structure ---------- */
+  const PIECES = [
+    ['spec', 'The language, as specified', [
+      ['0001-objects-values-types', 'Objects, values and types', 'Ref §3.1–3.2'],
+      ['0002-lexical-structure-and-expressions', 'Lexical structure & expressions', 'Ref §2, §6'],
+      ['0003-execution-model', 'Execution model: names, scopes, closures', 'Ref §4'],
+      ['0004-data-model-special-methods', 'Data model I: special methods', 'Ref §3.3'],
+      ['0005-attribute-access-and-descriptors', 'Data model II: attributes & descriptors', 'Ref §3.3.2, HOWTO'],
+      ['0006-classes-mro-metaclasses', 'Classes, MRO, metaclasses', 'Ref §3.3.3, HOWTO'],
+      ['0007-functions-generators-coroutines', 'Functions, generators, coroutines', 'Ref §6.3, §3.4'],
+      ['0008-statements-and-pattern-matching', 'Statements, exceptions, pattern matching', 'Ref §7–8'],
+      ['0009-import-system', 'The import system', 'Ref §5'],
+      ['0010-typing', 'Typing: the PEP 484 lineage to 3.13', 'PEPs 484…742']]],
+    ['internals', 'CPython 3.13 internals', [
+      ['0011-compiler-and-bytecode', 'From source to bytecode', 'InternalDocs compiler, dis'],
+      ['0012-eval-loop-and-specialization', 'The eval loop, specialization, JIT', 'InternalDocs interpreter, PEPs 659/744'],
+      ['0013-memory-refcounting-gc', 'Memory, refcounting, garbage collection', 'InternalDocs GC, PEP 683'],
+      ['0014-gil-and-free-threading', 'The GIL and free-threaded Python', 'PEP 703, HOWTO']]],
+    ['data', 'DataFrames: pandas vs Polars', [
+      ['0015-dataframe-data-models', 'Two data models', 'pandas dsintro, Polars concepts'],
+      ['0016-selection-and-indexing', 'Selecting, filtering, assigning', 'pandas indexing, Polars expressions'],
+      ['0017-expressions-and-lazy', 'Expressions, contexts, lazy queries', 'Polars lazy, pandas chaining'],
+      ['0018-groupby-joins-reshaping', 'Groupby, joins, reshaping', 'pandas groupby/merging, Polars transformations'],
+      ['0019-time-series', 'Time series', 'pandas timeseries, Polars time-series'],
+      ['0020-performance-and-scale', 'Performance, memory, scale', 'pandas enhancingperf/scale, Modern Polars']]]
+  ];
+  const LESSONS = PIECES.flatMap(p => p[2].map(l => [l[0], l[1], p[0], l[2]]));
+  const title = id => (LESSONS.find(l => l[0] === id) || [])[1] || id;
+  let pageId = null, root = '../';
+
+  /* ---------- chrome: sticky header, slide-out directory, notes drawer, prev/next ---------- */
+  function chrome(id, rootPath) {
+    pageId = id; root = rootPath === undefined ? '../' : rootPath;
+    const i = LESSONS.findIndex(l => l[0] === id);
+    const isLesson = i >= 0;
+    const top = document.createElement('header'); top.className = 'topbar';
+    top.innerHTML = `<button class="menu" aria-label="Open directory" aria-expanded="false">☰<span>Directory</span></button>
+      <a class="brand" href="${root}index.html"><span class="dot"></span>Python 3.13 course</a>
+      <nav class="links"><a href="${root}reference/glossary.html">Glossary</a><a href="${root}reference/cheatsheets.html">Cheat sheets</a><a href="${root}notes.html">My notes</a></nav>
+      ${isLesson ? `<span class="where">${i+1} / ${LESSONS.length}</span>` : ''}`;
+    document.body.prepend(top);
+    // directory drawer
+    const drawer = document.createElement('aside'); drawer.className = 'drawer'; drawer.setAttribute('aria-label', 'Course directory');
+    const scores = Object.fromEntries(LESSONS.map(l => [l[0], store.get('quiz:' + l[0])]));
+    const notes = new Set(store.keys('notes:').map(k => k.slice(6)).filter(k => (store.get('notes:' + k) || {}).text));
+    drawer.innerHTML = `<div class="dhead"><b>Directory</b><button class="close" aria-label="Close">×</button></div>
+      <a class="ditem ${id === 'index' ? 'cur' : ''}" href="${root}index.html">Course hub</a>
+      ${PIECES.map(([cls, name, ls]) => `<div class="dgroup piece-${cls}"><div class="dname">${name}</div>${ls.map(l => {
+        const n = LESSONS.findIndex(x => x[0] === l[0]) + 1, s = scores[l[0]];
+        return `<a class="ditem ${l[0] === id ? 'cur' : ''}" href="${root}lessons/${l[0]}.html"><span class="n">${n}</span><span class="t">${l[1]}<small>${l[3]}</small></span><span class="badges">${notes.has(l[0]) ? '<i title="you have notes">✎</i>' : ''}${s ? `<em title="best quiz score">${s.score}/${s.total}</em>` : ''}</span></a>`; }).join('')}</div>`).join('')}
+      <div class="dgroup piece-intro"><div class="dname">Reference</div>
+        <a class="ditem ${id === 'glossary' ? 'cur' : ''}" href="${root}reference/glossary.html"><span class="t">Glossary</span></a>
+        <a class="ditem ${id === 'cheatsheets' ? 'cur' : ''}" href="${root}reference/cheatsheets.html"><span class="t">Cheat sheets</span></a>
+        <a class="ditem ${id === 'notes' ? 'cur' : ''}" href="${root}notes.html"><span class="t">My notes &amp; progress</span></a></div>
+      <div class="dfoot">${store.available() ? 'Notes and scores are saved in this browser.' : 'Notes and scores are kept for this session only (storage unavailable here).'}</div>`;
+    document.body.append(drawer);
+    const scrim = document.createElement('div'); scrim.className = 'scrim'; document.body.append(scrim);
+    const open = o => { document.body.classList.toggle('drawer-open', o); top.querySelector('.menu').setAttribute('aria-expanded', o); if (o) drawer.querySelector('.cur, .ditem')?.focus(); };
+    top.querySelector('.menu').onclick = () => open(!document.body.classList.contains('drawer-open'));
+    drawer.querySelector('.close').onclick = () => open(false); scrim.onclick = () => open(false);
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') { open(false); notesOpen(false); } });
+    // prev/next for lessons
+    if (isLesson) {
+      const nav = document.createElement('div'); nav.className = 'nav-bottom';
+      const prev = LESSONS[i-1], next = LESSONS[i+1];
+      nav.innerHTML = (prev ? `<a href="${prev[0]}.html">← ${i}. ${prev[1]}</a>` : '<span></span>') +
+                      (next ? `<a href="${next[0]}.html">${i+2}. ${next[1]} →</a>` : `<a href="${root}index.html">Back to course hub →</a>`);
+      document.querySelector('.wrap').append(nav);
+    }
+    // wrap tables so they scroll sideways on phones
+    document.querySelectorAll('.wrap table').forEach(t => { if (t.parentElement.classList.contains('tw')) return; const w = document.createElement('div'); w.className = 'tw'; t.replaceWith(w); w.append(t); });
+    // notes drawer (every page except the notes page itself)
+    if (id !== 'notes') notesUI(id, isLesson ? `${i+1}. ${LESSONS[i][1]}` : (document.title.split(' — ')[0]));
+  }
+
+  /* ---------- notes: floating button + bottom sheet, autosaved ---------- */
+  let notesOpen = () => {};
+  function notesUI(id, label) {
+    const btn = document.createElement('button'); btn.className = 'notes-fab'; btn.innerHTML = '✎ <span>Notes</span>'; btn.setAttribute('aria-label', 'Open notes');
+    const sheet = document.createElement('section'); sheet.className = 'notes-sheet'; sheet.setAttribute('aria-label', 'Notes for this page');
+    const saved = store.get('notes:' + id) || {};
+    sheet.innerHTML = `<div class="nhead"><b>Notes · ${esc(label)}</b><span class="nstatus"></span><button class="close" aria-label="Close notes">×</button></div>
+      <textarea placeholder="Your notes for this page. Markdown is fine. Saved automatically.">${esc(saved.text || '')}</textarea>
+      <div class="nfoot"><span class="ncount"></span><a href="${root}notes.html">All notes &amp; export →</a></div>`;
+    document.body.append(btn, sheet);
+    const ta = sheet.querySelector('textarea'), status = sheet.querySelector('.nstatus'), count = sheet.querySelector('.ncount');
+    const upd = () => { count.textContent = ta.value.trim() ? ta.value.trim().split(/\s+/).length + ' words' : ''; };
+    let t; ta.addEventListener('input', () => { status.textContent = 'saving…'; clearTimeout(t); t = setTimeout(() => { store.set('notes:' + id, { text: ta.value, title: label, updated: new Date().toISOString() }); status.textContent = 'saved'; upd(); }, 400); });
+    upd();
+    notesOpen = o => { document.body.classList.toggle('notes-open', o); if (o) ta.focus(); };
+    btn.onclick = () => notesOpen(!document.body.classList.contains('notes-open'));
+    sheet.querySelector('.close').onclick = () => notesOpen(false);
+  }
+
+  /* ---------- quiz: immediate feedback; best score persisted ---------- */
+  function quiz(el, qs) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('quiz');
+    let score = 0, answered = 0;
+    const best = pageId ? store.get('quiz:' + pageId) : null;
+    el.innerHTML = qs.map((q, i) => `<div class="q" data-i="${i}"><p>${i+1}. ${q.q}</p>
+      <div class="opts">${q.o.map((o, j) => `<button class="opt" data-j="${j}">${esc(o)}</button>`).join('')}</div>
+      <div class="why">${q.why}</div></div>`).join('') + `<div class="score">${best ? `Best so far: ${best.score}/${best.total} (${new Date(best.date).toLocaleDateString()})` : ''}</div>`;
+    el.querySelectorAll('.q').forEach(qd => {
+      const q = qs[+qd.dataset.i];
+      qd.querySelectorAll('.opt').forEach(b => b.addEventListener('click', () => {
+        if (qd.classList.contains('done')) return;
+        qd.classList.add('done'); answered++;
+        const j = +b.dataset.j;
+        if (j === q.a) { b.classList.add('right'); score++; }
+        else { b.classList.add('wrong'); qd.querySelectorAll('.opt')[q.a].classList.add('right'); }
+        const s = el.querySelector('.score');
+        s.textContent = `${score} / ${answered} correct`;
+        if (answered === qs.length) {
+          s.textContent += score === qs.length ? ' — all of them. Retry from memory in two days.' : ' — reread the sections you missed, then retry.';
+          if (pageId && (!best || score >= best.score)) store.set('quiz:' + pageId, { score, total: qs.length, date: new Date().toISOString() });
+        }
+      }));
+    });
+  }
+
+
+  /* ---------- runnable Python (Pyodide, loaded on first use) ---------- */
+  const pyodideP = {};
+  function loadPy(status, version) {
+    version = version || '0.28.3';
+    if (pyodideP[version]) return pyodideP[version];
+    status('loading Python (Pyodide ' + version + ', ~10 MB, once per page)…');
+    pyodideP[version] = new Promise((res, rej) => {
+      const s = document.createElement('script'); s.src = 'https://cdn.jsdelivr.net/pyodide/v' + version + '/full/pyodide.js';
+      s.onload = () => window.loadPyodide({ indexURL: 'https://cdn.jsdelivr.net/pyodide/v' + version + '/full/' }).then(res, rej);
+      s.onerror = () => rej(new Error('Could not load Pyodide (offline, or blocked by this preview).'));
+      document.head.append(s);
+    });
+    return pyodideP[version];
+  }
+  function py(el, code, opts) {
+    el = typeof el === 'string' ? document.getElementById(el) : el; opts = opts || {};
+    el.classList.add('pyrun');
+    el.innerHTML = `<div class="pyhead"><span>Python${opts.note ? ' · ' + esc(opts.note) : ''}</span><span class="pystatus"></span><button class="primary run">▶ Run</button><button class="reset">Reset</button></div><textarea spellcheck="false">${esc(code.trim())}</textarea><pre class="pyout" hidden></pre>`;
+    const ta = el.querySelector('textarea'), out = el.querySelector('.pyout'), st = el.querySelector('.pystatus');
+    const fit = () => { ta.style.height = 'auto'; ta.style.height = Math.min(480, ta.scrollHeight + 4) + 'px'; }; fit(); ta.addEventListener('input', fit);
+    el.querySelector('.reset').onclick = () => { ta.value = code.trim(); fit(); out.hidden = true; };
+    el.querySelector('.run').onclick = async () => {
+      out.hidden = false; out.textContent = ''; st.textContent = '';
+      try {
+        const pyo = await loadPy(m => st.textContent = m, opts.pyodide || ((opts.packages||[]).includes('polars') ? '0.27.7' : '0.28.3'));
+        if (opts.packages) { st.textContent = 'loading ' + opts.packages.join(', ') + '…'; await pyo.loadPackage(opts.packages).catch(() => {}); }
+        st.textContent = 'running…';
+        pyo.setStdout({ batched: s => out.textContent += s + '\n' }); pyo.setStderr({ batched: s => out.textContent += s + '\n' });
+        const r = await pyo.runPythonAsync(ta.value);
+        if (r !== undefined && r !== null && String(r) !== 'None') out.textContent += String(r);
+        st.textContent = 'done · CPython ' + pyo.runPython('import sys; f"{sys.version_info.major}.{sys.version_info.minor}"') + ' in WebAssembly';
+      } catch (e) { out.textContent += String(e); st.textContent = 'error'; }
+    };
+  }
+
+  /* ---------- flip cards ---------- */
+  function cards(el, list) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('cards');
+    el.innerHTML = list.map(([f, b]) => `<div class="card" tabindex="0" role="button" aria-label="flip card"><div class="inner"><div class="face front">${f}</div><div class="face back">${b}</div></div></div>`).join('');
+    el.querySelectorAll('.card').forEach(c => {
+      const t = () => c.classList.toggle('flipped');
+      c.addEventListener('click', t);
+      c.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); t(); } });
+    });
+  }
+
+  /* ---------- stepper ---------- */
+  function stepper(el, steps, render) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('stepper');
+    let i = 0;
+    el.innerHTML = `<div class="controls"><button class="prev">← Back</button><button class="next primary">Next step →</button><span class="idx"></span></div><div class="stage"></div><div class="extra"></div>`;
+    const stage = el.querySelector('.stage'), idx = el.querySelector('.idx'), extra = el.querySelector('.extra');
+    const draw = () => { stage.innerHTML = steps[i]; idx.textContent = `step ${i+1} / ${steps.length}`; if (render) render(i, extra); };
+    el.querySelector('.prev').onclick = () => { i = Math.max(0, i-1); draw(); };
+    el.querySelector('.next').onclick = () => { i = Math.min(steps.length-1, i+1); draw(); };
+    draw();
+  }
+
+  /* ---------- gantt ---------- */
+  function gantt(el, rows, total, colors) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('gantt');
+    const pal = colors || ['#e8b84a','#5bc8f5','#6bcb77','#f47fa0','#c9a8ff','#ffb86b'];
+    el.innerHTML = rows.map((r, i) => `<div class="row"><span>${esc(r.name)}</span><div class="track">${r.segs.map(s =>
+      `<div class="seg" style="left:${100*s.start/total}%;width:${100*(s.end-s.start)/total}%;background:${pal[i%pal.length]}" title="${s.start}–${s.end}">${(s.end-s.start)/total > .06 ? (s.end-s.start) : ''}</div>`).join('')}</div></div>`).join('') +
+      `<div class="row"><span></span><div style="display:flex;justify-content:space-between;font-size:.75rem;color:var(--muted)"><span>0</span><span>${total}</span></div></div>`;
+  }
+
+  /* ---------- objectives checklist (persisted) ---------- */
+  function objectives(el, items) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('objectives');
+    const saved = (pageId && store.get('obj:' + pageId)) || [];
+    el.innerHTML = items.map((t, i) => `<li><label><input type="checkbox" data-i="${i}" ${saved.includes(i) ? 'checked' : ''}>${t}</label></li>`).join('');
+    el.querySelectorAll('input').forEach(c => c.onchange = () => { const s = [...el.querySelectorAll('input:checked')].map(x => +x.dataset.i); if (pageId) store.set('obj:' + pageId, s); });
+  }
+
+  return { chrome, quiz, cards, stepper, gantt, objectives, py, esc, store, LESSONS, PIECES, title };
+})();
+
+</script>
+<script>
+OS.chrome('0018-groupby-joins-reshaping');
+OS.objectives('obj',['Explain split-apply-combine and distinguish aggregation, transformation and filtration in both libraries.','Recall pandas groupby defaults (sort, dropna, as_index, observed) and Polars\' expression-based agg.','Choose the right join type, including semi/anti/asof/non-equi, and predict duplicate-key blow-ups.','Use validate/indicator/coalesce/suffix options correctly.','Move between wide and long layouts and explain why Polars pivot is eager (unless on_columns is given)-only.']);
+const L=[['k1','A'],['k2','B'],['k3','C']],R=[['k1','x'],['k2','y'],['k4','z']];
+const RES={inner:{rows:[['k1','A','x'],['k2','B','y']],l:[1,1,0],r:[1,1,0],m:'Only keys present on both sides: k1, k2.'},left:{rows:[['k1','A','x'],['k2','B','y'],['k3','C','null']],l:[1,1,1],r:[1,1,0],m:'All left rows; k3 has no match so its right columns are null (NaN in pandas, which may change dtypes).'},full:{rows:[['k1','A','x'],['k2','B','y'],['k3','C','null'],['k4','null','z']],l:[1,1,1],r:[1,1,1],m:'Union of both sides. pandas how="outer"; Polars how="full" — with coalesce=True the two key columns are merged into one.'},semi:{rows:[['k1','A'],['k2','B']],l:[1,1,0],r:[1,1,0],m:'Left rows that HAVE a match, without adding right columns and without duplicating rows. pandas: a[a.k.isin(b.k)].'},anti:{rows:[['k3','C']],l:[0,0,1],r:[0,0,0],m:'Left rows WITHOUT a match. pandas: merge with indicator=True and keep _merge == "left_only".'},m2m:{rows:[['k1','A','x'],['k1','A','x2'],['k1','A2','x'],['k1','A2','x2']],l:[1,1,0],r:[1,1,0],m:'If k1 appears twice on BOTH sides, an inner join yields 2×2 = 4 rows: the Cartesian product of the matches. validate="one_to_many" would raise here.'}};
+function jn(k){const s=RES[k];const left=k==='m2m'?[['k1','A'],['k1','A2']]:L,right=k==='m2m'?[['k1','x'],['k1','x2']]:R;const t=(rows,hits,h)=>`<table><tr>${h.map(x=>`<th>${x}</th>`).join('')}</tr>${rows.map((r,i)=>`<tr class="${hits[i]?'hit':'miss'}">${r.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('')}</table>`;document.getElementById('jn').innerHTML=t(left,s.l,['key','lv'])+t(right,s.r,['key','rv'])+`<table><tr>${(s.rows[0].length===3?['key','lv','rv']:['key','lv']).map(x=>`<th>${x}</th>`).join('')}</tr>${s.rows.map(r=>`<tr class="hit">${r.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('')}</table>`;document.getElementById('jmsg').textContent=s.m;}
+document.querySelectorAll('[data-j]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-j]').forEach(x=>x.classList.remove('primary'));b.classList.add('primary');jn(b.dataset.j);});jn('inner');
+OS.py('py1',`
+import pandas as pd, polars as pl, numpy as np
+pdf = pd.DataFrame({"k": ["b", "a", "b", None, "a"], "v": [1, 2, 3, 4, 5]})
+g = pdf.groupby("k")
+print("no split yet:", type(g).__name__, "| groups (sorted, NaN key dropped):", list(g.groups))
+print(pdf.groupby("k", sort=False, dropna=False, as_index=False).agg(total=("v", "sum"), n=("v", "size")))
+print("transform keeps shape:", pdf.groupby("k")["v"].transform("mean").tolist())
+print("filter drops whole groups:", pdf.groupby("k").filter(lambda x: len(x) >= 2)["v"].tolist())
+
+df = pl.from_pandas(pdf)
+print(df.group_by("k", maintain_order=True).agg(
+    total=pl.col("v").sum(), n=pl.len(),
+    big=pl.col("v").filter(pl.col("v") > 2).sum(),       # conditional aggregate inside agg
+    vals=pl.col("v")))                                       # the group's values as a list
+print(df.filter(pl.len().over("k") >= 2))                    # filtration via a window expression`,{packages:['pandas','polars']});
+OS.py('py2',`
+import pandas as pd, polars as pl
+a = pd.DataFrame({"k": ["k1", "k2", "k3"], "lv": ["A", "B", "C"]}, index=[10, 11, 12])
+b = pd.DataFrame({"k": ["k1", "k2", "k4"], "rv": ["x", "y", "z"]})
+m = a.merge(b, on="k", how="outer", indicator=True)
+print(m, "\\n(index discarded when joining columns on columns; _merge from indicator=True)")
+dup_l = pd.DataFrame({"k": ["k1", "k1"], "lv": ["A", "A2"]}); dup_r = pd.DataFrame({"k": ["k1", "k1"], "rv": ["x", "x2"]})
+print("many-to-many rows:", len(dup_l.merge(dup_r, on="k")))
+try: dup_l.merge(dup_r, on="k", validate="one_to_many")
+except pd.errors.MergeError as e: print("validate raised:", str(e)[:60])
+
+pa, pb = pl.from_pandas(a), pl.from_pandas(b)
+print(pa.join(pb, on="k", how="full", coalesce=True))
+print("semi:", pa.join(pb, on="k", how="semi")["k"].to_list(), "| anti:", pa.join(pb, on="k", how="anti")["k"].to_list())
+print(pa.join(pb, left_on=pl.col("k").str.to_uppercase(), right_on=pl.col("k").str.to_uppercase(), how="inner").columns)
+trades = pl.DataFrame({"t": [1, 5, 10], "px": [100, 101, 102]}); quotes = pl.DataFrame({"t": [0, 4, 9], "bid": [99, 100, 101]})
+print(trades.join_asof(quotes, on="t", strategy="backward"))     # nearest earlier quote per trade`,{packages:['pandas','polars']});
+OS.py('py3',`
+import pandas as pd, polars as pl
+long = pd.DataFrame({"id": [1, 1, 2, 2], "var": ["h", "w", "h", "w"], "val": [170, 60, 180, 80]})
+wide = long.pivot(index="id", columns="var", values="val"); print(wide)
+print("back to long (melt ignores the index):"); print(wide.reset_index().melt(id_vars="id"))
+dups = pd.concat([long, long])
+try: dups.pivot(index="id", columns="var", values="val")
+except ValueError as e: print("pivot with duplicates:", str(e)[:50], "→ pivot_table aggregates:"); print(dups.pivot_table(index="id", columns="var", values="val", aggfunc="mean"))
+print("stack (innermost columns → index):"); print(wide.stack().head(2))
+print(pd.concat([long.head(1), pd.DataFrame({"id": [9], "extra": ["e"]})], ignore_index=True))   # outer join on columns
+
+pll = pl.from_pandas(long)
+w = pll.pivot(on="var", index="id", values="val"); print(w)
+print(w.unpivot(index="id"))
+try:
+    print(pll.lazy().pivot(on="var", index="id", values="val", on_columns=["h", "w"]).collect())   # lazy only with a static schema
+except (AttributeError, TypeError) as e:
+    print("this Polars version: LazyFrame pivot unavailable → collect first, or pass on_columns in newer versions")
+print(pl.concat([pll.head(1), pl.DataFrame({"id": [9], "extra": ["e"]})], how="diagonal"))`,{packages:['pandas','polars']});
+OS.cards('cards',[['Split-apply-combine','Split rows into groups, apply a function per group (aggregate / transform / filter), combine results.'],['groupby defaults (pandas)','sort=True, dropna=True (NaN keys dropped), as_index=True (keys become index), observed for categoricals.'],['agg with expressions (Polars)','Any expression per group, evaluated in parallel: conditional sums, sort_by().last(), pl.len(), lists of values.'],['Left vs inner','Left keeps all left rows (nulls on the right); inner keeps only matches.'],['Semi / anti join','Left rows with / without a match, no right columns, no row duplication; pandas emulates with isin or indicator.'],['Many-to-many','Duplicate keys on both sides multiply: Cartesian product of the matches; validate= guards against it.'],['as-of join','Match on the nearest key (typically time) instead of equality: merge_asof / join_asof(strategy=…).'],['pivot vs pivot_table','pivot needs unique index/column pairs; pivot_table aggregates duplicates (default mean).'],['Polars pivot is eager','Lazy needs a static schema, but pivot\'s columns depend on the data — collect first, or declare them with on_columns.']]);
+OS.quiz('quiz',[
+{q:'In pandas, when does the actual splitting into groups happen?',o:['when groupby() is called','lazily, when an operation needs it','when the DataFrame is created','only for sort=True'],a:1,why:'The guide: no splitting occurs until it is needed; creating the GroupBy object only validates the mapping.'},
+{q:'df.groupby("k").sum() where k contains NaN: by default NaN keys are',o:['kept as a group','dropped (dropna=True)','converted to "nan"','an error'],a:1,why:'dropna defaults to True; pass dropna=False to keep NA keys as a group.'},
+{q:'Two frames each have key k1 twice. An inner merge on k produces how many k1 rows?',o:['2','4','1','an error by default'],a:1,why:'Many-to-many joins yield the Cartesian product of matching rows (2 × 2). Use validate= to catch this.'},
+{q:'Which Polars join returns left rows that have NO match, without right columns?',o:['left','anti','semi','full'],a:1,why:'Anti join keeps non-matching left rows; semi keeps matching ones; both add no right columns.'},
+{q:'pandas merge on columns: what happens to the original indexes?',o:['preserved from the left','discarded','combined into a MultiIndex','kept only with how="left"'],a:1,why:'The guide: when joining columns on columns, any indexes on the passed DataFrames are discarded.'},
+{q:'Why can\'t a Polars LazyFrame pivot?',o:['pivot is not parallelizable','the output schema depends on the data, but lazy plans need a static schema','pivot needs an index','it can, with collect_schema()'],a:1,why:'The pivot guide: lazy evaluation requires a static schema; pivot\'s columns are only known after seeing the values — unless you declare them with on_columns.'},
+{q:'pandas pivot() with duplicate (index, column) pairs:',o:['keeps the last value','raises; use pivot_table to aggregate','averages silently','creates a MultiIndex'],a:1,why:'pivot requires uniqueness; pivot_table applies an aggregation function (mean by default) to duplicates.'}]);
+</script></body></html>

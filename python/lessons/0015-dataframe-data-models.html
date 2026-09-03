@@ -1,11 +1,11 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>OSTEP course — Operating Systems: Three Easy Pieces, taught interactively</title><style>
+<title>15 · DataFrame data models: pandas vs Polars — Python 3.13 course</title><style>
 /* OSTEP course — shared stylesheet. Three pieces, three hues. */
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
 :root{
   --ink:#151b2f; --ink-2:#1e2540; --ink-3:#28304f; --line:#3a4368;
   --paper:#eef0f7; --muted:#a9b1cf; --faint:#6e779a;
-  --virt:#e8b84a; --conc:#5bc8f5; --pers:#6bcb77; --sec:#f47fa0; --intro:#c9a8ff;
+  --virt:#e8b84a; --conc:#5bc8f5; --pers:#6bcb77; --sec:#f47fa0; --intro:#c9a8ff; --spec:#ffd166; --internals:#5bc8f5; --data:#6bcb77;
   --ok:#6bcb77; --bad:#ff6b6b;
   --accent:var(--virt);
   --radius:6px;
@@ -28,7 +28,7 @@ p,li{max-width:72ch}
 .hero{padding:44px 0 16px}
 .hero .chapters{color:var(--muted);font-size:.95rem;margin-bottom:6px}
 .lede{font-size:1.2rem;color:var(--muted);max-width:66ch}
-.piece-virt{--accent:var(--virt)} .piece-conc{--accent:var(--conc)} .piece-pers{--accent:var(--pers)} .piece-sec{--accent:var(--sec)} .piece-intro{--accent:var(--intro)}
+.piece-spec{--accent:var(--spec)} .piece-internals{--accent:var(--internals)} .piece-data{--accent:var(--data)} .piece-virt{--accent:var(--virt)} .piece-conc{--accent:var(--conc)} .piece-pers{--accent:var(--pers)} .piece-sec{--accent:var(--sec)} .piece-intro{--accent:var(--intro)}
 .fig{background:var(--ink-2);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;margin:22px 0}
 .fig figcaption,.cap{color:var(--muted);font-size:.9rem;margin-top:10px}
 .fig svg{max-width:100%;height:auto;display:block}
@@ -182,32 +182,40 @@ details>div{padding:0 16px 14px}
 }
 @media (max-width:420px){.cards{grid-template-columns:1fr}}
 
+/* ---------- runnable Python ---------- */
+.pyrun{border:1px solid var(--line);border-radius:var(--radius);background:#0f1424;margin:18px 0;overflow:hidden}
+.pyrun .pyhead{display:flex;gap:10px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--line);font-size:.85rem;color:var(--muted);background:var(--ink-2)}
+.pyrun .pyhead span:first-child{flex:1;font-weight:600;color:var(--paper)}
+.pyrun .pystatus{font-size:.78rem}
+.pyrun textarea{display:block;width:100%;border:none;background:#0f1424;color:var(--paper);font-family:'IBM Plex Mono',monospace;font-size:.86rem;line-height:1.5;padding:12px 14px;resize:vertical;outline:none;min-height:60px;tab-size:4}
+.pyrun .pyout{margin:0;border:none;border-top:1px solid var(--line);border-left:none;border-radius:0;background:#0a0e1a;color:#cfe3ff;max-height:320px}
+
 </style>
-<style>.map{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:24px 0}.piece{border:1px solid var(--line);border-radius:8px;padding:16px;background:var(--ink-2);border-top:4px solid var(--accent)}.piece h3{margin:0 0 4px;color:var(--accent)}.piece p{font-size:.9rem;color:var(--muted);margin:0 0 10px}.piece a{display:block;text-decoration:none;color:var(--paper);padding:6px 0;border-top:1px solid var(--line);font-size:.92rem}.piece a:hover{color:var(--accent)}.piece a small{display:block;color:var(--faint);font-size:.78rem}.piece a.done::after{content:" ✓";color:var(--ok)}.how{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}.how .fig{margin:0}.how h4{margin:0 0 6px}@media(max-width:900px){.map{grid-template-columns:1fr 1fr}.how{grid-template-columns:1fr}}@media(max-width:600px){.map{grid-template-columns:1fr}}.big{font-size:1.05rem}</style></head>
-<body class="piece-intro"><div class="wrap">
-<header class="hero"><div class="chapters">Operating Systems: Three Easy Pieces · Remzi H. and Andrea C. Arpaci-Dusseau (v1.10, 2023) · security chapters by Peter Reiher</div>
-<h1>The whole book, as sixteen interactive lessons</h1>
-<p class="lede big">Built from the text of all 57 chapters plus the VMM appendix — every "crux", every summary, every number in the figures was extracted from the chapter PDFs, not recalled. Each lesson is short, visual, and ends in retrieval practice. Do them in order; the book's pieces build on each other.</p></header>
+<style>.cmp{display:grid;grid-template-columns:1fr 1fr;gap:12px}.cmp .fig{margin:0}.cmp h4 span{font-size:.7rem;padding:2px 8px;border-radius:10px;margin-left:6px;vertical-align:middle}.pd{background:#150458;color:#fff}.pl{background:#1f3a5f;color:#fff}.mem{display:grid;grid-template-columns:repeat(auto-fit,minmax(30px,1fr));gap:3px;font-family:'IBM Plex Mono',monospace;font-size:.72rem}.mem span{padding:6px 2px;text-align:center;border-radius:3px;background:#28304f}.mem span.i{background:#5bc8f5;color:#111}.mem span.f{background:#e8b84a;color:#111}.mem span.s{background:#6bcb77;color:#111}.mem span.n{background:#ff6b6b;color:#111}.mem span.v{background:#3a4368}@media(max-width:700px){.cmp{grid-template-columns:1fr}}</style></head>
+<body class="piece-data"><div class="wrap">
+<header class="hero"><div class="chapters">pandas user guide: Intro to data structures, Working with missing data, PyArrow functionality, Migration (Copy-on-Write) · Polars user guide: Data types and structures, Missing data, Coming from pandas</div>
+<h1>Two data models: labeled NumPy blocks vs Arrow columns</h1>
+<p class="lede">pandas and Polars both give you a "DataFrame", and the word hides two different designs. pandas is built on <em>labeled</em> axes and <em>alignment</em> — an index on every row, NumPy arrays underneath, <code>NaN</code> as the missing marker. Polars is built on Apache Arrow columns with a <em>validity bitmap</em>, no row index, strict dtypes, and expressions evaluated by a query engine. Knowing which model you are in explains most of the API differences that follow in lessons 16–20.</p></header>
+<div class="source"><b>Primary sources:</b> pandas <a href="https://pandas.pydata.org/docs/user_guide/dsintro.html">Intro to data structures</a>, <a href="https://pandas.pydata.org/docs/user_guide/missing_data.html">Working with missing data</a>, <a href="https://pandas.pydata.org/docs/user_guide/pyarrow.html">PyArrow functionality</a>, <a href="https://pandas.pydata.org/docs/user_guide/migration.html">Migration guide: Copy-on-Write</a> (pandas 3.0 docs); Polars <a href="https://docs.pola.rs/user-guide/concepts/data-types-and-structures/">Data types and structures</a>, <a href="https://docs.pola.rs/user-guide/expressions/missing-data/">Missing data</a>, <a href="https://docs.pola.rs/user-guide/migration/pandas/">Coming from pandas</a>. Runners load Pyodide 0.27.7 (Python 3.12) because it is the last release bundling Polars; pandas there is 2.x, so where pandas 3.0 changed behaviour the text says so.</div>
+<h2>What you'll be able to do</h2><ul id="obj"></ul>
 
-<figure class="fig"><svg viewBox="0 0 900 150" role="img" aria-label="three pieces">
-<rect x="20" y="30" width="270" height="90" rx="8" fill="#e8b84a"/><text x="155" y="68" text-anchor="middle" fill="#111" font-size="20" font-weight="700" font-family="Fraunces,serif">Virtualization</text><text x="155" y="95" text-anchor="middle" fill="#111" font-size="13">CPU (ch 4–10) · Memory (ch 13–23)</text>
-<rect x="315" y="30" width="270" height="90" rx="8" fill="#5bc8f5"/><text x="450" y="68" text-anchor="middle" fill="#111" font-size="20" font-weight="700" font-family="Fraunces,serif">Concurrency</text><text x="450" y="95" text-anchor="middle" fill="#111" font-size="13">threads, locks, CVs, semaphores, bugs (ch 26–33)</text>
-<rect x="610" y="30" width="270" height="90" rx="8" fill="#6bcb77"/><text x="745" y="68" text-anchor="middle" fill="#111" font-size="20" font-weight="700" font-family="Fraunces,serif">Persistence</text><text x="745" y="95" text-anchor="middle" fill="#111" font-size="13">devices, disks, file systems, distributed (ch 36–50)</text>
-<text x="450" y="140" text-anchor="middle" fill="#a9b1cf" font-size="13">+ Security (ch 53–57) and Virtual Machine Monitors (Appendix B)</text></svg></figure>
+<h2>Side by side</h2>
+<div class="cmp"><div class="fig"><h4>pandas <span class="pd">labels + NumPy</span></h4><ul><li><b>Series</b>: 1-D labeled array of any dtype; <b>DataFrame</b>: 2-D labeled, columns potentially of different types; both carry an <b>Index</b> (row labels) and DataFrame a columns Index.</li><li><b>Data alignment is intrinsic</b>: arithmetic between two Series aligns on labels and produces the <em>union</em> of indexes with NaN where a label is missing.</li><li>Storage: NumPy arrays by default (columns of the same dtype consolidated into blocks); optional nullable extension arrays (<code>Int64</code>, <code>boolean</code>, <code>string</code>) and PyArrow-backed columns (<code>"int64[pyarrow]"</code>, <code>ArrowDtype</code>).</li><li>Missing data: <b>different sentinels per dtype</b> — <code>np.nan</code> for NumPy float (which coerces int columns to float64 or object), <code>NaT</code> for datetimes, <code>pd.NA</code> for nullable/Arrow dtypes.</li><li>pandas 3.0: <b>Copy-on-Write</b> is the default and only mode; strings infer to a dedicated <code>str</code> dtype (PyArrow-backed when available) instead of <code>object</code>.</li></ul></div>
+<div class="fig"><h4>Polars <span class="pl">Arrow + expressions</span></h4><ul><li><b>Series</b>: 1-D <em>homogeneous</em>; <b>DataFrame</b>: 2-D collection of uniquely named Series with a <b>schema</b>. <b>No index</b>: rows are addressed by integer position; the guide argues an index makes results less predictable, and any needed key is just a column.</li><li>Memory: the Apache Arrow columnar format, so zero-copy interchange with other Arrow tools; every column is a chunked Arrow array.</li><li>Missing data: <b>always <code>null</code></b>, for every dtype, tracked by a <b>validity bitmap</b> costing <em>n/8</em> bytes; <code>null_count</code> is O(1). <code>NaN</code> is a valid float value, <em>not</em> missing.</li><li>Strict, rich dtypes: sized ints (<code>Int8…Int64</code>, <code>UInt…</code>), <code>Float32/64</code>, <code>Boolean</code>, <code>String</code>, <code>Categorical</code>, <code>Enum</code>, <code>Date</code>/<code>Datetime</code>/<code>Duration</code>/<code>Time</code>, nested <code>List</code>, <code>Array</code>, <code>Struct</code>, <code>Object</code>.</li><li>Rust engine: parallel by default across cores; eager <em>and</em> lazy evaluation with query optimization (lesson 17).</li></ul></div></div>
+<div id="py1"></div>
 
-<h2>Course map</h2>
-<div class="map" id="map"></div>
+<h2>Missing data: the same column, two encodings</h2>
+<p>Consider an integer column with one missing value. pandas (NumPy-backed) must <em>change the dtype</em>: the reindex/insert of a missing value coerces <code>int64</code> to <code>float64</code> and stores <code>NaN</code> in the data itself. Polars keeps the <code>Int64</code> buffer untouched and flips one bit in a separate validity bitmap. pandas' nullable <code>Int64</code> (capital I) and PyArrow-backed dtypes adopt the same "mask" idea, which is why the pandas docs recommend them for data with missing values.</p>
+<div class="fig"><h4>Memory picture for [1, 2, ?, 4]</h4><div class="controls"><button class="primary" data-m="np">pandas int64 (NumPy)</button><button data-m="nullable">pandas Int64 (nullable)</button><button data-m="pl">Polars Int64</button></div><div id="mem"></div><div class="cap" id="mmsg"></div></div>
+<div id="py2"></div>
 
-<h2>How to use this course</h2>
-<div class="how">
-<div class="fig"><h4>1. One lesson per sitting</h4><p>Each takes 25–45 minutes: read, play with the simulator until you can predict its output, flip the cards, then do the quiz <em>from memory</em>. Check off the objectives at the top only when you could explain them to someone else.</p></div>
-<div class="fig"><h4>2. Then read the chapter</h4><p>Every lesson links its primary source — the free chapter PDFs at <a href="https://pages.cs.wisc.edu/~remzi/OSTEP/">ostep.org</a>. The lesson gives you the map; the chapter has the jokes, the asides, and the homework simulators (<code>ostep-homework</code>) which are the best practice there is.</p></div>
-<div class="fig"><h4>3. Space it out</h4><p>Long-term retention comes from re-testing later, not from feeling fluent now. Redo a lesson's quiz two days later and again after a week; the <a href="reference/cheatsheets.html">cheat sheets</a> are for the fast pass, the <a href="reference/glossary.html">glossary</a> for vocabulary. Ask me in the chat for mixed quizzes across lessons.</p></div></div>
+<h2>Copy-on-Write: pandas 3.0 adopts the immutable mindset</h2>
+<p>Before 3.0, whether <code>df["a"]</code> was a view or a copy of <code>df</code> depended on the internal block layout — the source of the infamous <code>SettingWithCopyWarning</code>. The migration guide states the new rule: <b>any DataFrame or Series derived from another in any way always behaves as a copy</b>; a lazy copy is made only when one of them is actually modified. Consequences: chained assignment (<code>df["a"][0] = 1</code>, <code>df["a"].replace(…, inplace=True)</code>) <em>never</em> works — write <code>df.loc[0, "a"] = 1</code> or <code>df.replace({"a": {…}})</code>; selecting a column returns a new Series each time; constructors copy NumPy input by default (<code>copy=False</code> to opt out); <code>.to_numpy()</code> may return a read-only view. Polars never had the problem: DataFrames are immutable values and every operation returns a new frame (sharing Arrow buffers underneath).</p>
+<div id="py3"></div>
 
-<h2>What the book covers that this course does too</h2>
-<p>Chapters 1–2 (dialogue, introduction) → lesson 1. Chapters 3, 11, 12, 24, 25, 34, 35, 46, 47, 51, 52 are the book's short dialogues that open and close each part; their content is folded into the neighbouring lessons. The lab appendices (tutorial, systems and xv6 projects) and the deprecated monitors appendix are referenced in RESOURCES.md rather than taught.</p>
-<h2>Sister courses</h2><div class="how"><div class="fig"><h4><a href="python/index.html">Python 3.13</a></h4><p>The Language Reference, CPython internals (specializing interpreter, JIT, GC, GIL and free-threading), and pandas vs Polars — 20 interactive lessons with Python running in the browser.</p></div><div class="fig"><h4>Java 21</h4><p>Coming next: the JLS/JVMS, the JVM (class loading, bytecode, JIT, GC), and virtual threads internals.</p></div></div>
-<p class="tip">This workspace follows the <code>teach</code> skill layout: <code>MISSION.md</code> (why you're learning this), <code>RESOURCES.md</code> (sources), <code>NOTES.md</code>, <code>learning-records/</code>, <code>lessons/</code>, <code>reference/</code>, <code>assets/</code>. Tell me in the chat how a lesson landed and I'll adapt the next ones.</p>
+<h2>Flash cards</h2><div id="cards"></div>
+<h2>Retrieval practice</h2><div id="quiz"></div>
+<p class="tip">Want to convert a real dataset between the two libraries (<code>pl.from_pandas</code>, <code>.to_pandas()</code>, Arrow interchange) and compare memory with <code>estimated_size()</code> vs <code>memory_usage(deep=True)</code>? Ask me in the chat.</p>
 </div>
 <script>
 /* OSTEP course — shared components. Every page loads this file (inlined by build.py). */
@@ -217,34 +225,38 @@ window.OS = (function () {
   /* ---------- persistent storage (localStorage on a real site; in-memory fallback in sandboxes) ---------- */
   const mem = {};
   const store = {
-    get(k) { try { const v = localStorage.getItem('ostep:' + k); return v === null ? (mem[k] ?? null) : JSON.parse(v); } catch (e) { return mem[k] ?? null; } },
-    set(k, v) { mem[k] = v; try { localStorage.setItem('ostep:' + k, JSON.stringify(v)); } catch (e) {} },
-    del(k) { delete mem[k]; try { localStorage.removeItem('ostep:' + k); } catch (e) {} },
-    keys(prefix) { const out = new Set(Object.keys(mem).filter(k => k.startsWith(prefix))); try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith('ostep:' + prefix)) out.add(k.slice(6)); } } catch (e) {} return [...out]; },
-    available() { try { localStorage.setItem('ostep:test', '1'); localStorage.removeItem('ostep:test'); return true; } catch (e) { return false; } }
+    get(k) { try { const v = localStorage.getItem('py313:' + k); return v === null ? (mem[k] ?? null) : JSON.parse(v); } catch (e) { return mem[k] ?? null; } },
+    set(k, v) { mem[k] = v; try { localStorage.setItem('py313:' + k, JSON.stringify(v)); } catch (e) {} },
+    del(k) { delete mem[k]; try { localStorage.removeItem('py313:' + k); } catch (e) {} },
+    keys(prefix) { const out = new Set(Object.keys(mem).filter(k => k.startsWith(prefix))); try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith('py313:' + prefix)) out.add(k.slice(6)); } } catch (e) {} return [...out]; },
+    available() { try { localStorage.setItem('py313:test', '1'); localStorage.removeItem('py313:test'); return true; } catch (e) { return false; } }
   };
 
   /* ---------- course structure ---------- */
   const PIECES = [
-    ['intro', 'Introduction', [['0001-three-easy-pieces', 'Three easy pieces', 'ch 1–2']]],
-    ['virt', 'Virtualization', [
-      ['0002-processes', 'Processes & the process API', 'ch 4–5'],
-      ['0003-limited-direct-execution', 'Limited direct execution', 'ch 6'],
-      ['0004-scheduling', 'Scheduling', 'ch 7–10'],
-      ['0005-address-spaces', 'Address spaces & segments', 'ch 13–16'],
-      ['0006-paging-and-tlbs', 'Paging & TLBs', 'ch 17–20'],
-      ['0007-swapping', 'Swapping & policies', 'ch 21–23']]],
-    ['conc', 'Concurrency', [
-      ['0008-threads-and-locks', 'Threads & locks', 'ch 26–28'],
-      ['0009-cvs-and-semaphores', 'CVs & semaphores', 'ch 29–31'],
-      ['0010-bugs-and-events', 'Bugs & events', 'ch 32–33']]],
-    ['pers', 'Persistence', [
-      ['0011-devices-disks-raid', 'Devices, disks, RAID', 'ch 36–38'],
-      ['0012-files-and-vsfs', 'Files & a simple FS', 'ch 39–40'],
-      ['0013-ffs-journaling-lfs', 'FFS, journaling, LFS', 'ch 41–43'],
-      ['0014-ssd-and-integrity', 'SSDs & integrity', 'ch 44–45'],
-      ['0015-distributed-nfs-afs', 'Distributed FS', 'ch 48–50']]],
-    ['sec', 'Security', [['0016-security-and-vmms', 'Security & VMMs', 'ch 53–57, App B']]]
+    ['spec', 'The language, as specified', [
+      ['0001-objects-values-types', 'Objects, values and types', 'Ref §3.1–3.2'],
+      ['0002-lexical-structure-and-expressions', 'Lexical structure & expressions', 'Ref §2, §6'],
+      ['0003-execution-model', 'Execution model: names, scopes, closures', 'Ref §4'],
+      ['0004-data-model-special-methods', 'Data model I: special methods', 'Ref §3.3'],
+      ['0005-attribute-access-and-descriptors', 'Data model II: attributes & descriptors', 'Ref §3.3.2, HOWTO'],
+      ['0006-classes-mro-metaclasses', 'Classes, MRO, metaclasses', 'Ref §3.3.3, HOWTO'],
+      ['0007-functions-generators-coroutines', 'Functions, generators, coroutines', 'Ref §6.3, §3.4'],
+      ['0008-statements-and-pattern-matching', 'Statements, exceptions, pattern matching', 'Ref §7–8'],
+      ['0009-import-system', 'The import system', 'Ref §5'],
+      ['0010-typing', 'Typing: the PEP 484 lineage to 3.13', 'PEPs 484…742']]],
+    ['internals', 'CPython 3.13 internals', [
+      ['0011-compiler-and-bytecode', 'From source to bytecode', 'InternalDocs compiler, dis'],
+      ['0012-eval-loop-and-specialization', 'The eval loop, specialization, JIT', 'InternalDocs interpreter, PEPs 659/744'],
+      ['0013-memory-refcounting-gc', 'Memory, refcounting, garbage collection', 'InternalDocs GC, PEP 683'],
+      ['0014-gil-and-free-threading', 'The GIL and free-threaded Python', 'PEP 703, HOWTO']]],
+    ['data', 'DataFrames: pandas vs Polars', [
+      ['0015-dataframe-data-models', 'Two data models', 'pandas dsintro, Polars concepts'],
+      ['0016-selection-and-indexing', 'Selecting, filtering, assigning', 'pandas indexing, Polars expressions'],
+      ['0017-expressions-and-lazy', 'Expressions, contexts, lazy queries', 'Polars lazy, pandas chaining'],
+      ['0018-groupby-joins-reshaping', 'Groupby, joins, reshaping', 'pandas groupby/merging, Polars transformations'],
+      ['0019-time-series', 'Time series', 'pandas timeseries, Polars time-series'],
+      ['0020-performance-and-scale', 'Performance, memory, scale', 'pandas enhancingperf/scale, Modern Polars']]]
   ];
   const LESSONS = PIECES.flatMap(p => p[2].map(l => [l[0], l[1], p[0], l[2]]));
   const title = id => (LESSONS.find(l => l[0] === id) || [])[1] || id;
@@ -257,7 +269,7 @@ window.OS = (function () {
     const isLesson = i >= 0;
     const top = document.createElement('header'); top.className = 'topbar';
     top.innerHTML = `<button class="menu" aria-label="Open directory" aria-expanded="false">☰<span>Directory</span></button>
-      <a class="brand" href="${root}index.html"><span class="dot"></span>OSTEP course</a>
+      <a class="brand" href="${root}index.html"><span class="dot"></span>Python 3.13 course</a>
       <nav class="links"><a href="${root}reference/glossary.html">Glossary</a><a href="${root}reference/cheatsheets.html">Cheat sheets</a><a href="${root}notes.html">My notes</a></nav>
       ${isLesson ? `<span class="where">${i+1} / ${LESSONS.length}</span>` : ''}`;
     document.body.prepend(top);
@@ -341,6 +353,42 @@ window.OS = (function () {
     });
   }
 
+
+  /* ---------- runnable Python (Pyodide, loaded on first use) ---------- */
+  const pyodideP = {};
+  function loadPy(status, version) {
+    version = version || '0.28.3';
+    if (pyodideP[version]) return pyodideP[version];
+    status('loading Python (Pyodide ' + version + ', ~10 MB, once per page)…');
+    pyodideP[version] = new Promise((res, rej) => {
+      const s = document.createElement('script'); s.src = 'https://cdn.jsdelivr.net/pyodide/v' + version + '/full/pyodide.js';
+      s.onload = () => window.loadPyodide({ indexURL: 'https://cdn.jsdelivr.net/pyodide/v' + version + '/full/' }).then(res, rej);
+      s.onerror = () => rej(new Error('Could not load Pyodide (offline, or blocked by this preview).'));
+      document.head.append(s);
+    });
+    return pyodideP[version];
+  }
+  function py(el, code, opts) {
+    el = typeof el === 'string' ? document.getElementById(el) : el; opts = opts || {};
+    el.classList.add('pyrun');
+    el.innerHTML = `<div class="pyhead"><span>Python${opts.note ? ' · ' + esc(opts.note) : ''}</span><span class="pystatus"></span><button class="primary run">▶ Run</button><button class="reset">Reset</button></div><textarea spellcheck="false">${esc(code.trim())}</textarea><pre class="pyout" hidden></pre>`;
+    const ta = el.querySelector('textarea'), out = el.querySelector('.pyout'), st = el.querySelector('.pystatus');
+    const fit = () => { ta.style.height = 'auto'; ta.style.height = Math.min(480, ta.scrollHeight + 4) + 'px'; }; fit(); ta.addEventListener('input', fit);
+    el.querySelector('.reset').onclick = () => { ta.value = code.trim(); fit(); out.hidden = true; };
+    el.querySelector('.run').onclick = async () => {
+      out.hidden = false; out.textContent = ''; st.textContent = '';
+      try {
+        const pyo = await loadPy(m => st.textContent = m, opts.pyodide || ((opts.packages||[]).includes('polars') ? '0.27.7' : '0.28.3'));
+        if (opts.packages) { st.textContent = 'loading ' + opts.packages.join(', ') + '…'; await pyo.loadPackage(opts.packages).catch(() => {}); }
+        st.textContent = 'running…';
+        pyo.setStdout({ batched: s => out.textContent += s + '\n' }); pyo.setStderr({ batched: s => out.textContent += s + '\n' });
+        const r = await pyo.runPythonAsync(ta.value);
+        if (r !== undefined && r !== null && String(r) !== 'None') out.textContent += String(r);
+        st.textContent = 'done · CPython ' + pyo.runPython('import sys; f"{sys.version_info.major}.{sys.version_info.minor}"') + ' in WebAssembly';
+      } catch (e) { out.textContent += String(e); st.textContent = 'error'; }
+    };
+  }
+
   /* ---------- flip cards ---------- */
   function cards(el, list) {
     el = typeof el === 'string' ? document.getElementById(el) : el;
@@ -385,17 +433,67 @@ window.OS = (function () {
     el.querySelectorAll('input').forEach(c => c.onchange = () => { const s = [...el.querySelectorAll('input:checked')].map(x => +x.dataset.i); if (pageId) store.set('obj:' + pageId, s); });
   }
 
-  return { chrome, quiz, cards, stepper, gantt, objectives, esc, store, LESSONS, PIECES, title };
+  return { chrome, quiz, cards, stepper, gantt, objectives, py, esc, store, LESSONS, PIECES, title };
 })();
 
 </script>
 <script>
-OS.chrome('index','');
-const P=[['intro','Introduction','What an OS is: the three pieces, design goals, history.',['0001-three-easy-pieces','Three easy pieces','ch 1–2']],
-['virt','Virtualization','The CPU and memory made private and plentiful.',['0002-processes','Processes & the process API','ch 4–5'],['0003-limited-direct-execution','Limited direct execution','ch 6'],['0004-scheduling','Scheduling: FIFO to CFS and multi-CPU','ch 7–10'],['0005-address-spaces','Address spaces, base/bounds, segments','ch 13–16'],['0006-paging-and-tlbs','Free space, paging, TLBs, small tables','ch 17–20'],['0007-swapping','Swapping, replacement, VAX/VMS & Linux','ch 21–23']],
-['conc','Concurrency','Threads and the primitives that make them safe.',['0008-threads-and-locks','Threads, thread API, locks','ch 26–28'],['0009-cvs-and-semaphores','Locked structures, CVs, semaphores','ch 29–31'],['0010-bugs-and-events','Concurrency bugs & event-based servers','ch 32–33']],
-['pers','Persistence + Security','Storage from the device up; then protecting it all.',['0011-devices-disks-raid','Devices, disks, RAID','ch 36–38'],['0012-files-and-vsfs','Files, directories, a simple file system','ch 39–40'],['0013-ffs-journaling-lfs','FFS, crash consistency, LFS','ch 41–43'],['0014-ssd-and-integrity','SSDs & data integrity','ch 44–45'],['0015-distributed-nfs-afs','Distributed systems, NFS, AFS','ch 48–50'],['0016-security-and-vmms','Security (ch 53–57) & VMMs','ch 53–57, App B']]];
-const m=document.getElementById('map');let idx=0;const S=OS.store;
-m.innerHTML=P.map(([cls,name,desc,...ls])=>`<div class="piece piece-${cls}"><h3>${name}</h3><p>${desc}</p>${ls.map(l=>{idx++;const q=S.get('quiz:'+l[0]),nt=(S.get('notes:'+l[0])||{}).text;return `<a href="lessons/${l[0]}.html" data-id="${l[0]}" class="${q&&q.score===q.total?'done':''}">${idx}. ${l[1]}<small>${l[2]}${q?` · quiz ${q.score}/${q.total}`:''}${nt?' · ✎ notes':''}</small></a>`;}).join('')}</div>`).join('');
-const done=OS.LESSONS.filter(l=>S.get('quiz:'+l[0])).length;const ph=document.createElement('p');ph.className='cap';ph.textContent=done?`${done} of 16 lesson quizzes attempted — see My notes & progress for details.`:'Quiz scores, checked objectives and notes are saved in this browser as you go.';document.getElementById('map').after(ph);
+OS.chrome('0015-dataframe-data-models');
+OS.objectives('obj',['Contrast the two data models: labeled axes + alignment vs schema + no index.','Explain why pandas coerces dtypes for missing values and how Polars\' validity bitmap avoids it; distinguish null from NaN.','Describe pandas\' nullable and PyArrow-backed dtypes and the 3.0 string dtype default.','State the Copy-on-Write rule and rewrite chained assignments.','Name the Polars dtype families and what "strict" buys you.']);
+const M={np:{cells:[['1','i'],['2','i'],['NaN','n'],['4','i']],m:'NumPy-backed pandas: the column becomes float64 [1.0, 2.0, NaN, 4.0]. The missing marker lives inside the data, so the integer dtype is lost and equality/joins on the column behave like floats.'},nullable:{cells:[['1','i'],['2','i'],['·','v'],['4','i'],['|','v'],['1','s'],['1','s'],['0','n'],['1','s']],m:'pandas nullable Int64 (or int64[pyarrow]): data stays integer; a separate boolean mask (right) marks validity. Missing shows as pd.NA.'},pl:{cells:[['1','i'],['2','i'],['·','v'],['4','i'],['|','v'],['1','s'],['1','s'],['0','n'],['1','s']],m:'Polars Int64: Arrow buffer of int64 plus a validity BITMAP — one bit per row (n/8 bytes). null_count is stored, so counting missing values is free. NaN would be a separate, valid float concept.'}};
+function mem(k){document.getElementById('mem').innerHTML=`<div class="mem">${M[k].cells.map(c=>`<span class="${c[1]}">${c[0]}</span>`).join('')}</div>`;document.getElementById('mmsg').textContent=M[k].m;}
+document.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-m]').forEach(x=>x.classList.remove('primary'));b.classList.add('primary');mem(b.dataset.m);});mem('np');
+OS.py('py1',`
+import pandas as pd, polars as pl, numpy as np
+print("pandas", pd.__version__, "| polars", pl.__version__)
+s1 = pd.Series([10, 20, 30], index=["a", "b", "c"])
+s2 = pd.Series([1, 2, 3], index=["b", "c", "d"])
+print("pandas aligns on labels (union index, NaN for gaps):"); print(s1 + s2)
+pdf = pd.DataFrame({"x": [1, 2, 3], "y": ["a", "b", "c"]})
+print("pandas dtypes:", dict(pdf.dtypes.astype(str)), "| index:", type(pdf.index).__name__)
+pldf = pl.DataFrame({"x": [1, 2, 3], "y": ["a", "b", "c"]})
+print("polars schema:", pldf.schema, "| no index; rows by position:", pldf.row(1))
+print("polars Series is homogeneous:", end=" ")
+try: pl.Series([1, "two"])
+except Exception as e: print(type(e).__name__, "(strict) — pandas would give dtype object")`,{packages:['pandas','polars']});
+OS.py('py2',`
+import pandas as pd, polars as pl, numpy as np
+s = pd.Series([1, 2, 4], dtype="int64").reindex([0, 1, 2, 3])
+print("pandas NumPy int → after a missing value:", s.dtype, list(s))
+n = pd.Series([1, 2, 4], dtype="Int64").reindex([0, 1, 2, 3])
+print("pandas nullable Int64:", n.dtype, list(n), "| isna:", n.isna().sum())
+a = pd.Series([1, 2, None, 4], dtype="int64[pyarrow]")
+print("pandas pyarrow-backed:", a.dtype, list(a))
+print("sentinels differ:", repr(np.nan), repr(pd.NaT), repr(pd.NA), "| pd.NA == pd.NA →", pd.NA == pd.NA)
+
+p = pl.Series("v", [1, 2, None, 4])
+print("polars:", p.dtype, p.to_list(), "| null_count (O(1)):", p.null_count())
+f = pl.Series("f", [1.0, float("nan"), None])
+print("polars NaN is a value, null is missing:", f.is_nan().to_list(), f.is_null().to_list())
+print("estimated size of 1M Int64 with nulls ≈", pl.Series(range(1_000_000)).estimated_size("mb").__round__(2), "MB data + 0.12 MB bitmap")`,{packages:['pandas','polars']});
+OS.py('py3',`
+import pandas as pd, polars as pl
+pd.options.mode.copy_on_write = True          # pandas 3.0 behaviour; on 2.x we opt in (deprecated no-op in 3.0)
+df = pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
+sub = df["a"]
+sub.iloc[0] = 100                              # CoW: modifies sub only; df untouched
+print("df after modifying the derived Series:", df["a"].tolist(), "| sub:", sub.tolist())
+df["a"][0] = -1                                # chained assignment: never works under CoW
+print("chained assignment had no effect:", df["a"].tolist())
+df.loc[0, "a"] = -1                            # the right way
+print("df.loc worked:", df["a"].tolist())
+arr = df["b"].to_numpy(); print("to_numpy read-only under CoW:", not arr.flags.writeable)
+
+pdf = pl.DataFrame({"a": [1, 2, 3]})
+new = pdf.with_columns(pl.col("a") * 10)       # polars: every operation returns a new frame
+print("polars original unchanged:", pdf["a"].to_list(), "| new:", new["a"].to_list())`,{packages:['pandas','polars']});
+OS.cards('cards',[['Alignment (pandas)','Operations between Series/DataFrames match rows by index label, producing the union of labels with NaN for gaps.'],['Index (pandas)','Row labels object on every Series/DataFrame; Polars has none — rows are positional and keys are ordinary columns.'],['Sentinel missing values','pandas: np.nan (floats/NumPy), NaT (datetimes), pd.NA (nullable/Arrow). Coerces int64 → float64 or object.'],['Validity bitmap','Polars/Arrow: one bit per row marks null; n/8 bytes; null_count cached; data buffer keeps its dtype.'],['null vs NaN','Polars: null = missing (any dtype); NaN = a valid IEEE float value. pandas conflates them for NumPy floats.'],['Nullable / Arrow dtypes','pandas Int64, boolean, string, "int64[pyarrow]", ArrowDtype: mask-based missing values, pd.NA.'],['Copy-on-Write','pandas 3.0 rule: derived objects always behave as copies; lazy copy on first modification; chained assignment never works.'],['Schema (Polars)','Ordered mapping column → dtype known before execution; enables strictness and lazy planning.'],['pandas 3.0 str dtype','Inferred strings get a dedicated string dtype (PyArrow-backed when installed) with NaN as NA, instead of object.']]);
+OS.quiz('quiz',[
+{q:'s1 + s2 with pandas Series indexed ["a","b","c"] and ["b","c","d"] yields an index of:',o:['["b","c"] only','["a","b","c","d"] with NaN at a and d','["a","b","c"]','a ValueError'],a:1,why:'pandas alignment is intrinsic: the result carries the union of labels; unmatched labels get NaN.'},
+{q:'Inserting a missing value into a NumPy-backed int64 pandas column:',o:['keeps int64 and stores -1','coerces the column to float64 (or object)','raises TypeError','stores pd.NA in place'],a:1,why:'np.nan is a float, so NumPy integer dtypes cannot hold it; the nullable Int64 and PyArrow dtypes avoid this via a mask.'},
+{q:'How does Polars know which values are null?',o:['a special value per dtype','a validity bitmap alongside the data buffer','a Python None inside the buffer','NaN for all dtypes'],a:1,why:'Arrow columns carry a bit-encoded validity mask (n/8 bytes); null_count is stored so it is a cheap operation.'},
+{q:'In Polars, is NaN missing data?',o:['yes, identical to null','no; NaN is a valid float value distinct from null','only in Float32','only after fill_null'],a:1,why:'The Polars guide: missing data is always represented by null; NaN is a legitimate floating-point value handled separately (is_nan vs is_null).'},
+{q:'Why does Polars omit a row index?',o:['Arrow forbids indexes','predictable results and readable queries; keys are just columns','performance of joins','it was never implemented'],a:1,why:'The "Coming from pandas" guide: an index makes results less predictable and queries harder to read; database-style indexes may be used internally as optimizations only.'},
+{q:'Under pandas 3.0 Copy-on-Write, df["a"][0] = 1:',o:['modifies df','never modifies df; use df.loc[0, "a"] = 1','modifies df only if "a" is float','raises KeyError'],a:1,why:'Chained assignment updates a temporary derived object; CoW guarantees derived objects behave as copies, so df is untouched.'},
+{q:'What does pandas 3.0 infer for a column of Python strings by default?',o:['object dtype','a dedicated str dtype (PyArrow-backed when available)','category','bytes'],a:1,why:'The text guide: since 3.0 string inference yields StringDtype ("str"), backed by a PyArrow string array if installed, else NumPy object storage.'}]);
 </script></body></html>

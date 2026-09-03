@@ -1,11 +1,11 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>OSTEP course — Operating Systems: Three Easy Pieces, taught interactively</title><style>
+<title>1 · Objects, values and types — Python 3.13 course</title><style>
 /* OSTEP course — shared stylesheet. Three pieces, three hues. */
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
 :root{
   --ink:#151b2f; --ink-2:#1e2540; --ink-3:#28304f; --line:#3a4368;
   --paper:#eef0f7; --muted:#a9b1cf; --faint:#6e779a;
-  --virt:#e8b84a; --conc:#5bc8f5; --pers:#6bcb77; --sec:#f47fa0; --intro:#c9a8ff;
+  --virt:#e8b84a; --conc:#5bc8f5; --pers:#6bcb77; --sec:#f47fa0; --intro:#c9a8ff; --spec:#ffd166; --internals:#5bc8f5; --data:#6bcb77;
   --ok:#6bcb77; --bad:#ff6b6b;
   --accent:var(--virt);
   --radius:6px;
@@ -28,7 +28,7 @@ p,li{max-width:72ch}
 .hero{padding:44px 0 16px}
 .hero .chapters{color:var(--muted);font-size:.95rem;margin-bottom:6px}
 .lede{font-size:1.2rem;color:var(--muted);max-width:66ch}
-.piece-virt{--accent:var(--virt)} .piece-conc{--accent:var(--conc)} .piece-pers{--accent:var(--pers)} .piece-sec{--accent:var(--sec)} .piece-intro{--accent:var(--intro)}
+.piece-spec{--accent:var(--spec)} .piece-internals{--accent:var(--internals)} .piece-data{--accent:var(--data)} .piece-virt{--accent:var(--virt)} .piece-conc{--accent:var(--conc)} .piece-pers{--accent:var(--pers)} .piece-sec{--accent:var(--sec)} .piece-intro{--accent:var(--intro)}
 .fig{background:var(--ink-2);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;margin:22px 0}
 .fig figcaption,.cap{color:var(--muted);font-size:.9rem;margin-top:10px}
 .fig svg{max-width:100%;height:auto;display:block}
@@ -182,32 +182,44 @@ details>div{padding:0 16px 14px}
 }
 @media (max-width:420px){.cards{grid-template-columns:1fr}}
 
+/* ---------- runnable Python ---------- */
+.pyrun{border:1px solid var(--line);border-radius:var(--radius);background:#0f1424;margin:18px 0;overflow:hidden}
+.pyrun .pyhead{display:flex;gap:10px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--line);font-size:.85rem;color:var(--muted);background:var(--ink-2)}
+.pyrun .pyhead span:first-child{flex:1;font-weight:600;color:var(--paper)}
+.pyrun .pystatus{font-size:.78rem}
+.pyrun textarea{display:block;width:100%;border:none;background:#0f1424;color:var(--paper);font-family:'IBM Plex Mono',monospace;font-size:.86rem;line-height:1.5;padding:12px 14px;resize:vertical;outline:none;min-height:60px;tab-size:4}
+.pyrun .pyout{margin:0;border:none;border-top:1px solid var(--line);border-left:none;border-radius:0;background:#0a0e1a;color:#cfe3ff;max-height:320px}
+
 </style>
-<style>.map{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:24px 0}.piece{border:1px solid var(--line);border-radius:8px;padding:16px;background:var(--ink-2);border-top:4px solid var(--accent)}.piece h3{margin:0 0 4px;color:var(--accent)}.piece p{font-size:.9rem;color:var(--muted);margin:0 0 10px}.piece a{display:block;text-decoration:none;color:var(--paper);padding:6px 0;border-top:1px solid var(--line);font-size:.92rem}.piece a:hover{color:var(--accent)}.piece a small{display:block;color:var(--faint);font-size:.78rem}.piece a.done::after{content:" ✓";color:var(--ok)}.how{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}.how .fig{margin:0}.how h4{margin:0 0 6px}@media(max-width:900px){.map{grid-template-columns:1fr 1fr}.how{grid-template-columns:1fr}}@media(max-width:600px){.map{grid-template-columns:1fr}}.big{font-size:1.05rem}</style></head>
-<body class="piece-intro"><div class="wrap">
-<header class="hero"><div class="chapters">Operating Systems: Three Easy Pieces · Remzi H. and Andrea C. Arpaci-Dusseau (v1.10, 2023) · security chapters by Peter Reiher</div>
-<h1>The whole book, as sixteen interactive lessons</h1>
-<p class="lede big">Built from the text of all 57 chapters plus the VMM appendix — every "crux", every summary, every number in the figures was extracted from the chapter PDFs, not recalled. Each lesson is short, visual, and ends in retrieval practice. Do them in order; the book's pieces build on each other.</p></header>
+<style>.objs{display:grid;grid-template-columns:1fr 1fr;gap:12px}.names,.heap{background:#0f1424;border:1px solid var(--line);border-radius:6px;padding:10px;min-height:120px}.names h4,.heap h4{margin:0 0 8px;font-family:inherit;font-size:.8rem;color:var(--muted)}.nm{display:inline-block;padding:4px 10px;border-radius:4px;background:#28304f;font-family:'IBM Plex Mono',monospace;margin:3px}.ob{display:inline-block;padding:6px 10px;border-radius:6px;border:2px solid var(--accent);font-family:'IBM Plex Mono',monospace;margin:3px;font-size:.85rem}.ob small{display:block;color:var(--muted);font-size:.7rem}.tree button{display:block;width:100%;text-align:left;margin:3px 0;font-family:'IBM Plex Mono',monospace;font-size:.82rem}.tree .l1{margin-left:16px}.tree .l2{margin-left:32px}</style></head>
+<body class="piece-spec"><div class="wrap">
+<header class="hero"><div class="chapters">Language Reference §3.1 Objects, values and types · §3.2 The standard type hierarchy</div>
+<h1>Everything is an object: identity, type, value</h1>
+<p class="lede">The Python Language Reference opens its data model with one sentence that explains half of the language's behaviour: <em>every object has an identity, a type and a value</em>. Names are not objects; they refer to objects. Get this model exactly right and mutability, aliasing, <code>is</code> vs <code>==</code>, and hashing all follow.</p></header>
+<div class="source"><b>Primary source:</b> <a href="https://docs.python.org/3.13/reference/datamodel.html#objects-values-and-types">§3.1 Objects, values and types</a> and <a href="https://docs.python.org/3.13/reference/datamodel.html#the-standard-type-hierarchy">§3.2 The standard type hierarchy</a> of <em>The Python Language Reference</em>, 3.13. Every claim below is paraphrased from that text; the code blocks run real CPython (compiled to WebAssembly) in your browser.</div>
+<h2>What you'll be able to do</h2><ul id="obj"></ul>
 
-<figure class="fig"><svg viewBox="0 0 900 150" role="img" aria-label="three pieces">
-<rect x="20" y="30" width="270" height="90" rx="8" fill="#e8b84a"/><text x="155" y="68" text-anchor="middle" fill="#111" font-size="20" font-weight="700" font-family="Fraunces,serif">Virtualization</text><text x="155" y="95" text-anchor="middle" fill="#111" font-size="13">CPU (ch 4–10) · Memory (ch 13–23)</text>
-<rect x="315" y="30" width="270" height="90" rx="8" fill="#5bc8f5"/><text x="450" y="68" text-anchor="middle" fill="#111" font-size="20" font-weight="700" font-family="Fraunces,serif">Concurrency</text><text x="450" y="95" text-anchor="middle" fill="#111" font-size="13">threads, locks, CVs, semaphores, bugs (ch 26–33)</text>
-<rect x="610" y="30" width="270" height="90" rx="8" fill="#6bcb77"/><text x="745" y="68" text-anchor="middle" fill="#111" font-size="20" font-weight="700" font-family="Fraunces,serif">Persistence</text><text x="745" y="95" text-anchor="middle" fill="#111" font-size="13">devices, disks, file systems, distributed (ch 36–50)</text>
-<text x="450" y="140" text-anchor="middle" fill="#a9b1cf" font-size="13">+ Security (ch 53–57) and Virtual Machine Monitors (Appendix B)</text></svg></figure>
+<h2>The three properties of an object</h2>
+<div class="crux"><b>The spec, compressed.</b> <em>Identity</em> never changes once an object exists — think of it as the address (in CPython, <code>id(x)</code> literally is the memory address). <em>Type</em> determines which operations the object supports and which values it can have; it is also unchangeable. <em>Value</em> may change for <b>mutable</b> types (list, dict) and cannot for <b>immutable</b> ones (numbers, strings, tuples). Mutability is a property of the <em>type</em>.</div>
+<p>Two subtleties the reference spells out. First, an immutable container holding a mutable object: the tuple's value "changes" when the inner list changes, yet the tuple is still immutable — mutability refers only to the identities of the immediately contained objects. Second, names: <code>a = 1; b = 1</code> <em>may or may not</em> make <code>a</code> and <code>b</code> the same object (int is immutable, so the implementation is free to reuse the object), whereas <code>c = []; d = []</code> are <em>guaranteed</em> to be two distinct new lists, and <code>e = f = []</code> binds two names to <em>one</em> list.</p>
+<div class="fig"><h4>Names and objects</h4><div class="controls"><button class="primary" data-s="int">a = 1; b = 1</button><button data-s="lists">c = []; d = []</button><button data-s="alias">e = f = []</button><button data-s="tuple">t = (1, [2, 3]); t[1].append(4)</button></div><div class="objs"><div class="names"><h4>namespace (names)</h4><div id="nm"></div></div><div class="heap"><h4>objects (identity · type · value)</h4><div id="hp"></div></div></div><div class="cap" id="omsg"></div></div>
+<div id="py1"></div>
 
-<h2>Course map</h2>
-<div class="map" id="map"></div>
+<h2>Garbage collection, as the spec sees it</h2>
+<p>Objects are never explicitly destroyed; when they become <b>unreachable</b> they <em>may</em> be collected. The reference deliberately leaves this to implementation quality — CPython uses reference counting plus optional delayed detection of cyclic garbage, and "other implementations act differently and CPython may change." Hence the rule: <b>do not depend on immediate finalization</b>; release external resources (files, sockets) explicitly with <code>close()</code>, or structurally with <code>with</code> / <code>try…finally</code>. Note too that debugging facilities, and a caught exception (its traceback holds frames), can keep objects alive longer than you expect. Lesson 13 opens the hood on how CPython actually does it.</p>
+<div id="py2"></div>
 
-<h2>How to use this course</h2>
-<div class="how">
-<div class="fig"><h4>1. One lesson per sitting</h4><p>Each takes 25–45 minutes: read, play with the simulator until you can predict its output, flip the cards, then do the quiz <em>from memory</em>. Check off the objectives at the top only when you could explain them to someone else.</p></div>
-<div class="fig"><h4>2. Then read the chapter</h4><p>Every lesson links its primary source — the free chapter PDFs at <a href="https://pages.cs.wisc.edu/~remzi/OSTEP/">ostep.org</a>. The lesson gives you the map; the chapter has the jokes, the asides, and the homework simulators (<code>ostep-homework</code>) which are the best practice there is.</p></div>
-<div class="fig"><h4>3. Space it out</h4><p>Long-term retention comes from re-testing later, not from feeling fluent now. Redo a lesson's quiz two days later and again after a week; the <a href="reference/cheatsheets.html">cheat sheets</a> are for the fast pass, the <a href="reference/glossary.html">glossary</a> for vocabulary. Ask me in the chat for mixed quizzes across lessons.</p></div></div>
+<h2>The standard type hierarchy</h2>
+<p>§3.2 lists every built-in type the language defines. Click a node for the spec's one-line characterisation.</p>
+<div class="fig two"><div class="tree" id="tree"></div><div id="tmsg" class="cap" style="align-self:start">Pick a type.</div></div>
 
-<h2>What the book covers that this course does too</h2>
-<p>Chapters 1–2 (dialogue, introduction) → lesson 1. Chapters 3, 11, 12, 24, 25, 34, 35, 46, 47, 51, 52 are the book's short dialogues that open and close each part; their content is folded into the neighbouring lessons. The lab appendices (tutorial, systems and xv6 projects) and the deprecated monitors appendix are referenced in RESOURCES.md rather than taught.</p>
-<h2>Sister courses</h2><div class="how"><div class="fig"><h4><a href="python/index.html">Python 3.13</a></h4><p>The Language Reference, CPython internals (specializing interpreter, JIT, GC, GIL and free-threading), and pandas vs Polars — 20 interactive lessons with Python running in the browser.</p></div><div class="fig"><h4>Java 21</h4><p>Coming next: the JLS/JVMS, the JVM (class loading, bytecode, JIT, GC), and virtual threads internals.</p></div></div>
-<p class="tip">This workspace follows the <code>teach</code> skill layout: <code>MISSION.md</code> (why you're learning this), <code>RESOURCES.md</code> (sources), <code>NOTES.md</code>, <code>learning-records/</code>, <code>lessons/</code>, <code>reference/</code>, <code>assets/</code>. Tell me in the chat how a lesson landed and I'll adapt the next ones.</p>
+<h2>Equality, identity, hashing</h2>
+<p><code>is</code> compares identity; <code>==</code> asks the type (<code>__eq__</code>). The contract in §3.3.1: objects that compare equal must have the same hash, so a class that defines <code>__eq__</code> without <code>__hash__</code> has its hash set to <code>None</code> and becomes unhashable — otherwise dicts and sets would break. Hash randomization for <code>str</code>/<code>bytes</code> is on by default (see <code>PYTHONHASHSEED</code>), so hashes differ between runs. Dictionaries preserve insertion order (guaranteed since 3.7; CPython 3.6 did it as an implementation detail).</p>
+<div id="py3"></div>
+
+<h2>Flash cards</h2><div id="cards"></div>
+<h2>Retrieval practice</h2><div id="quiz"></div>
+<p class="tip">Ask me in the chat for more exercises on aliasing bugs (default-argument lists, nested list multiplication), or to trace <code>id()</code> behaviour in the runner above.</p>
 </div>
 <script>
 /* OSTEP course — shared components. Every page loads this file (inlined by build.py). */
@@ -217,34 +229,38 @@ window.OS = (function () {
   /* ---------- persistent storage (localStorage on a real site; in-memory fallback in sandboxes) ---------- */
   const mem = {};
   const store = {
-    get(k) { try { const v = localStorage.getItem('ostep:' + k); return v === null ? (mem[k] ?? null) : JSON.parse(v); } catch (e) { return mem[k] ?? null; } },
-    set(k, v) { mem[k] = v; try { localStorage.setItem('ostep:' + k, JSON.stringify(v)); } catch (e) {} },
-    del(k) { delete mem[k]; try { localStorage.removeItem('ostep:' + k); } catch (e) {} },
-    keys(prefix) { const out = new Set(Object.keys(mem).filter(k => k.startsWith(prefix))); try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith('ostep:' + prefix)) out.add(k.slice(6)); } } catch (e) {} return [...out]; },
-    available() { try { localStorage.setItem('ostep:test', '1'); localStorage.removeItem('ostep:test'); return true; } catch (e) { return false; } }
+    get(k) { try { const v = localStorage.getItem('py313:' + k); return v === null ? (mem[k] ?? null) : JSON.parse(v); } catch (e) { return mem[k] ?? null; } },
+    set(k, v) { mem[k] = v; try { localStorage.setItem('py313:' + k, JSON.stringify(v)); } catch (e) {} },
+    del(k) { delete mem[k]; try { localStorage.removeItem('py313:' + k); } catch (e) {} },
+    keys(prefix) { const out = new Set(Object.keys(mem).filter(k => k.startsWith(prefix))); try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith('py313:' + prefix)) out.add(k.slice(6)); } } catch (e) {} return [...out]; },
+    available() { try { localStorage.setItem('py313:test', '1'); localStorage.removeItem('py313:test'); return true; } catch (e) { return false; } }
   };
 
   /* ---------- course structure ---------- */
   const PIECES = [
-    ['intro', 'Introduction', [['0001-three-easy-pieces', 'Three easy pieces', 'ch 1–2']]],
-    ['virt', 'Virtualization', [
-      ['0002-processes', 'Processes & the process API', 'ch 4–5'],
-      ['0003-limited-direct-execution', 'Limited direct execution', 'ch 6'],
-      ['0004-scheduling', 'Scheduling', 'ch 7–10'],
-      ['0005-address-spaces', 'Address spaces & segments', 'ch 13–16'],
-      ['0006-paging-and-tlbs', 'Paging & TLBs', 'ch 17–20'],
-      ['0007-swapping', 'Swapping & policies', 'ch 21–23']]],
-    ['conc', 'Concurrency', [
-      ['0008-threads-and-locks', 'Threads & locks', 'ch 26–28'],
-      ['0009-cvs-and-semaphores', 'CVs & semaphores', 'ch 29–31'],
-      ['0010-bugs-and-events', 'Bugs & events', 'ch 32–33']]],
-    ['pers', 'Persistence', [
-      ['0011-devices-disks-raid', 'Devices, disks, RAID', 'ch 36–38'],
-      ['0012-files-and-vsfs', 'Files & a simple FS', 'ch 39–40'],
-      ['0013-ffs-journaling-lfs', 'FFS, journaling, LFS', 'ch 41–43'],
-      ['0014-ssd-and-integrity', 'SSDs & integrity', 'ch 44–45'],
-      ['0015-distributed-nfs-afs', 'Distributed FS', 'ch 48–50']]],
-    ['sec', 'Security', [['0016-security-and-vmms', 'Security & VMMs', 'ch 53–57, App B']]]
+    ['spec', 'The language, as specified', [
+      ['0001-objects-values-types', 'Objects, values and types', 'Ref §3.1–3.2'],
+      ['0002-lexical-structure-and-expressions', 'Lexical structure & expressions', 'Ref §2, §6'],
+      ['0003-execution-model', 'Execution model: names, scopes, closures', 'Ref §4'],
+      ['0004-data-model-special-methods', 'Data model I: special methods', 'Ref §3.3'],
+      ['0005-attribute-access-and-descriptors', 'Data model II: attributes & descriptors', 'Ref §3.3.2, HOWTO'],
+      ['0006-classes-mro-metaclasses', 'Classes, MRO, metaclasses', 'Ref §3.3.3, HOWTO'],
+      ['0007-functions-generators-coroutines', 'Functions, generators, coroutines', 'Ref §6.3, §3.4'],
+      ['0008-statements-and-pattern-matching', 'Statements, exceptions, pattern matching', 'Ref §7–8'],
+      ['0009-import-system', 'The import system', 'Ref §5'],
+      ['0010-typing', 'Typing: the PEP 484 lineage to 3.13', 'PEPs 484…742']]],
+    ['internals', 'CPython 3.13 internals', [
+      ['0011-compiler-and-bytecode', 'From source to bytecode', 'InternalDocs compiler, dis'],
+      ['0012-eval-loop-and-specialization', 'The eval loop, specialization, JIT', 'InternalDocs interpreter, PEPs 659/744'],
+      ['0013-memory-refcounting-gc', 'Memory, refcounting, garbage collection', 'InternalDocs GC, PEP 683'],
+      ['0014-gil-and-free-threading', 'The GIL and free-threaded Python', 'PEP 703, HOWTO']]],
+    ['data', 'DataFrames: pandas vs Polars', [
+      ['0015-dataframe-data-models', 'Two data models', 'pandas dsintro, Polars concepts'],
+      ['0016-selection-and-indexing', 'Selecting, filtering, assigning', 'pandas indexing, Polars expressions'],
+      ['0017-expressions-and-lazy', 'Expressions, contexts, lazy queries', 'Polars lazy, pandas chaining'],
+      ['0018-groupby-joins-reshaping', 'Groupby, joins, reshaping', 'pandas groupby/merging, Polars transformations'],
+      ['0019-time-series', 'Time series', 'pandas timeseries, Polars time-series'],
+      ['0020-performance-and-scale', 'Performance, memory, scale', 'pandas enhancingperf/scale, Modern Polars']]]
   ];
   const LESSONS = PIECES.flatMap(p => p[2].map(l => [l[0], l[1], p[0], l[2]]));
   const title = id => (LESSONS.find(l => l[0] === id) || [])[1] || id;
@@ -257,7 +273,7 @@ window.OS = (function () {
     const isLesson = i >= 0;
     const top = document.createElement('header'); top.className = 'topbar';
     top.innerHTML = `<button class="menu" aria-label="Open directory" aria-expanded="false">☰<span>Directory</span></button>
-      <a class="brand" href="${root}index.html"><span class="dot"></span>OSTEP course</a>
+      <a class="brand" href="${root}index.html"><span class="dot"></span>Python 3.13 course</a>
       <nav class="links"><a href="${root}reference/glossary.html">Glossary</a><a href="${root}reference/cheatsheets.html">Cheat sheets</a><a href="${root}notes.html">My notes</a></nav>
       ${isLesson ? `<span class="where">${i+1} / ${LESSONS.length}</span>` : ''}`;
     document.body.prepend(top);
@@ -341,6 +357,42 @@ window.OS = (function () {
     });
   }
 
+
+  /* ---------- runnable Python (Pyodide, loaded on first use) ---------- */
+  const pyodideP = {};
+  function loadPy(status, version) {
+    version = version || '0.28.3';
+    if (pyodideP[version]) return pyodideP[version];
+    status('loading Python (Pyodide ' + version + ', ~10 MB, once per page)…');
+    pyodideP[version] = new Promise((res, rej) => {
+      const s = document.createElement('script'); s.src = 'https://cdn.jsdelivr.net/pyodide/v' + version + '/full/pyodide.js';
+      s.onload = () => window.loadPyodide({ indexURL: 'https://cdn.jsdelivr.net/pyodide/v' + version + '/full/' }).then(res, rej);
+      s.onerror = () => rej(new Error('Could not load Pyodide (offline, or blocked by this preview).'));
+      document.head.append(s);
+    });
+    return pyodideP[version];
+  }
+  function py(el, code, opts) {
+    el = typeof el === 'string' ? document.getElementById(el) : el; opts = opts || {};
+    el.classList.add('pyrun');
+    el.innerHTML = `<div class="pyhead"><span>Python${opts.note ? ' · ' + esc(opts.note) : ''}</span><span class="pystatus"></span><button class="primary run">▶ Run</button><button class="reset">Reset</button></div><textarea spellcheck="false">${esc(code.trim())}</textarea><pre class="pyout" hidden></pre>`;
+    const ta = el.querySelector('textarea'), out = el.querySelector('.pyout'), st = el.querySelector('.pystatus');
+    const fit = () => { ta.style.height = 'auto'; ta.style.height = Math.min(480, ta.scrollHeight + 4) + 'px'; }; fit(); ta.addEventListener('input', fit);
+    el.querySelector('.reset').onclick = () => { ta.value = code.trim(); fit(); out.hidden = true; };
+    el.querySelector('.run').onclick = async () => {
+      out.hidden = false; out.textContent = ''; st.textContent = '';
+      try {
+        const pyo = await loadPy(m => st.textContent = m, opts.pyodide || ((opts.packages||[]).includes('polars') ? '0.27.7' : '0.28.3'));
+        if (opts.packages) { st.textContent = 'loading ' + opts.packages.join(', ') + '…'; await pyo.loadPackage(opts.packages).catch(() => {}); }
+        st.textContent = 'running…';
+        pyo.setStdout({ batched: s => out.textContent += s + '\n' }); pyo.setStderr({ batched: s => out.textContent += s + '\n' });
+        const r = await pyo.runPythonAsync(ta.value);
+        if (r !== undefined && r !== null && String(r) !== 'None') out.textContent += String(r);
+        st.textContent = 'done · CPython ' + pyo.runPython('import sys; f"{sys.version_info.major}.{sys.version_info.minor}"') + ' in WebAssembly';
+      } catch (e) { out.textContent += String(e); st.textContent = 'error'; }
+    };
+  }
+
   /* ---------- flip cards ---------- */
   function cards(el, list) {
     el = typeof el === 'string' ? document.getElementById(el) : el;
@@ -385,17 +437,75 @@ window.OS = (function () {
     el.querySelectorAll('input').forEach(c => c.onchange = () => { const s = [...el.querySelectorAll('input:checked')].map(x => +x.dataset.i); if (pageId) store.set('obj:' + pageId, s); });
   }
 
-  return { chrome, quiz, cards, stepper, gantt, objectives, esc, store, LESSONS, PIECES, title };
+  return { chrome, quiz, cards, stepper, gantt, objectives, py, esc, store, LESSONS, PIECES, title };
 })();
 
 </script>
 <script>
-OS.chrome('index','');
-const P=[['intro','Introduction','What an OS is: the three pieces, design goals, history.',['0001-three-easy-pieces','Three easy pieces','ch 1–2']],
-['virt','Virtualization','The CPU and memory made private and plentiful.',['0002-processes','Processes & the process API','ch 4–5'],['0003-limited-direct-execution','Limited direct execution','ch 6'],['0004-scheduling','Scheduling: FIFO to CFS and multi-CPU','ch 7–10'],['0005-address-spaces','Address spaces, base/bounds, segments','ch 13–16'],['0006-paging-and-tlbs','Free space, paging, TLBs, small tables','ch 17–20'],['0007-swapping','Swapping, replacement, VAX/VMS & Linux','ch 21–23']],
-['conc','Concurrency','Threads and the primitives that make them safe.',['0008-threads-and-locks','Threads, thread API, locks','ch 26–28'],['0009-cvs-and-semaphores','Locked structures, CVs, semaphores','ch 29–31'],['0010-bugs-and-events','Concurrency bugs & event-based servers','ch 32–33']],
-['pers','Persistence + Security','Storage from the device up; then protecting it all.',['0011-devices-disks-raid','Devices, disks, RAID','ch 36–38'],['0012-files-and-vsfs','Files, directories, a simple file system','ch 39–40'],['0013-ffs-journaling-lfs','FFS, crash consistency, LFS','ch 41–43'],['0014-ssd-and-integrity','SSDs & data integrity','ch 44–45'],['0015-distributed-nfs-afs','Distributed systems, NFS, AFS','ch 48–50'],['0016-security-and-vmms','Security (ch 53–57) & VMMs','ch 53–57, App B']]];
-const m=document.getElementById('map');let idx=0;const S=OS.store;
-m.innerHTML=P.map(([cls,name,desc,...ls])=>`<div class="piece piece-${cls}"><h3>${name}</h3><p>${desc}</p>${ls.map(l=>{idx++;const q=S.get('quiz:'+l[0]),nt=(S.get('notes:'+l[0])||{}).text;return `<a href="lessons/${l[0]}.html" data-id="${l[0]}" class="${q&&q.score===q.total?'done':''}">${idx}. ${l[1]}<small>${l[2]}${q?` · quiz ${q.score}/${q.total}`:''}${nt?' · ✎ notes':''}</small></a>`;}).join('')}</div>`).join('');
-const done=OS.LESSONS.filter(l=>S.get('quiz:'+l[0])).length;const ph=document.createElement('p');ph.className='cap';ph.textContent=done?`${done} of 16 lesson quizzes attempted — see My notes & progress for details.`:'Quiz scores, checked objectives and notes are saved in this browser as you go.';document.getElementById('map').after(ph);
+OS.chrome('0001-objects-values-types');
+OS.objectives('obj',['State the three properties of an object and which two never change.','Explain why a tuple containing a list is immutable even though its value can change.','Predict when two names may, must, or cannot refer to the same object.','Explain the __eq__/__hash__ contract and why defining __eq__ alone makes a class unhashable.','Name the major branches of the standard type hierarchy.']);
+const SC={int:{n:['a','b'],o:[{v:'1',t:'int',id:'…a40'}],map:[0,0],m:'int is immutable, so the implementation may reuse one object for both names — CPython does, because it pre-creates small integers. The spec only says "may or may not"; never rely on it.'},
+lists:{n:['c','d'],o:[{v:'[]',t:'list',id:'…f80'},{v:'[]',t:'list',id:'…fc0'}],map:[0,1],m:'Two list displays create two distinct, newly created objects — guaranteed by the spec, because lists are mutable and sharing would be observable.'},
+alias:{n:['e','f'],o:[{v:'[]',t:'list',id:'…f80'}],map:[0,0],m:'Chained assignment binds both names to the same object. e.append(1) is visible through f: that is aliasing, not copying.'},
+tuple:{n:['t'],o:[{v:'( · , · )',t:'tuple',id:'…c10'},{v:'1',t:'int',id:'…a40'},{v:'[2, 3, 4]',t:'list',id:'…f80'}],map:[0],m:'The tuple holds two references. Its collection of identities cannot change (immutable), yet its value now reads (1, [2, 3, 4]) because the list it refers to mutated.'}};
+function show(k){const s=SC[k];document.getElementById('nm').innerHTML=s.n.map((n,i)=>`<span class="nm">${n} → #${s.map[i]}</span>`).join('');document.getElementById('hp').innerHTML=s.o.map((o,i)=>`<span class="ob">#${i} ${o.v}<small>type ${o.t} · id ${o.id}</small></span>`).join('');document.getElementById('omsg').textContent=s.m;}
+document.querySelectorAll('[data-s]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-s]').forEach(x=>x.classList.remove('primary'));b.classList.add('primary');show(b.dataset.s);});show('int');
+OS.py('py1',`
+a = 1; b = 1
+print("a is b:", a is b, "(implementation detail; the spec says 'may or may not')")
+c = []; d = []
+print("c is d:", c is d, "(spec: guaranteed distinct)")
+e = f = []
+e.append(42)
+print("f after e.append:", f, "| e is f:", e is f)
+t = (1, [2, 3])
+t[1].append(4)
+print("t =", t, "| type(t) =", type(t).__name__, "| still immutable: t[0] = 9 →", end=" ")
+try:
+    t[0] = 9
+except TypeError as err:
+    print(type(err).__name__)
+big = 10**30
+print("id() is CPython's memory address:", hex(id(big)))`);
+OS.py('py2',`
+import sys
+x = []
+print("refcount of x (includes the getrefcount argument):", sys.getrefcount(x))
+y = x
+print("after y = x:", sys.getrefcount(x))
+del y
+print("after del y:", sys.getrefcount(x))
+# In 3.12+ some objects are 'immortal' (PEP 683): their refcount is a huge constant that never changes
+print("None's refcount looks like:", sys.getrefcount(None))
+class Noisy:
+    def __del__(self): print("  Noisy collected")
+n = Noisy(); del n            # CPython frees at once (refcount → 0); the spec does not promise this
+print("(the spec: do not depend on immediate finalization — use with/close)")`);
+const T=[['None','A single object with a single value; signifies absence (e.g. returned by functions that return nothing). Truth value false.',0],['NotImplemented','Single object returned by numeric/comparison special methods to say "I don\'t handle this operand"; the interpreter then tries the reflected operation. Truth value deprecated.',0],['Ellipsis','The single object written ... ; truth value true.',0],['numbers.Number','Immutable; created by literals and arithmetic.',0],['Integral: int, bool','int has unlimited range (subject to memory); bool\'s two objects False and True behave like 0 and 1 (but print as False/True).',1],['Real (float), Complex (complex)','Double-precision machine floats (no single precision); complex is a pair of floats .real/.imag.',1],['Sequences','Finite ordered sets indexed by non-negative integers; len(), a[i], slicing a[i:j] (some support extended slicing a[i:j:k]).',0],['Immutable: str, tuple, bytes','str = sequence of Unicode code points U+0000–U+10FFFF (no separate char type; ord/chr convert). tuple; bytes = 8-bit bytes 0–256.',1],['Mutable: list, bytearray','Modified in place via subscription and slice assignment; also range (immutable) belongs among sequences.',1],['Set types: set, frozenset','Unordered, finite, unique immutable elements; cannot be indexed; iterable; len(). frozenset is hashable, set is not.',0],['Mappings: dict','Finite sets of objects indexed by arbitrary index sets; keys must be hashable (so 1 and 1.0 index the same entry). Insertion order preserved (guaranteed since 3.7).',0],['Callable types','User-defined functions, instance methods, generator/coroutine/async-generator functions, built-in functions and methods, classes, and instances with __call__.',0],['Modules','Basic organizational unit; a namespace via a dict (__dict__), plus __name__, __doc__, __file__, __spec__…',0],['Custom classes & instances','Created by class definitions; attribute lookup walks the class then its bases (MRO); instances have __dict__ (unless __slots__).',0],['I/O objects','File objects: sys.stdin/stdout/stderr, open(), io module.',0],['Internal types','Code objects (immutable, no references to mutable objects), frame objects, traceback objects, slice objects, static-method and class-method objects.',0]];
+const tr=document.getElementById('tree');tr.innerHTML=T.map((t,i)=>`<button class="l${t[2]}" data-i="${i}">${t[0]}</button>`).join('');tr.querySelectorAll('button').forEach(b=>b.onclick=()=>{tr.querySelectorAll('button').forEach(x=>x.classList.remove('primary'));b.classList.add('primary');document.getElementById('tmsg').innerHTML=`<b>${T[+b.dataset.i][0]}</b> — ${T[+b.dataset.i][1]}`;});
+OS.py('py3',`
+class P:
+    def __init__(self, x): self.x = x
+    def __eq__(self, other): return isinstance(other, P) and self.x == other.x
+print("P.__hash__ is", P.__hash__, "→ unhashable because __eq__ was defined without __hash__")
+try:
+    {P(1)}
+except TypeError as e:
+    print(" ", e)
+class Q(P):
+    def __hash__(self): return hash(self.x)      # equal objects now hash equal: contract restored
+print("len({Q(1), Q(1)}) =", len({Q(1), Q(1)}))
+print("1 == 1.0 == True:", 1 == 1.0 == True, "| hash(1) == hash(1.0) == hash(True):", hash(1) == hash(1.0) == hash(True))
+d = {1: "int"}; d[1.0] = "float"; d[True] = "bool"
+print("one dict entry, last value wins:", d)
+print("dict keeps insertion order:", list({"z": 1, "a": 2, "m": 3}))`);
+OS.cards('cards',[['Identity','Unchanging property of an object; compared with <code>is</code>; in CPython, <code>id()</code> is the address.'],['Type','Determines supported operations and possible values; unchangeable; returned by <code>type()</code>, itself an object.'],['Mutable / immutable','Whether the value can change after creation; a property of the type. Lists/dicts yes; numbers/strings/tuples no.'],['Container','Object holding references to other objects (tuple, list, dict); the references are part of its value.'],['Unreachable','No path of references leads to the object; it <em>may</em> be garbage-collected (CPython: usually immediately, cycles later).'],['NotImplemented','Return it from a binary special method to let Python try the reflected operation on the other operand.'],['Hashable','Has <code>__hash__</code> consistent with <code>__eq__</code>: equal objects hash equal. Required for dict keys and set members.'],['Insertion order','dict iterates keys in the order they were inserted — a language guarantee since Python 3.7.']]);
+OS.quiz('quiz',[
+{q:'Which two properties of an object does the reference say can never change?',o:['identity and value','identity and type','type and value','none of the three'],a:1,why:'Identity and type are fixed at creation; only the value may change, and only for mutable types.'},
+{q:'After c = []; d = [], what does the spec guarantee about c and d?',o:['they may share one object','they are two distinct objects','they compare unequal','they have the same id()'],a:1,why:'List displays create new objects. For immutable types like int the implementation may reuse an object; for mutable ones it must not.'},
+{q:'t = (1, [2]); t[1].append(3). Which statement matches the reference?',o:['t is now a mutable object','t is immutable; its value changed','t raises TypeError on append','t silently copies the list'],a:1,why:'Mutability concerns the identities a container holds; those didn\'t change. The value did, because the referenced list mutated.'},
+{q:'A class defines __eq__ but not __hash__. Instances are:',o:['hashable by identity','unhashable (hash is None)','hashable by value','hashable only in sets'],a:1,why:'To keep the equal-implies-same-hash invariant, Python sets __hash__ to None when __eq__ is overridden without __hash__.'},
+{q:'Why does the reference tell you to close files explicitly rather than rely on collection?',o:['CPython never collects file objects','collection timing is not guaranteed','files are immortal objects','close() is faster than del'],a:1,why:'An implementation may postpone or omit garbage collection; CPython happens to free most objects at once, but that is not a language guarantee.'},
+{q:'What does returning NotImplemented from __add__ cause?',o:['a TypeError immediately','Python tries the other operand\'s __radd__','the result is NotImplemented','the operation returns None'],a:1,why:'NotImplemented signals "not my case"; the interpreter tries the reflected method, and only if both decline raises TypeError.'},
+{q:'d = {1: "a"}; d[1.0] = "b"; d[True] = "c". How many keys does d have?',o:['three','one','two','zero'],a:1,why:'1, 1.0 and True compare equal and hash equal, so they index the same entry; the last assignment wins, keeping the original key object 1.'}]);
 </script></body></html>

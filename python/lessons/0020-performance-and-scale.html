@@ -1,11 +1,11 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>OSTEP course — Operating Systems: Three Easy Pieces, taught interactively</title><style>
+<title>20 · Performance & scale — Python 3.13 course</title><style>
 /* OSTEP course — shared stylesheet. Three pieces, three hues. */
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
 :root{
   --ink:#151b2f; --ink-2:#1e2540; --ink-3:#28304f; --line:#3a4368;
   --paper:#eef0f7; --muted:#a9b1cf; --faint:#6e779a;
-  --virt:#e8b84a; --conc:#5bc8f5; --pers:#6bcb77; --sec:#f47fa0; --intro:#c9a8ff;
+  --virt:#e8b84a; --conc:#5bc8f5; --pers:#6bcb77; --sec:#f47fa0; --intro:#c9a8ff; --spec:#ffd166; --internals:#5bc8f5; --data:#6bcb77;
   --ok:#6bcb77; --bad:#ff6b6b;
   --accent:var(--virt);
   --radius:6px;
@@ -28,7 +28,7 @@ p,li{max-width:72ch}
 .hero{padding:44px 0 16px}
 .hero .chapters{color:var(--muted);font-size:.95rem;margin-bottom:6px}
 .lede{font-size:1.2rem;color:var(--muted);max-width:66ch}
-.piece-virt{--accent:var(--virt)} .piece-conc{--accent:var(--conc)} .piece-pers{--accent:var(--pers)} .piece-sec{--accent:var(--sec)} .piece-intro{--accent:var(--intro)}
+.piece-spec{--accent:var(--spec)} .piece-internals{--accent:var(--internals)} .piece-data{--accent:var(--data)} .piece-virt{--accent:var(--virt)} .piece-conc{--accent:var(--conc)} .piece-pers{--accent:var(--pers)} .piece-sec{--accent:var(--sec)} .piece-intro{--accent:var(--intro)}
 .fig{background:var(--ink-2);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;margin:22px 0}
 .fig figcaption,.cap{color:var(--muted);font-size:.9rem;margin-top:10px}
 .fig svg{max-width:100%;height:auto;display:block}
@@ -182,32 +182,49 @@ details>div{padding:0 16px 14px}
 }
 @media (max-width:420px){.cards{grid-template-columns:1fr}}
 
+/* ---------- runnable Python ---------- */
+.pyrun{border:1px solid var(--line);border-radius:var(--radius);background:#0f1424;margin:18px 0;overflow:hidden}
+.pyrun .pyhead{display:flex;gap:10px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--line);font-size:.85rem;color:var(--muted);background:var(--ink-2)}
+.pyrun .pyhead span:first-child{flex:1;font-weight:600;color:var(--paper)}
+.pyrun .pystatus{font-size:.78rem}
+.pyrun textarea{display:block;width:100%;border:none;background:#0f1424;color:var(--paper);font-family:'IBM Plex Mono',monospace;font-size:.86rem;line-height:1.5;padding:12px 14px;resize:vertical;outline:none;min-height:60px;tab-size:4}
+.pyrun .pyout{margin:0;border:none;border-top:1px solid var(--line);border-left:none;border-radius:0;background:#0a0e1a;color:#cfe3ff;max-height:320px}
+
 </style>
-<style>.map{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:24px 0}.piece{border:1px solid var(--line);border-radius:8px;padding:16px;background:var(--ink-2);border-top:4px solid var(--accent)}.piece h3{margin:0 0 4px;color:var(--accent)}.piece p{font-size:.9rem;color:var(--muted);margin:0 0 10px}.piece a{display:block;text-decoration:none;color:var(--paper);padding:6px 0;border-top:1px solid var(--line);font-size:.92rem}.piece a:hover{color:var(--accent)}.piece a small{display:block;color:var(--faint);font-size:.78rem}.piece a.done::after{content:" ✓";color:var(--ok)}.how{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}.how .fig{margin:0}.how h4{margin:0 0 6px}@media(max-width:900px){.map{grid-template-columns:1fr 1fr}.how{grid-template-columns:1fr}}@media(max-width:600px){.map{grid-template-columns:1fr}}.big{font-size:1.05rem}</style></head>
-<body class="piece-intro"><div class="wrap">
-<header class="hero"><div class="chapters">Operating Systems: Three Easy Pieces · Remzi H. and Andrea C. Arpaci-Dusseau (v1.10, 2023) · security chapters by Peter Reiher</div>
-<h1>The whole book, as sixteen interactive lessons</h1>
-<p class="lede big">Built from the text of all 57 chapters plus the VMM appendix — every "crux", every summary, every number in the figures was extracted from the chapter PDFs, not recalled. Each lesson is short, visual, and ends in retrieval practice. Do them in order; the book's pieces build on each other.</p></header>
+<style>.dec{display:grid;gap:8px}.dec div{background:#0f1424;border:1px solid var(--line);border-radius:6px;padding:10px;font-size:.88rem}.dec b{color:var(--accent)}.mm{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;text-align:center;font-size:.8rem}.mm div{background:#0f1424;border:1px solid var(--line);border-radius:6px;padding:8px}.mm i{display:block;height:70px;background:#28304f;border-radius:4px;position:relative;overflow:hidden;margin-bottom:6px}.mm i b{position:absolute;bottom:0;left:0;right:0;background:var(--accent)}@media(max-width:700px){.mm{grid-template-columns:1fr 1fr}}</style></head>
+<body class="piece-data"><div class="wrap">
+<header class="hero"><div class="chapters">pandas user guide: Scaling to large datasets, Enhancing performance · Polars: Comparison with other tools, Multiprocessing, Streaming · Modern Polars: Performance</div>
+<h1>Performance and scale: dtypes, columns, laziness, cores</h1>
+<p class="lede">The last lesson turns the internals of both libraries into practical rules. pandas' own scaling guide is four headings: load less data, use efficient dtypes, use chunking, use other libraries. Polars' advice (via the <em>Modern Polars</em> book) is nearly the same list plus one item pandas cannot offer — use the lazy API — because its engine is multithreaded and query-optimizing by design. The closing section connects this back to the GIL lesson: why Polars gets parallelism that pandas structurally can't.</p></header>
+<div class="source"><b>Primary sources:</b> pandas <a href="https://pandas.pydata.org/docs/user_guide/scale.html">Scaling to large datasets</a> and <a href="https://pandas.pydata.org/docs/user_guide/enhancingperf.html">Enhancing performance</a>; Polars <a href="https://docs.pola.rs/user-guide/misc/comparison/">Comparison with other tools</a>, <a href="https://docs.pola.rs/user-guide/misc/multiprocessing/">Multiprocessing</a>, <a href="https://docs.pola.rs/user-guide/concepts/streaming/">Streaming</a>; Kevin Heavey's <a href="https://kevinheavey.github.io/modern-polars/performance.html">Modern Polars — Performance</a> ("six fairly obvious performance rules").</div>
+<h2>What you'll be able to do</h2><ul id="obj"></ul>
 
-<figure class="fig"><svg viewBox="0 0 900 150" role="img" aria-label="three pieces">
-<rect x="20" y="30" width="270" height="90" rx="8" fill="#e8b84a"/><text x="155" y="68" text-anchor="middle" fill="#111" font-size="20" font-weight="700" font-family="Fraunces,serif">Virtualization</text><text x="155" y="95" text-anchor="middle" fill="#111" font-size="13">CPU (ch 4–10) · Memory (ch 13–23)</text>
-<rect x="315" y="30" width="270" height="90" rx="8" fill="#5bc8f5"/><text x="450" y="68" text-anchor="middle" fill="#111" font-size="20" font-weight="700" font-family="Fraunces,serif">Concurrency</text><text x="450" y="95" text-anchor="middle" fill="#111" font-size="13">threads, locks, CVs, semaphores, bugs (ch 26–33)</text>
-<rect x="610" y="30" width="270" height="90" rx="8" fill="#6bcb77"/><text x="745" y="68" text-anchor="middle" fill="#111" font-size="20" font-weight="700" font-family="Fraunces,serif">Persistence</text><text x="745" y="95" text-anchor="middle" fill="#111" font-size="13">devices, disks, file systems, distributed (ch 36–50)</text>
-<text x="450" y="140" text-anchor="middle" fill="#a9b1cf" font-size="13">+ Security (ch 53–57) and Virtual Machine Monitors (Appendix B)</text></svg></figure>
+<h2>The rules, side by side</h2>
+<table><tr><th>Rule</th><th>pandas (scale.rst)</th><th>Polars (Modern Polars)</th></tr>
+<tr><td>Read only what you need</td><td><code>read_parquet(columns=[…])</code>, <code>read_csv(usecols=…)</code>: loading then dropping columns still pays the full memory cost</td><td>"Only select the columns you need" — and with <code>scan_*</code> the optimizer pushes the projection into the read for you</td></tr>
+<tr><td>Efficient dtypes</td><td>Default dtypes are not memory-efficient: downcast numerics, use <code>category</code> for repeated strings (huge <code>memory_usage(deep=True)</code> savings), nullable/Arrow dtypes</td><td>"Use the smallest necessary numeric types" (<code>UInt8</code> not <code>Int64</code>); <code>Categorical</code>/<code>Enum</code> for recurring strings when there is repetition</td></tr>
+<tr><td>Storage format</td><td>Parquet: columnar, typed, column-selectable</td><td>"Use efficient storage… Parquet is a good choice"; Parquet schemas are respected, CSV needs parsing</td></tr>
+<tr><td>Bigger than memory</td><td>Chunking: split into many small problems (<code>chunksize=</code>, per-file loops); or hand off to Dask/other libraries</td><td>Lazy + streaming engine processes batches; <code>sink_parquet</code> writes without materializing</td></tr>
+<tr><td>Vectorize</td><td>Avoid Python-level loops/UDFs; <code>eval</code>/<code>query</code>, Numba, Cython for hot spots</td><td>"Use Exprs, don't use apply unless you really have to"</td></tr>
+<tr><td>Laziness</td><td>— (eager only)</td><td>"Use the lazy API" — the one rule with no pandas counterpart</td></tr></table>
+<div class="fig"><h4>Memory of one 10-million-row column</h4><div class="controls"><label>values <select id="mk"><option value="int64">integers 0–200</option><option value="strobj">10 distinct strings (object)</option><option value="strcat">10 distinct strings (category / Categorical)</option><option value="float">floats</option></select></label></div><div class="mm" id="mm"></div><div class="cap" id="mmsg"></div></div>
+<div id="py1"></div>
 
-<h2>Course map</h2>
-<div class="map" id="map"></div>
+<h2>Where the speed comes from</h2>
+<div class="dec"><div><b>Columnar, typed memory.</b> Arrow arrays (Polars) and NumPy blocks (pandas) both let inner loops run in compiled code over contiguous typed buffers — this is why "vectorize" is rule one for both. pandas <code>object</code> columns break this: each cell is a Python object with its own refcount (lesson 13), touched one at a time.</div>
+<div><b>Multithreading vs the GIL.</b> Polars' engine is Rust; its threads never take the GIL because they don't touch Python objects, so a query uses all cores by default (<code>POLARS_MAX_THREADS</code> to cap). pandas is single-threaded: NumPy kernels release the GIL for some operations, but pandas itself runs one operation at a time — the guide's remedy is other libraries (Dask etc.). The 3.13 free-threaded build (lesson 14) does not change this: parallelism needs the library's own design.</div>
+<div><b>Query optimization.</b> Only a lazy engine can reorder your work: projection/predicate/slice pushdown, common-subplan elimination, join ordering (lesson 17). Eager pandas executes exactly what you wrote, in order, materializing every intermediate.</div>
+<div><b>Missing values without dtype changes.</b> Validity bitmaps mean an integer column stays integer with nulls; pandas' NumPy path upcasts to float64 (twice the memory of int32, and float semantics).</div>
+<div><b>Process-level parallelism caveat.</b> If you combine Polars with <code>multiprocessing</code>, use the <code>spawn</code> start method, not <code>fork</code>: forking a multithreaded process (Polars' thread pool) is unsafe and can deadlock — the Polars guide quotes the standard-library warning.</div></div>
+<div id="py2"></div>
 
-<h2>How to use this course</h2>
-<div class="how">
-<div class="fig"><h4>1. One lesson per sitting</h4><p>Each takes 25–45 minutes: read, play with the simulator until you can predict its output, flip the cards, then do the quiz <em>from memory</em>. Check off the objectives at the top only when you could explain them to someone else.</p></div>
-<div class="fig"><h4>2. Then read the chapter</h4><p>Every lesson links its primary source — the free chapter PDFs at <a href="https://pages.cs.wisc.edu/~remzi/OSTEP/">ostep.org</a>. The lesson gives you the map; the chapter has the jokes, the asides, and the homework simulators (<code>ostep-homework</code>) which are the best practice there is.</p></div>
-<div class="fig"><h4>3. Space it out</h4><p>Long-term retention comes from re-testing later, not from feeling fluent now. Redo a lesson's quiz two days later and again after a week; the <a href="reference/cheatsheets.html">cheat sheets</a> are for the fast pass, the <a href="reference/glossary.html">glossary</a> for vocabulary. Ask me in the chat for mixed quizzes across lessons.</p></div></div>
+<h2>Choosing</h2>
+<p>The Polars comparison page is candid: pandas is "widely-adopted and comprehensive" with a rich feature set and community, but single-threaded and prone to memory/performance trouble on medium-to-large data; Polars is optimized for multithreaded single-machine work with a stricter, more composable API that yields fewer schema bugs. Practical reading: pandas when you need its ecosystem (plotting, statsmodels, scikit-learn glue, countless tutorials) or small interactive work; Polars when data is large, pipelines are repeatable, or you want lazy optimization and predictable types; DuckDB/Spark when you're beyond one machine or want SQL. They interoperate cheaply through Arrow (<code>pl.from_pandas</code>, <code>.to_pandas()</code>, <code>.to_arrow()</code>), so the choice is per stage, not per project.</p>
+<div id="py3"></div>
 
-<h2>What the book covers that this course does too</h2>
-<p>Chapters 1–2 (dialogue, introduction) → lesson 1. Chapters 3, 11, 12, 24, 25, 34, 35, 46, 47, 51, 52 are the book's short dialogues that open and close each part; their content is folded into the neighbouring lessons. The lab appendices (tutorial, systems and xv6 projects) and the deprecated monitors appendix are referenced in RESOURCES.md rather than taught.</p>
-<h2>Sister courses</h2><div class="how"><div class="fig"><h4><a href="python/index.html">Python 3.13</a></h4><p>The Language Reference, CPython internals (specializing interpreter, JIT, GC, GIL and free-threading), and pandas vs Polars — 20 interactive lessons with Python running in the browser.</p></div><div class="fig"><h4>Java 21</h4><p>Coming next: the JLS/JVMS, the JVM (class loading, bytecode, JIT, GC), and virtual threads internals.</p></div></div>
-<p class="tip">This workspace follows the <code>teach</code> skill layout: <code>MISSION.md</code> (why you're learning this), <code>RESOURCES.md</code> (sources), <code>NOTES.md</code>, <code>learning-records/</code>, <code>lessons/</code>, <code>reference/</code>, <code>assets/</code>. Tell me in the chat how a lesson landed and I'll adapt the next ones.</p>
+<h2>Flash cards</h2><div id="cards"></div>
+<h2>Retrieval practice</h2><div id="quiz"></div>
+<p class="tip">That's the end of the course. Ask me in the chat for a capstone: profile one of your own pandas scripts, translate it to Polars lazy, and compare memory and time. The cheatsheets and glossary in the Directory summarize everything.</p>
 </div>
 <script>
 /* OSTEP course — shared components. Every page loads this file (inlined by build.py). */
@@ -217,34 +234,38 @@ window.OS = (function () {
   /* ---------- persistent storage (localStorage on a real site; in-memory fallback in sandboxes) ---------- */
   const mem = {};
   const store = {
-    get(k) { try { const v = localStorage.getItem('ostep:' + k); return v === null ? (mem[k] ?? null) : JSON.parse(v); } catch (e) { return mem[k] ?? null; } },
-    set(k, v) { mem[k] = v; try { localStorage.setItem('ostep:' + k, JSON.stringify(v)); } catch (e) {} },
-    del(k) { delete mem[k]; try { localStorage.removeItem('ostep:' + k); } catch (e) {} },
-    keys(prefix) { const out = new Set(Object.keys(mem).filter(k => k.startsWith(prefix))); try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith('ostep:' + prefix)) out.add(k.slice(6)); } } catch (e) {} return [...out]; },
-    available() { try { localStorage.setItem('ostep:test', '1'); localStorage.removeItem('ostep:test'); return true; } catch (e) { return false; } }
+    get(k) { try { const v = localStorage.getItem('py313:' + k); return v === null ? (mem[k] ?? null) : JSON.parse(v); } catch (e) { return mem[k] ?? null; } },
+    set(k, v) { mem[k] = v; try { localStorage.setItem('py313:' + k, JSON.stringify(v)); } catch (e) {} },
+    del(k) { delete mem[k]; try { localStorage.removeItem('py313:' + k); } catch (e) {} },
+    keys(prefix) { const out = new Set(Object.keys(mem).filter(k => k.startsWith(prefix))); try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith('py313:' + prefix)) out.add(k.slice(6)); } } catch (e) {} return [...out]; },
+    available() { try { localStorage.setItem('py313:test', '1'); localStorage.removeItem('py313:test'); return true; } catch (e) { return false; } }
   };
 
   /* ---------- course structure ---------- */
   const PIECES = [
-    ['intro', 'Introduction', [['0001-three-easy-pieces', 'Three easy pieces', 'ch 1–2']]],
-    ['virt', 'Virtualization', [
-      ['0002-processes', 'Processes & the process API', 'ch 4–5'],
-      ['0003-limited-direct-execution', 'Limited direct execution', 'ch 6'],
-      ['0004-scheduling', 'Scheduling', 'ch 7–10'],
-      ['0005-address-spaces', 'Address spaces & segments', 'ch 13–16'],
-      ['0006-paging-and-tlbs', 'Paging & TLBs', 'ch 17–20'],
-      ['0007-swapping', 'Swapping & policies', 'ch 21–23']]],
-    ['conc', 'Concurrency', [
-      ['0008-threads-and-locks', 'Threads & locks', 'ch 26–28'],
-      ['0009-cvs-and-semaphores', 'CVs & semaphores', 'ch 29–31'],
-      ['0010-bugs-and-events', 'Bugs & events', 'ch 32–33']]],
-    ['pers', 'Persistence', [
-      ['0011-devices-disks-raid', 'Devices, disks, RAID', 'ch 36–38'],
-      ['0012-files-and-vsfs', 'Files & a simple FS', 'ch 39–40'],
-      ['0013-ffs-journaling-lfs', 'FFS, journaling, LFS', 'ch 41–43'],
-      ['0014-ssd-and-integrity', 'SSDs & integrity', 'ch 44–45'],
-      ['0015-distributed-nfs-afs', 'Distributed FS', 'ch 48–50']]],
-    ['sec', 'Security', [['0016-security-and-vmms', 'Security & VMMs', 'ch 53–57, App B']]]
+    ['spec', 'The language, as specified', [
+      ['0001-objects-values-types', 'Objects, values and types', 'Ref §3.1–3.2'],
+      ['0002-lexical-structure-and-expressions', 'Lexical structure & expressions', 'Ref §2, §6'],
+      ['0003-execution-model', 'Execution model: names, scopes, closures', 'Ref §4'],
+      ['0004-data-model-special-methods', 'Data model I: special methods', 'Ref §3.3'],
+      ['0005-attribute-access-and-descriptors', 'Data model II: attributes & descriptors', 'Ref §3.3.2, HOWTO'],
+      ['0006-classes-mro-metaclasses', 'Classes, MRO, metaclasses', 'Ref §3.3.3, HOWTO'],
+      ['0007-functions-generators-coroutines', 'Functions, generators, coroutines', 'Ref §6.3, §3.4'],
+      ['0008-statements-and-pattern-matching', 'Statements, exceptions, pattern matching', 'Ref §7–8'],
+      ['0009-import-system', 'The import system', 'Ref §5'],
+      ['0010-typing', 'Typing: the PEP 484 lineage to 3.13', 'PEPs 484…742']]],
+    ['internals', 'CPython 3.13 internals', [
+      ['0011-compiler-and-bytecode', 'From source to bytecode', 'InternalDocs compiler, dis'],
+      ['0012-eval-loop-and-specialization', 'The eval loop, specialization, JIT', 'InternalDocs interpreter, PEPs 659/744'],
+      ['0013-memory-refcounting-gc', 'Memory, refcounting, garbage collection', 'InternalDocs GC, PEP 683'],
+      ['0014-gil-and-free-threading', 'The GIL and free-threaded Python', 'PEP 703, HOWTO']]],
+    ['data', 'DataFrames: pandas vs Polars', [
+      ['0015-dataframe-data-models', 'Two data models', 'pandas dsintro, Polars concepts'],
+      ['0016-selection-and-indexing', 'Selecting, filtering, assigning', 'pandas indexing, Polars expressions'],
+      ['0017-expressions-and-lazy', 'Expressions, contexts, lazy queries', 'Polars lazy, pandas chaining'],
+      ['0018-groupby-joins-reshaping', 'Groupby, joins, reshaping', 'pandas groupby/merging, Polars transformations'],
+      ['0019-time-series', 'Time series', 'pandas timeseries, Polars time-series'],
+      ['0020-performance-and-scale', 'Performance, memory, scale', 'pandas enhancingperf/scale, Modern Polars']]]
   ];
   const LESSONS = PIECES.flatMap(p => p[2].map(l => [l[0], l[1], p[0], l[2]]));
   const title = id => (LESSONS.find(l => l[0] === id) || [])[1] || id;
@@ -257,7 +278,7 @@ window.OS = (function () {
     const isLesson = i >= 0;
     const top = document.createElement('header'); top.className = 'topbar';
     top.innerHTML = `<button class="menu" aria-label="Open directory" aria-expanded="false">☰<span>Directory</span></button>
-      <a class="brand" href="${root}index.html"><span class="dot"></span>OSTEP course</a>
+      <a class="brand" href="${root}index.html"><span class="dot"></span>Python 3.13 course</a>
       <nav class="links"><a href="${root}reference/glossary.html">Glossary</a><a href="${root}reference/cheatsheets.html">Cheat sheets</a><a href="${root}notes.html">My notes</a></nav>
       ${isLesson ? `<span class="where">${i+1} / ${LESSONS.length}</span>` : ''}`;
     document.body.prepend(top);
@@ -341,6 +362,42 @@ window.OS = (function () {
     });
   }
 
+
+  /* ---------- runnable Python (Pyodide, loaded on first use) ---------- */
+  const pyodideP = {};
+  function loadPy(status, version) {
+    version = version || '0.28.3';
+    if (pyodideP[version]) return pyodideP[version];
+    status('loading Python (Pyodide ' + version + ', ~10 MB, once per page)…');
+    pyodideP[version] = new Promise((res, rej) => {
+      const s = document.createElement('script'); s.src = 'https://cdn.jsdelivr.net/pyodide/v' + version + '/full/pyodide.js';
+      s.onload = () => window.loadPyodide({ indexURL: 'https://cdn.jsdelivr.net/pyodide/v' + version + '/full/' }).then(res, rej);
+      s.onerror = () => rej(new Error('Could not load Pyodide (offline, or blocked by this preview).'));
+      document.head.append(s);
+    });
+    return pyodideP[version];
+  }
+  function py(el, code, opts) {
+    el = typeof el === 'string' ? document.getElementById(el) : el; opts = opts || {};
+    el.classList.add('pyrun');
+    el.innerHTML = `<div class="pyhead"><span>Python${opts.note ? ' · ' + esc(opts.note) : ''}</span><span class="pystatus"></span><button class="primary run">▶ Run</button><button class="reset">Reset</button></div><textarea spellcheck="false">${esc(code.trim())}</textarea><pre class="pyout" hidden></pre>`;
+    const ta = el.querySelector('textarea'), out = el.querySelector('.pyout'), st = el.querySelector('.pystatus');
+    const fit = () => { ta.style.height = 'auto'; ta.style.height = Math.min(480, ta.scrollHeight + 4) + 'px'; }; fit(); ta.addEventListener('input', fit);
+    el.querySelector('.reset').onclick = () => { ta.value = code.trim(); fit(); out.hidden = true; };
+    el.querySelector('.run').onclick = async () => {
+      out.hidden = false; out.textContent = ''; st.textContent = '';
+      try {
+        const pyo = await loadPy(m => st.textContent = m, opts.pyodide || ((opts.packages||[]).includes('polars') ? '0.27.7' : '0.28.3'));
+        if (opts.packages) { st.textContent = 'loading ' + opts.packages.join(', ') + '…'; await pyo.loadPackage(opts.packages).catch(() => {}); }
+        st.textContent = 'running…';
+        pyo.setStdout({ batched: s => out.textContent += s + '\n' }); pyo.setStderr({ batched: s => out.textContent += s + '\n' });
+        const r = await pyo.runPythonAsync(ta.value);
+        if (r !== undefined && r !== null && String(r) !== 'None') out.textContent += String(r);
+        st.textContent = 'done · CPython ' + pyo.runPython('import sys; f"{sys.version_info.major}.{sys.version_info.minor}"') + ' in WebAssembly';
+      } catch (e) { out.textContent += String(e); st.textContent = 'error'; }
+    };
+  }
+
   /* ---------- flip cards ---------- */
   function cards(el, list) {
     el = typeof el === 'string' ? document.getElementById(el) : el;
@@ -385,17 +442,61 @@ window.OS = (function () {
     el.querySelectorAll('input').forEach(c => c.onchange = () => { const s = [...el.querySelectorAll('input:checked')].map(x => +x.dataset.i); if (pageId) store.set('obj:' + pageId, s); });
   }
 
-  return { chrome, quiz, cards, stepper, gantt, objectives, esc, store, LESSONS, PIECES, title };
+  return { chrome, quiz, cards, stepper, gantt, objectives, py, esc, store, LESSONS, PIECES, title };
 })();
 
 </script>
 <script>
-OS.chrome('index','');
-const P=[['intro','Introduction','What an OS is: the three pieces, design goals, history.',['0001-three-easy-pieces','Three easy pieces','ch 1–2']],
-['virt','Virtualization','The CPU and memory made private and plentiful.',['0002-processes','Processes & the process API','ch 4–5'],['0003-limited-direct-execution','Limited direct execution','ch 6'],['0004-scheduling','Scheduling: FIFO to CFS and multi-CPU','ch 7–10'],['0005-address-spaces','Address spaces, base/bounds, segments','ch 13–16'],['0006-paging-and-tlbs','Free space, paging, TLBs, small tables','ch 17–20'],['0007-swapping','Swapping, replacement, VAX/VMS & Linux','ch 21–23']],
-['conc','Concurrency','Threads and the primitives that make them safe.',['0008-threads-and-locks','Threads, thread API, locks','ch 26–28'],['0009-cvs-and-semaphores','Locked structures, CVs, semaphores','ch 29–31'],['0010-bugs-and-events','Concurrency bugs & event-based servers','ch 32–33']],
-['pers','Persistence + Security','Storage from the device up; then protecting it all.',['0011-devices-disks-raid','Devices, disks, RAID','ch 36–38'],['0012-files-and-vsfs','Files, directories, a simple file system','ch 39–40'],['0013-ffs-journaling-lfs','FFS, crash consistency, LFS','ch 41–43'],['0014-ssd-and-integrity','SSDs & data integrity','ch 44–45'],['0015-distributed-nfs-afs','Distributed systems, NFS, AFS','ch 48–50'],['0016-security-and-vmms','Security (ch 53–57) & VMMs','ch 53–57, App B']]];
-const m=document.getElementById('map');let idx=0;const S=OS.store;
-m.innerHTML=P.map(([cls,name,desc,...ls])=>`<div class="piece piece-${cls}"><h3>${name}</h3><p>${desc}</p>${ls.map(l=>{idx++;const q=S.get('quiz:'+l[0]),nt=(S.get('notes:'+l[0])||{}).text;return `<a href="lessons/${l[0]}.html" data-id="${l[0]}" class="${q&&q.score===q.total?'done':''}">${idx}. ${l[1]}<small>${l[2]}${q?` · quiz ${q.score}/${q.total}`:''}${nt?' · ✎ notes':''}</small></a>`;}).join('')}</div>`).join('');
-const done=OS.LESSONS.filter(l=>S.get('quiz:'+l[0])).length;const ph=document.createElement('p');ph.className='cap';ph.textContent=done?`${done} of 16 lesson quizzes attempted — see My notes & progress for details.`:'Quiz scores, checked objectives and notes are saved in this browser as you go.';document.getElementById('map').after(ph);
+OS.chrome('0020-performance-and-scale');
+OS.objectives('obj',['List the pandas scaling rules and the Modern Polars rules and map one onto the other.','Quantify dtype choices (int64 vs uint8, object vs category) for a large column.','Explain why Polars parallelizes and pandas does not, in terms of the GIL and engine design.','Explain what only a lazy engine can do and how streaming/sink handle larger-than-memory data.','Choose between pandas, Polars and other tools for a given stage and interoperate via Arrow.']);
+const MK={int64:{bars:[['int64',80,'80 MB'],['int32',40,'40 MB'],['uint8',10,'10 MB'],['Polars UInt8 + bitmap',11.25,'11 MB']],m:'Values 0–200 fit in one byte: int64 wastes 7 bytes per value. Both libraries let you downcast; Polars\' null bitmap adds n/8 bytes on top.'},strobj:{bars:[['pandas object',~~(10*8+10*55)/1,'~630 MB'],['pandas str (Arrow)',~~(10*4+10*5),'~90 MB'],['Polars String',~~(10*4+10*5)+1,'~90 MB'],['Polars Categorical',~~(10*4),'~40 MB']],m:'object dtype stores a pointer per cell plus a full Python str object (~50+ bytes each) — the pathological case. Arrow strings store offsets + bytes; categoricals store small integer codes and a dictionary.'},strcat:{bars:[['pandas object',630,'~630 MB'],['pandas category',10,'~10 MB (int8 codes)'],['Polars Categorical',40,'~40 MB (u32 codes)'],['Polars Enum',40,'~40 MB, fixed categories']],m:'With 10 distinct values, codes replace strings: pandas uses the smallest int type for codes (int8 here); Polars Categorical uses 32-bit physical codes.'},float:{bars:[['float64',80,'80 MB'],['float32',40,'40 MB'],['Polars Float64',80,'80 MB'],['Polars Float32',40,'40 MB']],m:'Floats: halve memory with float32 if the precision suffices; missing values need no upcast in either (NaN fits) — but Polars distinguishes null from NaN.'}};
+function mm(){const k=document.getElementById('mk').value,m=MK[k],mx=Math.max(...m.bars.map(b=>b[1]));document.getElementById('mm').innerHTML=m.bars.map(b=>`<div><i><b style="height:${100*b[1]/mx}%"></b></i>${b[0]}<br><small>${b[2]}</small></div>`).join('');document.getElementById('mmsg').textContent=m.m+' (10 M rows; sizes approximate.)';}
+document.getElementById('mk').onchange=mm;mm();
+OS.py('py1',`
+import pandas as pd, polars as pl, numpy as np
+n = 300_000
+names = np.random.choice(["alpha", "beta", "gamma", "delta"], n)
+pdf = pd.DataFrame({"id": np.arange(n, dtype="int64"), "code": np.random.randint(0, 200, n).astype("int64"), "name": names})
+mb = lambda s: round(s / 1e6, 2)
+print("pandas default MB:", mb(pdf.memory_usage(deep=True).sum()))
+pdf2 = pdf.assign(code=pdf["code"].astype("uint8"), name=pdf["name"].astype("category"))
+print("downcast + category MB:", mb(pdf2.memory_usage(deep=True).sum()), "| per column:", dict(pdf2.memory_usage(deep=True).map(mb)))
+pl_df = pl.from_pandas(pdf)
+print("polars MB:", pl_df.estimated_size("mb").__round__(2), "| dtypes:", pl_df.dtypes)
+pl2 = pl_df.with_columns(pl.col("code").cast(pl.UInt8), pl.col("name").cast(pl.Categorical))
+print("polars downcast + Categorical MB:", pl2.estimated_size("mb").__round__(2))`,{packages:['pandas','polars']});
+OS.py('py2',`
+import polars as pl, pandas as pd, numpy as np, time, os
+n = 1_000_000
+pdf = pd.DataFrame({"k": np.random.randint(0, 1000, n), "v": np.random.rand(n), "w": np.random.rand(n)})
+pl_df = pl.from_pandas(pdf)
+def t(label, f):
+    s = time.perf_counter(); f(); print(f"{label:<40} {time.perf_counter()-s:6.3f}s")
+t("pandas groupby mean (single thread)", lambda: pdf.groupby("k")[["v", "w"]].mean())
+t("polars eager group_by mean", lambda: pl_df.group_by("k").agg(pl.col("v", "w").mean()))
+t("polars lazy filter+group_by (optimized)", lambda: pl_df.lazy().filter(pl.col("v") > 0.5).group_by("k").agg(pl.col("w").mean()).collect())
+t("pandas equivalent", lambda: pdf[pdf["v"] > 0.5].groupby("k")["w"].mean())
+print("polars thread pool size:", pl.thread_pool_size(), "(this wasm build is single-threaded; on a laptop this equals your core count)")
+print("multiprocessing with polars: use start method 'spawn', not 'fork' (thread pools + fork deadlock)")`,{packages:['pandas','polars']});
+OS.py('py3',`
+import polars as pl, pandas as pd, pyarrow as pa
+pdf = pd.DataFrame({"a": [1, 2, 3], "b": ["x", "y", "z"]})
+pl_df = pl.from_pandas(pdf)                       # via Arrow
+tbl = pl_df.to_arrow()                            # zero-copy Arrow table
+back = tbl.to_pandas(types_mapper=pd.ArrowDtype)  # pandas with Arrow-backed dtypes
+print(type(tbl).__name__, "|", back.dtypes.to_dict())
+print("pandas → pyarrow → polars round trip equal:", pl.from_arrow(pa.Table.from_pandas(pdf)).equals(pl_df))
+# a decision sketch
+for rows, need in [(50_000, "plots + statsmodels"), (50_000_000, "repeatable ETL"), (5_000_000_000, "cluster / SQL")]:
+    tool = "pandas" if rows < 1e6 else "polars (lazy, streaming)" if rows < 1e9 else "DuckDB / Spark"
+    print(f"{rows:>15,} rows, {need:<22} → {tool}")`,{packages:['pandas','polars']});
+OS.cards('cards',[['Load less data','read_parquet(columns=), read_csv(usecols=) in pandas; scan_* + select in Polars (projection pushdown does it).'],['Efficient dtypes','Downcast numerics (uint8 vs int64 = 8× less), category/Categorical for repeated strings, Arrow-backed strings instead of object.'],['Chunking','pandas: chunksize / per-file loops to keep memory bounded; Polars: lazy streaming batches and sink_* writers.'],['Vectorize','Both: avoid Python UDFs; pandas eval/query/Numba/Cython, Polars expressions and map_batches.'],['Lazy API','The one rule without a pandas counterpart: lets the optimizer reorder and prune the whole query.'],['Parallelism','Polars\' Rust threads never hold the GIL; pandas runs one operation at a time — free-threaded Python does not change library design.'],['spawn, not fork','Polars + multiprocessing: forking a process with a live thread pool can deadlock; use the spawn start method.'],['Arrow interchange','pl.from_pandas / to_pandas / to_arrow / from_arrow move data between libraries cheaply — choose per stage.']]);
+OS.quiz('quiz',[
+{q:'Per the pandas scaling guide, why is read_parquet(...)[cols] worse than read_parquet(..., columns=cols)?',o:['it changes dtypes','the first loads ALL columns into memory before dropping them','the second is deprecated','no difference'],a:1,why:'Option 1 pays the full memory cost of every column; option 2 reads only the requested ones from the columnar file.'},
+{q:'Storing values 0–200 as int64 instead of uint8 uses how much more memory?',o:['2×','8×','4×','the same'],a:1,why:'8 bytes vs 1 byte per value; Modern Polars: use the smallest necessary numeric type.'},
+{q:'Which performance rule exists for Polars but has no pandas counterpart?',o:['use Parquet','use categoricals','use the lazy API','select only needed columns'],a:2,why:'pandas is eager-only; laziness enables query optimization that pandas cannot perform.'},
+{q:'Why can Polars use all cores while pandas cannot, even on free-threaded 3.13?',o:['pandas forbids threads','Polars\' Rust engine runs without the GIL by design; pandas executes one operation at a time','NumPy holds the GIL','Polars uses multiprocessing internally'],a:1,why:'Parallelism is a property of the engine: Polars\' threads don\'t touch Python objects; pandas\' API is single-threaded regardless of the interpreter build.'},
+{q:'The recommended multiprocessing start method when using Polars is:',o:['fork','spawn','forkserver only','any'],a:1,why:'The Polars guide: forking a multithreaded process is problematic (deadlocks); use spawn.'},
+{q:'For a dataset larger than RAM, the pandas guide suggests:',o:['increasing the switch interval','chunking or using other libraries like Dask','using object dtype','using inplace=True'],a:1,why:'Its headings are load less data, efficient dtypes, chunking, and other libraries; Polars offers streaming for the same problem.'},
+{q:'Converting between pandas and Polars is cheap because:',o:['both use NumPy internally','both speak Apache Arrow (zero-copy interchange)','Polars wraps pandas','they share the same C library'],a:1,why:'from_pandas/to_pandas/to_arrow go through Arrow memory, often without copying.'}]);
 </script></body></html>

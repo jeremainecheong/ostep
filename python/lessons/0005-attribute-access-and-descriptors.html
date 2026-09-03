@@ -1,11 +1,11 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>OSTEP course — Operating Systems: Three Easy Pieces, taught interactively</title><style>
+<title>5 · Attributes & descriptors — Python 3.13 course</title><style>
 /* OSTEP course — shared stylesheet. Three pieces, three hues. */
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
 :root{
   --ink:#151b2f; --ink-2:#1e2540; --ink-3:#28304f; --line:#3a4368;
   --paper:#eef0f7; --muted:#a9b1cf; --faint:#6e779a;
-  --virt:#e8b84a; --conc:#5bc8f5; --pers:#6bcb77; --sec:#f47fa0; --intro:#c9a8ff;
+  --virt:#e8b84a; --conc:#5bc8f5; --pers:#6bcb77; --sec:#f47fa0; --intro:#c9a8ff; --spec:#ffd166; --internals:#5bc8f5; --data:#6bcb77;
   --ok:#6bcb77; --bad:#ff6b6b;
   --accent:var(--virt);
   --radius:6px;
@@ -28,7 +28,7 @@ p,li{max-width:72ch}
 .hero{padding:44px 0 16px}
 .hero .chapters{color:var(--muted);font-size:.95rem;margin-bottom:6px}
 .lede{font-size:1.2rem;color:var(--muted);max-width:66ch}
-.piece-virt{--accent:var(--virt)} .piece-conc{--accent:var(--conc)} .piece-pers{--accent:var(--pers)} .piece-sec{--accent:var(--sec)} .piece-intro{--accent:var(--intro)}
+.piece-spec{--accent:var(--spec)} .piece-internals{--accent:var(--internals)} .piece-data{--accent:var(--data)} .piece-virt{--accent:var(--virt)} .piece-conc{--accent:var(--conc)} .piece-pers{--accent:var(--pers)} .piece-sec{--accent:var(--sec)} .piece-intro{--accent:var(--intro)}
 .fig{background:var(--ink-2);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;margin:22px 0}
 .fig figcaption,.cap{color:var(--muted);font-size:.9rem;margin-top:10px}
 .fig svg{max-width:100%;height:auto;display:block}
@@ -182,32 +182,60 @@ details>div{padding:0 16px 14px}
 }
 @media (max-width:420px){.cards{grid-template-columns:1fr}}
 
+/* ---------- runnable Python ---------- */
+.pyrun{border:1px solid var(--line);border-radius:var(--radius);background:#0f1424;margin:18px 0;overflow:hidden}
+.pyrun .pyhead{display:flex;gap:10px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--line);font-size:.85rem;color:var(--muted);background:var(--ink-2)}
+.pyrun .pyhead span:first-child{flex:1;font-weight:600;color:var(--paper)}
+.pyrun .pystatus{font-size:.78rem}
+.pyrun textarea{display:block;width:100%;border:none;background:#0f1424;color:var(--paper);font-family:'IBM Plex Mono',monospace;font-size:.86rem;line-height:1.5;padding:12px 14px;resize:vertical;outline:none;min-height:60px;tab-size:4}
+.pyrun .pyout{margin:0;border:none;border-top:1px solid var(--line);border-left:none;border-radius:0;background:#0a0e1a;color:#cfe3ff;max-height:320px}
+
 </style>
-<style>.map{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:24px 0}.piece{border:1px solid var(--line);border-radius:8px;padding:16px;background:var(--ink-2);border-top:4px solid var(--accent)}.piece h3{margin:0 0 4px;color:var(--accent)}.piece p{font-size:.9rem;color:var(--muted);margin:0 0 10px}.piece a{display:block;text-decoration:none;color:var(--paper);padding:6px 0;border-top:1px solid var(--line);font-size:.92rem}.piece a:hover{color:var(--accent)}.piece a small{display:block;color:var(--faint);font-size:.78rem}.piece a.done::after{content:" ✓";color:var(--ok)}.how{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}.how .fig{margin:0}.how h4{margin:0 0 6px}@media(max-width:900px){.map{grid-template-columns:1fr 1fr}.how{grid-template-columns:1fr}}@media(max-width:600px){.map{grid-template-columns:1fr}}.big{font-size:1.05rem}</style></head>
-<body class="piece-intro"><div class="wrap">
-<header class="hero"><div class="chapters">Operating Systems: Three Easy Pieces · Remzi H. and Andrea C. Arpaci-Dusseau (v1.10, 2023) · security chapters by Peter Reiher</div>
-<h1>The whole book, as sixteen interactive lessons</h1>
-<p class="lede big">Built from the text of all 57 chapters plus the VMM appendix — every "crux", every summary, every number in the figures was extracted from the chapter PDFs, not recalled. Each lesson is short, visual, and ends in retrieval practice. Do them in order; the book's pieces build on each other.</p></header>
+<style>.chain{display:grid;gap:6px}.chain div{padding:9px 12px;border-radius:6px;border:1px solid var(--line);background:#0f1424;font-size:.88rem;display:flex;gap:10px;align-items:center}.chain div b{min-width:22px;color:var(--muted)}.chain div.hit{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 15%,#0f1424)}.chain div.skip{opacity:.45}.chain div.stop{border-color:var(--accent)}</style></head>
+<body class="piece-spec"><div class="wrap">
+<header class="hero"><div class="chapters">Language Reference §3.3.2 Customizing attribute access · Descriptor HOWTO</div>
+<h1>Attribute access: the algorithm behind the dot</h1>
+<p class="lede"><code>a.x</code> is not a dictionary lookup. It is <code>type(a).__getattribute__(a, "x")</code>, and the default implementation runs a precise five-step search in which <em>descriptors</em> — objects defining <code>__get__</code>/<code>__set__</code>/<code>__delete__</code> — can intercept. Functions are descriptors; that is how methods bind <code>self</code>. <code>property</code>, <code>classmethod</code>, <code>staticmethod</code>, <code>__slots__</code>: all descriptors. Learn the algorithm once and every "magic" attribute feature is just an application of it.</p></header>
+<div class="source"><b>Primary sources:</b> <a href="https://docs.python.org/3.13/reference/datamodel.html#customizing-attribute-access">§3.3.2</a> (including <em>Implementing Descriptors</em>, <em>Invoking Descriptors</em>, <em>__slots__</em>) and Raymond Hettinger's <a href="https://docs.python.org/3.13/howto/descriptor.html">Descriptor HOWTO</a>, whose pure-Python <code>object_getattribute</code> the simulator below reproduces.</div>
+<h2>What you'll be able to do</h2><ul id="obj"></ul>
 
-<figure class="fig"><svg viewBox="0 0 900 150" role="img" aria-label="three pieces">
-<rect x="20" y="30" width="270" height="90" rx="8" fill="#e8b84a"/><text x="155" y="68" text-anchor="middle" fill="#111" font-size="20" font-weight="700" font-family="Fraunces,serif">Virtualization</text><text x="155" y="95" text-anchor="middle" fill="#111" font-size="13">CPU (ch 4–10) · Memory (ch 13–23)</text>
-<rect x="315" y="30" width="270" height="90" rx="8" fill="#5bc8f5"/><text x="450" y="68" text-anchor="middle" fill="#111" font-size="20" font-weight="700" font-family="Fraunces,serif">Concurrency</text><text x="450" y="95" text-anchor="middle" fill="#111" font-size="13">threads, locks, CVs, semaphores, bugs (ch 26–33)</text>
-<rect x="610" y="30" width="270" height="90" rx="8" fill="#6bcb77"/><text x="745" y="68" text-anchor="middle" fill="#111" font-size="20" font-weight="700" font-family="Fraunces,serif">Persistence</text><text x="745" y="95" text-anchor="middle" fill="#111" font-size="13">devices, disks, file systems, distributed (ch 36–50)</text>
-<text x="450" y="140" text-anchor="middle" fill="#a9b1cf" font-size="13">+ Security (ch 53–57) and Virtual Machine Monitors (Appendix B)</text></svg></figure>
+<h2>The three hooks</h2>
+<ul><li><b><code>__getattribute__(self, name)</code></b>: called <em>unconditionally</em> for every attribute access on instances of the class. Override it and you own everything — and must call <code>object.__getattribute__(self, name)</code> for anything you need, or you recurse forever. (Implicit special-method lookup may still bypass it — lesson 4.)</li>
+<li><b><code>__getattr__(self, name)</code></b>: called only when normal lookup <em>fails</em> with <code>AttributeError</code>. Must return a value or raise <code>AttributeError</code>. The reference calls the asymmetry with <code>__setattr__</code> intentional: it keeps the normal path fast and lets <code>__getattr__</code> read other attributes without recursion.</li>
+<li><b><code>__setattr__</code> / <code>__delattr__</code></b>: called on <em>every</em> assignment/deletion. To actually store, call <code>object.__setattr__(self, name, value)</code>; assigning <code>self.name = value</code> inside would recurse.</li></ul>
+<div id="py1"></div>
 
-<h2>Course map</h2>
-<div class="map" id="map"></div>
+<h2>Descriptors</h2>
+<div class="crux"><b>Definition (§3.3.2.2):</b> an object attribute with "binding behavior" — any object whose type defines <code>__get__</code>, <code>__set__</code> or <code>__delete__</code>. A descriptor only works when it lives in a <em>class</em> dictionary (of the owner or a base), not in an instance's <code>__dict__</code>. Defining <code>__set__</code> or <code>__delete__</code> makes it a <b>data descriptor</b>; only <code>__get__</code> makes a <b>non-data descriptor</b>.</div>
+<p>How the call is assembled depends on what you bind through (§3.3.2.3): instance binding <code>a.x</code> → <code>type(a).__dict__['x'].__get__(a, type(a))</code>; class binding <code>A.x</code> → <code>A.__dict__['x'].__get__(None, A)</code>; super binding <code>super(A, a).x</code> → find the base <code>B</code> after <code>A</code> in <code>a.__class__.__mro__</code> and return <code>B.__dict__['x'].__get__(a, A)</code>.</p>
+<div class="fig"><h4>Simulator: <code>object.__getattribute__(a, "x")</code>, step by step</h4><div class="controls"><label>where is <code>x</code> defined? <select id="where"><option value="data">data descriptor on the class AND in the instance dict</option><option value="inst">instance dict AND a non-data descriptor (a method) on the class</option><option value="nondata">only a non-data descriptor on the class</option><option value="cls">only a plain class variable</option><option value="ga">nowhere, but __getattr__ is defined</option><option value="none">nowhere</option></select></label></div><div class="chain" id="chain"></div><div class="cap" id="cmsg"></div></div>
+<pre><code># the HOWTO's pure-Python equivalent of PyObject_GenericGetAttr (Objects/object.c)
+def object_getattribute(obj, name):
+    null = object()
+    objtype = type(obj)
+    cls_var = find_name_in_mro(objtype, name, null)          # walk objtype.__mro__, check vars(base)
+    descr_get = getattr(type(cls_var), '__get__', null)
+    if descr_get is not null:
+        if hasattr(type(cls_var), '__set__') or hasattr(type(cls_var), '__delete__'):
+            return descr_get(cls_var, obj, objtype)          # 1. data descriptor
+    if hasattr(obj, '__dict__') and name in vars(obj):
+        return vars(obj)[name]                               # 2. instance variable
+    if descr_get is not null:
+        return descr_get(cls_var, obj, objtype)              # 3. non-data descriptor
+    if cls_var is not null:
+        return cls_var                                       # 4. class variable
+    raise AttributeError(name)                               # 5. → __getattr__, if defined</code></pre>
+<div id="py2"></div>
 
-<h2>How to use this course</h2>
-<div class="how">
-<div class="fig"><h4>1. One lesson per sitting</h4><p>Each takes 25–45 minutes: read, play with the simulator until you can predict its output, flip the cards, then do the quiz <em>from memory</em>. Check off the objectives at the top only when you could explain them to someone else.</p></div>
-<div class="fig"><h4>2. Then read the chapter</h4><p>Every lesson links its primary source — the free chapter PDFs at <a href="https://pages.cs.wisc.edu/~remzi/OSTEP/">ostep.org</a>. The lesson gives you the map; the chapter has the jokes, the asides, and the homework simulators (<code>ostep-homework</code>) which are the best practice there is.</p></div>
-<div class="fig"><h4>3. Space it out</h4><p>Long-term retention comes from re-testing later, not from feeling fluent now. Redo a lesson's quiz two days later and again after a week; the <a href="reference/cheatsheets.html">cheat sheets</a> are for the fast pass, the <a href="reference/glossary.html">glossary</a> for vocabulary. Ask me in the chat for mixed quizzes across lessons.</p></div></div>
+<h2>Everything built on it</h2>
+<div class="two"><div class="fig"><h4>Functions → methods</h4><p>A function object has <code>__get__</code>; accessed through an instance it returns a <b>bound method</b> (<code>__self__</code>, <code>__func__</code>); through the class, the plain function. Because functions are <em>non-data</em> descriptors, an instance attribute of the same name shadows the method — the reference notes this is deliberate, so individual instances can acquire different behaviour. <code>staticmethod</code> returns the function unchanged; <code>classmethod</code> binds the class instead of the instance.</p></div>
+<div class="fig"><h4>property, slots, __set_name__</h4><p><code>property</code> is a <em>data</em> descriptor, so it always wins over the instance dict — that's how a read-only property blocks assignment. <code>__slots__</code> creates a <b>member descriptor</b> per name, denies <code>__dict__</code> and <code>__weakref__</code> (unless listed or provided by a base), saves memory and speeds lookup; a class attribute with the same name as a slot conflicts (the descriptor would be overwritten). <code>__set_name__(owner, name)</code> is called on every descriptor in the class body when the class is created, so descriptors learn their own attribute name.</p></div></div>
+<div id="py3"></div>
+<div id="py4"></div>
 
-<h2>What the book covers that this course does too</h2>
-<p>Chapters 1–2 (dialogue, introduction) → lesson 1. Chapters 3, 11, 12, 24, 25, 34, 35, 46, 47, 51, 52 are the book's short dialogues that open and close each part; their content is folded into the neighbouring lessons. The lab appendices (tutorial, systems and xv6 projects) and the deprecated monitors appendix are referenced in RESOURCES.md rather than taught.</p>
-<h2>Sister courses</h2><div class="how"><div class="fig"><h4><a href="python/index.html">Python 3.13</a></h4><p>The Language Reference, CPython internals (specializing interpreter, JIT, GC, GIL and free-threading), and pandas vs Polars — 20 interactive lessons with Python running in the browser.</p></div><div class="fig"><h4>Java 21</h4><p>Coming next: the JLS/JVMS, the JVM (class loading, bytecode, JIT, GC), and virtual threads internals.</p></div></div>
-<p class="tip">This workspace follows the <code>teach</code> skill layout: <code>MISSION.md</code> (why you're learning this), <code>RESOURCES.md</code> (sources), <code>NOTES.md</code>, <code>learning-records/</code>, <code>lessons/</code>, <code>reference/</code>, <code>assets/</code>. Tell me in the chat how a lesson landed and I'll adapt the next ones.</p>
+<h2>Flash cards</h2><div id="cards"></div>
+<h2>Retrieval practice</h2><div id="quiz"></div>
+<p class="tip">Want to implement a validating descriptor library, a cached property, or trace <code>type.__getattribute__</code> (metaclass lookup) the same way? Ask me in the chat.</p>
 </div>
 <script>
 /* OSTEP course — shared components. Every page loads this file (inlined by build.py). */
@@ -217,34 +245,38 @@ window.OS = (function () {
   /* ---------- persistent storage (localStorage on a real site; in-memory fallback in sandboxes) ---------- */
   const mem = {};
   const store = {
-    get(k) { try { const v = localStorage.getItem('ostep:' + k); return v === null ? (mem[k] ?? null) : JSON.parse(v); } catch (e) { return mem[k] ?? null; } },
-    set(k, v) { mem[k] = v; try { localStorage.setItem('ostep:' + k, JSON.stringify(v)); } catch (e) {} },
-    del(k) { delete mem[k]; try { localStorage.removeItem('ostep:' + k); } catch (e) {} },
-    keys(prefix) { const out = new Set(Object.keys(mem).filter(k => k.startsWith(prefix))); try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith('ostep:' + prefix)) out.add(k.slice(6)); } } catch (e) {} return [...out]; },
-    available() { try { localStorage.setItem('ostep:test', '1'); localStorage.removeItem('ostep:test'); return true; } catch (e) { return false; } }
+    get(k) { try { const v = localStorage.getItem('py313:' + k); return v === null ? (mem[k] ?? null) : JSON.parse(v); } catch (e) { return mem[k] ?? null; } },
+    set(k, v) { mem[k] = v; try { localStorage.setItem('py313:' + k, JSON.stringify(v)); } catch (e) {} },
+    del(k) { delete mem[k]; try { localStorage.removeItem('py313:' + k); } catch (e) {} },
+    keys(prefix) { const out = new Set(Object.keys(mem).filter(k => k.startsWith(prefix))); try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith('py313:' + prefix)) out.add(k.slice(6)); } } catch (e) {} return [...out]; },
+    available() { try { localStorage.setItem('py313:test', '1'); localStorage.removeItem('py313:test'); return true; } catch (e) { return false; } }
   };
 
   /* ---------- course structure ---------- */
   const PIECES = [
-    ['intro', 'Introduction', [['0001-three-easy-pieces', 'Three easy pieces', 'ch 1–2']]],
-    ['virt', 'Virtualization', [
-      ['0002-processes', 'Processes & the process API', 'ch 4–5'],
-      ['0003-limited-direct-execution', 'Limited direct execution', 'ch 6'],
-      ['0004-scheduling', 'Scheduling', 'ch 7–10'],
-      ['0005-address-spaces', 'Address spaces & segments', 'ch 13–16'],
-      ['0006-paging-and-tlbs', 'Paging & TLBs', 'ch 17–20'],
-      ['0007-swapping', 'Swapping & policies', 'ch 21–23']]],
-    ['conc', 'Concurrency', [
-      ['0008-threads-and-locks', 'Threads & locks', 'ch 26–28'],
-      ['0009-cvs-and-semaphores', 'CVs & semaphores', 'ch 29–31'],
-      ['0010-bugs-and-events', 'Bugs & events', 'ch 32–33']]],
-    ['pers', 'Persistence', [
-      ['0011-devices-disks-raid', 'Devices, disks, RAID', 'ch 36–38'],
-      ['0012-files-and-vsfs', 'Files & a simple FS', 'ch 39–40'],
-      ['0013-ffs-journaling-lfs', 'FFS, journaling, LFS', 'ch 41–43'],
-      ['0014-ssd-and-integrity', 'SSDs & integrity', 'ch 44–45'],
-      ['0015-distributed-nfs-afs', 'Distributed FS', 'ch 48–50']]],
-    ['sec', 'Security', [['0016-security-and-vmms', 'Security & VMMs', 'ch 53–57, App B']]]
+    ['spec', 'The language, as specified', [
+      ['0001-objects-values-types', 'Objects, values and types', 'Ref §3.1–3.2'],
+      ['0002-lexical-structure-and-expressions', 'Lexical structure & expressions', 'Ref §2, §6'],
+      ['0003-execution-model', 'Execution model: names, scopes, closures', 'Ref §4'],
+      ['0004-data-model-special-methods', 'Data model I: special methods', 'Ref §3.3'],
+      ['0005-attribute-access-and-descriptors', 'Data model II: attributes & descriptors', 'Ref §3.3.2, HOWTO'],
+      ['0006-classes-mro-metaclasses', 'Classes, MRO, metaclasses', 'Ref §3.3.3, HOWTO'],
+      ['0007-functions-generators-coroutines', 'Functions, generators, coroutines', 'Ref §6.3, §3.4'],
+      ['0008-statements-and-pattern-matching', 'Statements, exceptions, pattern matching', 'Ref §7–8'],
+      ['0009-import-system', 'The import system', 'Ref §5'],
+      ['0010-typing', 'Typing: the PEP 484 lineage to 3.13', 'PEPs 484…742']]],
+    ['internals', 'CPython 3.13 internals', [
+      ['0011-compiler-and-bytecode', 'From source to bytecode', 'InternalDocs compiler, dis'],
+      ['0012-eval-loop-and-specialization', 'The eval loop, specialization, JIT', 'InternalDocs interpreter, PEPs 659/744'],
+      ['0013-memory-refcounting-gc', 'Memory, refcounting, garbage collection', 'InternalDocs GC, PEP 683'],
+      ['0014-gil-and-free-threading', 'The GIL and free-threaded Python', 'PEP 703, HOWTO']]],
+    ['data', 'DataFrames: pandas vs Polars', [
+      ['0015-dataframe-data-models', 'Two data models', 'pandas dsintro, Polars concepts'],
+      ['0016-selection-and-indexing', 'Selecting, filtering, assigning', 'pandas indexing, Polars expressions'],
+      ['0017-expressions-and-lazy', 'Expressions, contexts, lazy queries', 'Polars lazy, pandas chaining'],
+      ['0018-groupby-joins-reshaping', 'Groupby, joins, reshaping', 'pandas groupby/merging, Polars transformations'],
+      ['0019-time-series', 'Time series', 'pandas timeseries, Polars time-series'],
+      ['0020-performance-and-scale', 'Performance, memory, scale', 'pandas enhancingperf/scale, Modern Polars']]]
   ];
   const LESSONS = PIECES.flatMap(p => p[2].map(l => [l[0], l[1], p[0], l[2]]));
   const title = id => (LESSONS.find(l => l[0] === id) || [])[1] || id;
@@ -257,7 +289,7 @@ window.OS = (function () {
     const isLesson = i >= 0;
     const top = document.createElement('header'); top.className = 'topbar';
     top.innerHTML = `<button class="menu" aria-label="Open directory" aria-expanded="false">☰<span>Directory</span></button>
-      <a class="brand" href="${root}index.html"><span class="dot"></span>OSTEP course</a>
+      <a class="brand" href="${root}index.html"><span class="dot"></span>Python 3.13 course</a>
       <nav class="links"><a href="${root}reference/glossary.html">Glossary</a><a href="${root}reference/cheatsheets.html">Cheat sheets</a><a href="${root}notes.html">My notes</a></nav>
       ${isLesson ? `<span class="where">${i+1} / ${LESSONS.length}</span>` : ''}`;
     document.body.prepend(top);
@@ -341,6 +373,42 @@ window.OS = (function () {
     });
   }
 
+
+  /* ---------- runnable Python (Pyodide, loaded on first use) ---------- */
+  const pyodideP = {};
+  function loadPy(status, version) {
+    version = version || '0.28.3';
+    if (pyodideP[version]) return pyodideP[version];
+    status('loading Python (Pyodide ' + version + ', ~10 MB, once per page)…');
+    pyodideP[version] = new Promise((res, rej) => {
+      const s = document.createElement('script'); s.src = 'https://cdn.jsdelivr.net/pyodide/v' + version + '/full/pyodide.js';
+      s.onload = () => window.loadPyodide({ indexURL: 'https://cdn.jsdelivr.net/pyodide/v' + version + '/full/' }).then(res, rej);
+      s.onerror = () => rej(new Error('Could not load Pyodide (offline, or blocked by this preview).'));
+      document.head.append(s);
+    });
+    return pyodideP[version];
+  }
+  function py(el, code, opts) {
+    el = typeof el === 'string' ? document.getElementById(el) : el; opts = opts || {};
+    el.classList.add('pyrun');
+    el.innerHTML = `<div class="pyhead"><span>Python${opts.note ? ' · ' + esc(opts.note) : ''}</span><span class="pystatus"></span><button class="primary run">▶ Run</button><button class="reset">Reset</button></div><textarea spellcheck="false">${esc(code.trim())}</textarea><pre class="pyout" hidden></pre>`;
+    const ta = el.querySelector('textarea'), out = el.querySelector('.pyout'), st = el.querySelector('.pystatus');
+    const fit = () => { ta.style.height = 'auto'; ta.style.height = Math.min(480, ta.scrollHeight + 4) + 'px'; }; fit(); ta.addEventListener('input', fit);
+    el.querySelector('.reset').onclick = () => { ta.value = code.trim(); fit(); out.hidden = true; };
+    el.querySelector('.run').onclick = async () => {
+      out.hidden = false; out.textContent = ''; st.textContent = '';
+      try {
+        const pyo = await loadPy(m => st.textContent = m, opts.pyodide || ((opts.packages||[]).includes('polars') ? '0.27.7' : '0.28.3'));
+        if (opts.packages) { st.textContent = 'loading ' + opts.packages.join(', ') + '…'; await pyo.loadPackage(opts.packages).catch(() => {}); }
+        st.textContent = 'running…';
+        pyo.setStdout({ batched: s => out.textContent += s + '\n' }); pyo.setStderr({ batched: s => out.textContent += s + '\n' });
+        const r = await pyo.runPythonAsync(ta.value);
+        if (r !== undefined && r !== null && String(r) !== 'None') out.textContent += String(r);
+        st.textContent = 'done · CPython ' + pyo.runPython('import sys; f"{sys.version_info.major}.{sys.version_info.minor}"') + ' in WebAssembly';
+      } catch (e) { out.textContent += String(e); st.textContent = 'error'; }
+    };
+  }
+
   /* ---------- flip cards ---------- */
   function cards(el, list) {
     el = typeof el === 'string' ? document.getElementById(el) : el;
@@ -385,17 +453,97 @@ window.OS = (function () {
     el.querySelectorAll('input').forEach(c => c.onchange = () => { const s = [...el.querySelectorAll('input:checked')].map(x => +x.dataset.i); if (pageId) store.set('obj:' + pageId, s); });
   }
 
-  return { chrome, quiz, cards, stepper, gantt, objectives, esc, store, LESSONS, PIECES, title };
+  return { chrome, quiz, cards, stepper, gantt, objectives, py, esc, store, LESSONS, PIECES, title };
 })();
 
 </script>
 <script>
-OS.chrome('index','');
-const P=[['intro','Introduction','What an OS is: the three pieces, design goals, history.',['0001-three-easy-pieces','Three easy pieces','ch 1–2']],
-['virt','Virtualization','The CPU and memory made private and plentiful.',['0002-processes','Processes & the process API','ch 4–5'],['0003-limited-direct-execution','Limited direct execution','ch 6'],['0004-scheduling','Scheduling: FIFO to CFS and multi-CPU','ch 7–10'],['0005-address-spaces','Address spaces, base/bounds, segments','ch 13–16'],['0006-paging-and-tlbs','Free space, paging, TLBs, small tables','ch 17–20'],['0007-swapping','Swapping, replacement, VAX/VMS & Linux','ch 21–23']],
-['conc','Concurrency','Threads and the primitives that make them safe.',['0008-threads-and-locks','Threads, thread API, locks','ch 26–28'],['0009-cvs-and-semaphores','Locked structures, CVs, semaphores','ch 29–31'],['0010-bugs-and-events','Concurrency bugs & event-based servers','ch 32–33']],
-['pers','Persistence + Security','Storage from the device up; then protecting it all.',['0011-devices-disks-raid','Devices, disks, RAID','ch 36–38'],['0012-files-and-vsfs','Files, directories, a simple file system','ch 39–40'],['0013-ffs-journaling-lfs','FFS, crash consistency, LFS','ch 41–43'],['0014-ssd-and-integrity','SSDs & data integrity','ch 44–45'],['0015-distributed-nfs-afs','Distributed systems, NFS, AFS','ch 48–50'],['0016-security-and-vmms','Security (ch 53–57) & VMMs','ch 53–57, App B']]];
-const m=document.getElementById('map');let idx=0;const S=OS.store;
-m.innerHTML=P.map(([cls,name,desc,...ls])=>`<div class="piece piece-${cls}"><h3>${name}</h3><p>${desc}</p>${ls.map(l=>{idx++;const q=S.get('quiz:'+l[0]),nt=(S.get('notes:'+l[0])||{}).text;return `<a href="lessons/${l[0]}.html" data-id="${l[0]}" class="${q&&q.score===q.total?'done':''}">${idx}. ${l[1]}<small>${l[2]}${q?` · quiz ${q.score}/${q.total}`:''}${nt?' · ✎ notes':''}</small></a>`;}).join('')}</div>`).join('');
-const done=OS.LESSONS.filter(l=>S.get('quiz:'+l[0])).length;const ph=document.createElement('p');ph.className='cap';ph.textContent=done?`${done} of 16 lesson quizzes attempted — see My notes & progress for details.`:'Quiz scores, checked objectives and notes are saved in this browser as you go.';document.getElementById('map').after(ph);
+OS.chrome('0005-attribute-access-and-descriptors');
+OS.objectives('obj',['Distinguish __getattribute__, __getattr__, __setattr__ and avoid the recursion traps.','Define data vs non-data descriptors and give the instance/class/super binding transformations.','Run the five-step object.__getattribute__ algorithm by hand for any layout.','Explain why methods bind, why instance attributes can shadow methods but not properties, and how __slots__ works.','Describe what __set_name__ provides and when it is called.']);
+const STEPS=['find x in type(a).__mro__ → cls_var','is cls_var a DATA descriptor (has __set__/__delete__)? → return its __get__(a, type(a))','is "x" in a.__dict__? → return vars(a)["x"]','is cls_var a NON-DATA descriptor (only __get__)? → return its __get__(a, type(a))','is cls_var anything at all? → return the class variable','raise AttributeError → __getattr__(a, "x") if the class defines it, else propagate'];
+const W={data:{stop:1,m:'Data descriptors (property, slot members, your own with __set__) always override the instance dictionary. The value in a.__dict__ is never consulted.'},inst:{stop:2,m:'Methods are non-data descriptors, so the instance dict wins: a.x shadows the method for this one instance.'},nondata:{stop:3,m:'No instance entry; the non-data descriptor\'s __get__ runs — this is how functions become bound methods.'},cls:{stop:4,m:'A plain class attribute (no __get__) is returned as is, after checking the instance dict.'},ga:{stop:5,m:'Normal lookup failed; because the class defines __getattr__, it gets a chance to compute the value or raise AttributeError.'},none:{stop:5,m:'AttributeError propagates. (With the 3.10+ suggestion machinery you may see "Did you mean…".)'}};
+function chain(){const k=document.getElementById('where').value,w=W[k];document.getElementById('chain').innerHTML=STEPS.map((s,i)=>`<div class="${i<w.stop?'skip':i===w.stop?(k==='none'?'stop':'hit'):'skip'}"><b>${i}</b>${s}${i===w.stop?' ← here':''}</div>`).join('');document.getElementById('cmsg').textContent=w.m;}
+document.getElementById('where').onchange=chain;chain();
+OS.py('py1',`
+class Proxy:
+    def __init__(self, target):
+        object.__setattr__(self, "_t", target)            # bypass our own __setattr__
+    def __getattr__(self, name):                          # only called when normal lookup FAILS
+        print(f"  __getattr__({name!r}) → forwarding")
+        return getattr(self._t, name)
+    def __setattr__(self, name, value):                   # called on EVERY assignment
+        print(f"  __setattr__({name!r})")
+        setattr(self._t, name, value)
+p = Proxy([1, 2, 3])
+print(p.append)               # not on Proxy → __getattr__
+p.extend([4]); print(p._t)   # _t IS found normally → __getattr__ not called
+class Loud:
+    def __getattribute__(self, name):                     # called for EVERYTHING
+        print(f"  __getattribute__({name!r})")
+        return object.__getattribute__(self, name)       # avoid infinite recursion
+    y = 1
+Loud().y`);
+OS.py('py2',`
+class Typed:
+    "a data descriptor: has __get__ and __set__"
+    def __set_name__(self, owner, name): self.name = "_" + name; print(f"  __set_name__ → {self.name}")
+    def __get__(self, obj, objtype=None):
+        print(f"  __get__(obj={obj!r}, objtype={objtype.__name__})")
+        return self if obj is None else getattr(obj, self.name, None)
+    def __set__(self, obj, value):
+        if not isinstance(value, int): raise TypeError(f"{self.name[1:]} must be int")
+        setattr(obj, self.name, value)
+class Point:
+    x = Typed()
+    def __repr__(self): return "Point()"
+p = Point(); p.x = 5
+p.__dict__["x"] = "shadow attempt"                 # instance dict entry…
+print("p.x =", p.x, "  ← data descriptor beats the instance dict")
+print("Point.x →", Point.x, "  (class binding: __get__(None, Point))")
+try: p.x = "no"
+except TypeError as e: print("validated:", e)`);
+OS.py('py3',`
+class A:
+    def m(self): return "method"
+    @staticmethod
+    def s(): return "static"
+    @classmethod
+    def c(cls): return f"classmethod on {cls.__name__}"
+a = A()
+print(type(A.__dict__["m"]).__name__, "in the class dict; a.m is", type(a.m).__name__, "| bound to:", a.m.__self__ is a)
+print("A.m is the plain function:", A.m is A.__dict__["m"], "| function.__get__ exists:", hasattr(A.__dict__["m"], "__get__"))
+a.m = lambda: "instance wins over a NON-data descriptor"   # methods can be shadowed per instance
+print(a.m())
+print(a.s(), "|", a.c(), "|", A.c())
+class P:
+    @property
+    def ro(self): return 42
+q = P()
+try: q.ro = 1
+except AttributeError as e: print("property is a DATA descriptor:", e)`);
+OS.py('py4',`
+import sys
+class Plain:
+    def __init__(self): self.x = 1; self.y = 2
+class Slotted:
+    __slots__ = ("x", "y")                     # member descriptors; no __dict__, no __weakref__
+    def __init__(self): self.x = 1; self.y = 2
+print(type(Slotted.__dict__["x"]).__name__, "| has __dict__:", hasattr(Slotted(), "__dict__"))
+try: Slotted().z = 3
+except AttributeError as e: print("AttributeError:", e)
+print("sizes:", sys.getsizeof(Plain()) + sys.getsizeof(Plain().__dict__), "vs", sys.getsizeof(Slotted()), "bytes")
+try:
+    class Bad:
+        __slots__ = ("x",)
+        x = 0                                  # conflicts with the slot descriptor
+except ValueError as e: print("ValueError:", e)`);
+OS.cards('cards',[['__getattribute__','Unconditional hook for instance attribute access; must delegate to object.__getattribute__ to avoid recursion.'],['__getattr__','Fallback called only after normal lookup raises AttributeError; return a value or raise AttributeError.'],['Descriptor','Class-level object whose type defines __get__/__set__/__delete__; intercepts a.x via object.__getattribute__.'],['Data vs non-data','Has __set__ or __delete__ → data (beats the instance dict); only __get__ → non-data (instance dict wins).'],['Instance binding','a.x → type(a).__dict__["x"].__get__(a, type(a)); class binding passes None for the instance.'],['Bound method','Result of function.__get__(instance, cls): stores __self__ and __func__; calling it prepends self.'],['property','Built-in data descriptor wrapping fget/fset/fdel; read-only when fset is None (AttributeError on assignment).'],['__slots__','Declares fixed instance attributes as member descriptors; removes __dict__/__weakref__ unless listed; saves memory.'],['__set_name__','Called on each descriptor at class creation with (owner, name), so it can learn its attribute name.']]);
+OS.quiz('quiz',[
+{q:'In object.__getattribute__, which is checked FIRST?',o:['the instance __dict__','a data descriptor on the type','a non-data descriptor on the type','__getattr__'],a:1,why:'Order: data descriptor → instance dict → non-data descriptor → class variable → AttributeError (then __getattr__). Data descriptors always override instance storage.'},
+{q:'Why can a.m = something shadow a method but a.prop = something cannot shadow a property?',o:['methods live in the instance dict','methods are non-data, property is a data descriptor','properties are read-only by design','the interpreter special-cases property'],a:1,why:'Functions define only __get__ (non-data), so the instance dict wins; property defines __set__ too, so it takes precedence and controls assignment.'},
+{q:'A.x where x is a descriptor in A.__dict__ is transformed into:',o:['A.__dict__["x"].__get__(A, A)','A.__dict__["x"].__get__(None, A)','A.__dict__["x"].__get__(A, None)','A.__dict__["x"]'],a:1,why:'Class binding passes None for the instance and the class as owner — which is how classmethod gets the class and how a plain function is returned unbound.'},
+{q:'When is __getattr__ invoked?',o:['on every attribute access','only after normal lookup raises AttributeError','before __getattribute__','only for names starting with _'],a:1,why:'It is the fallback; if the attribute is found normally it is never called — the intentional asymmetry with __setattr__.'},
+{q:'Inside __setattr__, writing self.name = value causes:',o:['a data descriptor to run','infinite recursion','a silent no-op','the value to bypass validation'],a:1,why:'Assignment invokes __setattr__ again. Store via object.__setattr__(self, name, value) or self.__dict__[name] = value.'},
+{q:'What does __slots__ = ("x", "y") do to instances?',o:['makes them immutable','removes __dict__/__weakref__ and adds member descriptors','turns x and y into properties','disables inheritance'],a:1,why:'Slots reserve fixed storage per instance via descriptors; without __dict__ new attributes raise AttributeError and memory drops.'},
+{q:'When is __set_name__ called?',o:['on every attribute read','when the owning class is created','when the descriptor is instantiated','on first __get__'],a:1,why:'type.__new__ calls __set_name__(owner, name) on each attribute that defines it, once, during class creation.'}]);
 </script></body></html>

@@ -1,11 +1,11 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>OSTEP course — Operating Systems: Three Easy Pieces, taught interactively</title><style>
+<title>2 · Lexical structure & expressions — Python 3.13 course</title><style>
 /* OSTEP course — shared stylesheet. Three pieces, three hues. */
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
 :root{
   --ink:#151b2f; --ink-2:#1e2540; --ink-3:#28304f; --line:#3a4368;
   --paper:#eef0f7; --muted:#a9b1cf; --faint:#6e779a;
-  --virt:#e8b84a; --conc:#5bc8f5; --pers:#6bcb77; --sec:#f47fa0; --intro:#c9a8ff;
+  --virt:#e8b84a; --conc:#5bc8f5; --pers:#6bcb77; --sec:#f47fa0; --intro:#c9a8ff; --spec:#ffd166; --internals:#5bc8f5; --data:#6bcb77;
   --ok:#6bcb77; --bad:#ff6b6b;
   --accent:var(--virt);
   --radius:6px;
@@ -28,7 +28,7 @@ p,li{max-width:72ch}
 .hero{padding:44px 0 16px}
 .hero .chapters{color:var(--muted);font-size:.95rem;margin-bottom:6px}
 .lede{font-size:1.2rem;color:var(--muted);max-width:66ch}
-.piece-virt{--accent:var(--virt)} .piece-conc{--accent:var(--conc)} .piece-pers{--accent:var(--pers)} .piece-sec{--accent:var(--sec)} .piece-intro{--accent:var(--intro)}
+.piece-spec{--accent:var(--spec)} .piece-internals{--accent:var(--internals)} .piece-data{--accent:var(--data)} .piece-virt{--accent:var(--virt)} .piece-conc{--accent:var(--conc)} .piece-pers{--accent:var(--pers)} .piece-sec{--accent:var(--sec)} .piece-intro{--accent:var(--intro)}
 .fig{background:var(--ink-2);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;margin:22px 0}
 .fig figcaption,.cap{color:var(--muted);font-size:.9rem;margin-top:10px}
 .fig svg{max-width:100%;height:auto;display:block}
@@ -182,32 +182,66 @@ details>div{padding:0 16px 14px}
 }
 @media (max-width:420px){.cards{grid-template-columns:1fr}}
 
+/* ---------- runnable Python ---------- */
+.pyrun{border:1px solid var(--line);border-radius:var(--radius);background:#0f1424;margin:18px 0;overflow:hidden}
+.pyrun .pyhead{display:flex;gap:10px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--line);font-size:.85rem;color:var(--muted);background:var(--ink-2)}
+.pyrun .pyhead span:first-child{flex:1;font-weight:600;color:var(--paper)}
+.pyrun .pystatus{font-size:.78rem}
+.pyrun textarea{display:block;width:100%;border:none;background:#0f1424;color:var(--paper);font-family:'IBM Plex Mono',monospace;font-size:.86rem;line-height:1.5;padding:12px 14px;resize:vertical;outline:none;min-height:60px;tab-size:4}
+.pyrun .pyout{margin:0;border:none;border-top:1px solid var(--line);border-left:none;border-radius:0;background:#0a0e1a;color:#cfe3ff;max-height:320px}
+
 </style>
-<style>.map{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:24px 0}.piece{border:1px solid var(--line);border-radius:8px;padding:16px;background:var(--ink-2);border-top:4px solid var(--accent)}.piece h3{margin:0 0 4px;color:var(--accent)}.piece p{font-size:.9rem;color:var(--muted);margin:0 0 10px}.piece a{display:block;text-decoration:none;color:var(--paper);padding:6px 0;border-top:1px solid var(--line);font-size:.92rem}.piece a:hover{color:var(--accent)}.piece a small{display:block;color:var(--faint);font-size:.78rem}.piece a.done::after{content:" ✓";color:var(--ok)}.how{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}.how .fig{margin:0}.how h4{margin:0 0 6px}@media(max-width:900px){.map{grid-template-columns:1fr 1fr}.how{grid-template-columns:1fr}}@media(max-width:600px){.map{grid-template-columns:1fr}}.big{font-size:1.05rem}</style></head>
-<body class="piece-intro"><div class="wrap">
-<header class="hero"><div class="chapters">Operating Systems: Three Easy Pieces · Remzi H. and Andrea C. Arpaci-Dusseau (v1.10, 2023) · security chapters by Peter Reiher</div>
-<h1>The whole book, as sixteen interactive lessons</h1>
-<p class="lede big">Built from the text of all 57 chapters plus the VMM appendix — every "crux", every summary, every number in the figures was extracted from the chapter PDFs, not recalled. Each lesson is short, visual, and ends in retrieval practice. Do them in order; the book's pieces build on each other.</p></header>
+<style>.ind{display:grid;grid-template-columns:1fr 1fr;gap:12px}.ind textarea{width:100%;min-height:150px;background:#0f1424;color:var(--paper);border:1px solid var(--line);border-radius:6px;font-family:'IBM Plex Mono',monospace;font-size:.85rem;padding:10px;tab-size:4}.tok{font-family:'IBM Plex Mono',monospace;font-size:.8rem;line-height:1.9}.tok span{padding:2px 6px;border-radius:4px;margin:2px;display:inline-block}.tok .INDENT{background:#6bcb77;color:#111}.tok .DEDENT{background:#ff6b6b;color:#111}.tok .NL{background:#28304f;color:var(--muted)}.tok .CODE{background:#0f1424;border:1px solid var(--line)}.prec{font-family:'IBM Plex Mono',monospace;font-size:.85rem}.prec td:first-child{color:var(--accent)}.kw{display:flex;flex-wrap:wrap;gap:6px}.kw span{font-family:'IBM Plex Mono',monospace;font-size:.85rem;padding:4px 9px;border-radius:4px;background:#28304f}.kw span.soft{border:1px dashed var(--accent)}</style></head>
+<body class="piece-spec"><div class="wrap">
+<header class="hero"><div class="chapters">Language Reference §2 Lexical analysis · §6 Expressions</div>
+<h1>From characters to tokens to expressions</h1>
+<p class="lede">Before the parser sees anything, a tokenizer turns your file into a stream of tokens — and it is the tokenizer, not the parser, that invents <code>INDENT</code> and <code>DEDENT</code>. Then §6 defines what every expression means and in what order it is evaluated. Most "why does Python do that?" questions about arithmetic, comparison chaining and evaluation order are answered by a few paragraphs here.</p></header>
+<div class="source"><b>Primary sources:</b> <a href="https://docs.python.org/3.13/reference/lexical_analysis.html">§2 Lexical analysis</a> and <a href="https://docs.python.org/3.13/reference/expressions.html">§6 Expressions</a>. The full grammar is <a href="https://docs.python.org/3.13/reference/grammar.html">§10</a>, generated from <code>Grammar/python.gram</code>. The runners below use the real <code>tokenize</code> and <code>ast</code> modules.</div>
+<h2>What you'll be able to do</h2><ul id="obj"></ul>
 
-<figure class="fig"><svg viewBox="0 0 900 150" role="img" aria-label="three pieces">
-<rect x="20" y="30" width="270" height="90" rx="8" fill="#e8b84a"/><text x="155" y="68" text-anchor="middle" fill="#111" font-size="20" font-weight="700" font-family="Fraunces,serif">Virtualization</text><text x="155" y="95" text-anchor="middle" fill="#111" font-size="13">CPU (ch 4–10) · Memory (ch 13–23)</text>
-<rect x="315" y="30" width="270" height="90" rx="8" fill="#5bc8f5"/><text x="450" y="68" text-anchor="middle" fill="#111" font-size="20" font-weight="700" font-family="Fraunces,serif">Concurrency</text><text x="450" y="95" text-anchor="middle" fill="#111" font-size="13">threads, locks, CVs, semaphores, bugs (ch 26–33)</text>
-<rect x="610" y="30" width="270" height="90" rx="8" fill="#6bcb77"/><text x="745" y="68" text-anchor="middle" fill="#111" font-size="20" font-weight="700" font-family="Fraunces,serif">Persistence</text><text x="745" y="95" text-anchor="middle" fill="#111" font-size="13">devices, disks, file systems, distributed (ch 36–50)</text>
-<text x="450" y="140" text-anchor="middle" fill="#a9b1cf" font-size="13">+ Security (ch 53–57) and Virtual Machine Monitors (Appendix B)</text></svg></figure>
+<h2>Logical lines and indentation</h2>
+<p>A file is a sequence of <b>logical lines</b>; a logical line may span several physical lines (explicit joining with a backslash, implicit joining inside <code>()</code>, <code>[]</code>, <code>{}</code>). Leading whitespace of a logical line computes its <b>indentation level</b>. The rule for tabs: each is replaced by one to eight spaces so that the column becomes a multiple of eight; mixing tabs and spaces in a way whose meaning depends on the tab width raises <code>TabError</code>. The tokenizer keeps a <b>stack</b> of indentation levels: a deeper line pushes and emits <code>INDENT</code>; a shallower line pops until it matches — one <code>DEDENT</code> per pop — and raises an error if it never matches.</p>
+<div class="fig"><h4>Indentation stack, live</h4><div class="ind"><textarea id="src" spellcheck="false">def f(x):
+    if x:
+        return 1
+    return 0
 
-<h2>Course map</h2>
-<div class="map" id="map"></div>
+print(f(3))</textarea><div><div class="tok" id="toks"></div><div class="cap" id="stack"></div></div></div><div class="cap">Edit the code. Blank lines and comments produce no INDENT/DEDENT. At end of file the stack unwinds with one DEDENT per remaining level.</div></div>
 
-<h2>How to use this course</h2>
-<div class="how">
-<div class="fig"><h4>1. One lesson per sitting</h4><p>Each takes 25–45 minutes: read, play with the simulator until you can predict its output, flip the cards, then do the quiz <em>from memory</em>. Check off the objectives at the top only when you could explain them to someone else.</p></div>
-<div class="fig"><h4>2. Then read the chapter</h4><p>Every lesson links its primary source — the free chapter PDFs at <a href="https://pages.cs.wisc.edu/~remzi/OSTEP/">ostep.org</a>. The lesson gives you the map; the chapter has the jokes, the asides, and the homework simulators (<code>ostep-homework</code>) which are the best practice there is.</p></div>
-<div class="fig"><h4>3. Space it out</h4><p>Long-term retention comes from re-testing later, not from feeling fluent now. Redo a lesson's quiz two days later and again after a week; the <a href="reference/cheatsheets.html">cheat sheets</a> are for the fast pass, the <a href="reference/glossary.html">glossary</a> for vocabulary. Ask me in the chat for mixed quizzes across lessons.</p></div></div>
+<h2>Identifiers and keywords</h2>
+<p>Identifiers follow Unicode rules (letters in categories Lu, Ll, Lt, Lm, Lo, Nl, plus <code>_</code>; digits allowed after the first character) and are normalized with NFKC. The 35 <b>keywords</b> are reserved everywhere. Since 3.10 there are also <b>soft keywords</b>, reserved only in context — decided by the <em>parser</em>, not the tokenizer, so <code>match = 3</code> and <code>type = "x"</code> still work:</p>
+<div class="fig"><div class="kw" id="kw"></div><div class="cap">Dashed = soft keywords: <code>match</code>, <code>case</code>, <code>_</code> (match statement) and <code>type</code> (type statement, soft since 3.12).</div></div>
+<p>Reserved identifier classes: <code>_*</code> (not imported by <code>from m import *</code>; <code>_</code> is a soft keyword in <code>case</code>), <code>__*__</code> ("dunder" system names — don't invent your own), <code>__*</code> (class-private names, mangled to <code>_Class__name</code>).</p>
 
-<h2>What the book covers that this course does too</h2>
-<p>Chapters 1–2 (dialogue, introduction) → lesson 1. Chapters 3, 11, 12, 24, 25, 34, 35, 46, 47, 51, 52 are the book's short dialogues that open and close each part; their content is folded into the neighbouring lessons. The lab appendices (tutorial, systems and xv6 projects) and the deprecated monitors appendix are referenced in RESOURCES.md rather than taught.</p>
-<h2>Sister courses</h2><div class="how"><div class="fig"><h4><a href="python/index.html">Python 3.13</a></h4><p>The Language Reference, CPython internals (specializing interpreter, JIT, GC, GIL and free-threading), and pandas vs Polars — 20 interactive lessons with Python running in the browser.</p></div><div class="fig"><h4>Java 21</h4><p>Coming next: the JLS/JVMS, the JVM (class loading, bytecode, JIT, GC), and virtual threads internals.</p></div></div>
-<p class="tip">This workspace follows the <code>teach</code> skill layout: <code>MISSION.md</code> (why you're learning this), <code>RESOURCES.md</code> (sources), <code>NOTES.md</code>, <code>learning-records/</code>, <code>lessons/</code>, <code>reference/</code>, <code>assets/</code>. Tell me in the chat how a lesson landed and I'll adapt the next ones.</p>
+<h2>Literals</h2>
+<div class="two"><div class="fig"><h4>Strings and bytes</h4><p>Prefixes: <code>r</code> raw, <code>b</code> bytes, <code>f</code> formatted, <code>u</code> (no-op), combinable as <code>rb</code>/<code>fr</code>. Adjacent literals concatenate at compile time. Escapes: <code>\n</code>, <code>\xhh</code>, <code>\uXXXX</code>, <code>\N{name}</code>; unrecognized escapes in non-raw strings are kept <em>and</em> emit a <code>SyntaxWarning</code>. <b>f-strings</b>: <code>{expr!r:spec}</code>; <code>{x=}</code> for debugging (prints <code>x=</code> plus repr). Since 3.12 (PEP 701) the quotes may be reused inside replacement fields, fields may contain comments and newlines, and nesting is arbitrary.</p></div>
+<div class="fig"><h4>Numbers</h4><p>Integers: decimal (no leading zeros except <code>0</code>), <code>0b</code>, <code>0o</code>, <code>0x</code>; underscores for grouping (<code>1_000_000</code>). No limit on size. Floats: <code>3.14</code>, <code>1e10</code>, <code>.5</code>. Imaginary: <code>3j</code>. A leading minus is not part of the literal — <code>-1</code> is the unary operator applied to <code>1</code>, which is why <code>-1 ** 2</code> is <code>-1</code>.</p></div></div>
+<div id="py1"></div>
+
+<h2>Expressions: evaluation order and precedence</h2>
+<div class="crux"><b>§6.17: Python evaluates expressions left to right</b> — with one twist: in an assignment, the right-hand side is evaluated before the left-hand side. So <code>d[f()] = g()</code> calls <code>g</code> first, then <code>f</code>.</div>
+<table class="prec"><tr><th>Highest → lowest</th><th>Operators</th><th>Notes</th></tr>
+<tr><td>atoms</td><td><code>(...)</code> <code>[...]</code> <code>{...}</code></td><td>binding/parenthesized, displays, comprehensions</td></tr>
+<tr><td>primaries</td><td><code>x[i]</code> <code>x[i:j]</code> <code>x(args)</code> <code>x.attr</code></td><td>subscription, slicing, call, attribute reference</td></tr>
+<tr><td>await</td><td><code>await x</code></td><td></td></tr>
+<tr><td>power</td><td><code>**</code></td><td>binds less tightly than a unary operator on its <em>right</em>: <code>2**-1</code> = 0.5; right-associative: <code>2**3**2</code> = 2<sup>9</sup></td></tr>
+<tr><td>unary</td><td><code>+x</code> <code>-x</code> <code>~x</code></td><td>hence <code>-2**2 == -4</code></td></tr>
+<tr><td>multiplicative</td><td><code>*</code> <code>@</code> <code>/</code> <code>//</code> <code>%</code></td><td><code>/</code> on ints gives float; <code>//</code> floors; <code>%</code> takes the sign of the <em>second</em> operand; <code>x == (x//y)*y + x%y</code></td></tr>
+<tr><td>additive</td><td><code>+</code> <code>-</code></td><td></td></tr>
+<tr><td>shifts</td><td><code>&lt;&lt;</code> <code>&gt;&gt;</code></td><td><code>x &gt;&gt; n</code> = <code>x // 2**n</code></td></tr>
+<tr><td>bitwise</td><td><code>&amp;</code> then <code>^</code> then <code>|</code></td><td>three separate levels</td></tr>
+<tr><td>comparisons</td><td><code>in</code> <code>not in</code> <code>is</code> <code>is not</code> <code>&lt; &lt;= &gt; &gt;= != ==</code></td><td>all one level; <b>chain</b>: <code>a &lt; b &lt;= c</code> ≡ <code>a &lt; b and b &lt;= c</code> with <code>b</code> evaluated once</td></tr>
+<tr><td>boolean</td><td><code>not x</code>, then <code>and</code>, then <code>or</code></td><td><code>and</code>/<code>or</code> short-circuit and return an <em>operand</em>, not a bool</td></tr>
+<tr><td>conditional</td><td><code>x if c else y</code></td><td>evaluates <code>c</code> first, then only one branch</td></tr>
+<tr><td>lambda</td><td><code>lambda args: expr</code></td><td></td></tr>
+<tr><td>assignment expr</td><td><code>x := expr</code></td><td>the "walrus"; must be parenthesized at top level of most statements</td></tr></table>
+<p>Two more: the truth-value rule — an object is false if it is <code>None</code>, <code>False</code>, a zero of any numeric type, an empty sequence/collection, or defines <code>__bool__</code> returning False (else <code>__len__</code> returning 0). And the <b>call</b> rules of §6.3.4: positional then keyword arguments, <code>*iterable</code> and <code>**mapping</code> unpacking, and a <code>TypeError</code> for a parameter given twice or missing without a default.</p>
+<div id="py2"></div>
+<div class="fig"><h4>See the parse tree the grammar produces</h4><p>Change the expression; the runner dumps the AST so you can check which operator grabbed which operand.</p><div id="py3"></div></div>
+
+<h2>Flash cards</h2><div id="cards"></div>
+<h2>Retrieval practice</h2><div id="quiz"></div>
+<p class="tip">Want precedence drills, or an f-string formatting reference (the <code>:spec</code> mini-language)? Ask me in the chat.</p>
 </div>
 <script>
 /* OSTEP course — shared components. Every page loads this file (inlined by build.py). */
@@ -217,34 +251,38 @@ window.OS = (function () {
   /* ---------- persistent storage (localStorage on a real site; in-memory fallback in sandboxes) ---------- */
   const mem = {};
   const store = {
-    get(k) { try { const v = localStorage.getItem('ostep:' + k); return v === null ? (mem[k] ?? null) : JSON.parse(v); } catch (e) { return mem[k] ?? null; } },
-    set(k, v) { mem[k] = v; try { localStorage.setItem('ostep:' + k, JSON.stringify(v)); } catch (e) {} },
-    del(k) { delete mem[k]; try { localStorage.removeItem('ostep:' + k); } catch (e) {} },
-    keys(prefix) { const out = new Set(Object.keys(mem).filter(k => k.startsWith(prefix))); try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith('ostep:' + prefix)) out.add(k.slice(6)); } } catch (e) {} return [...out]; },
-    available() { try { localStorage.setItem('ostep:test', '1'); localStorage.removeItem('ostep:test'); return true; } catch (e) { return false; } }
+    get(k) { try { const v = localStorage.getItem('py313:' + k); return v === null ? (mem[k] ?? null) : JSON.parse(v); } catch (e) { return mem[k] ?? null; } },
+    set(k, v) { mem[k] = v; try { localStorage.setItem('py313:' + k, JSON.stringify(v)); } catch (e) {} },
+    del(k) { delete mem[k]; try { localStorage.removeItem('py313:' + k); } catch (e) {} },
+    keys(prefix) { const out = new Set(Object.keys(mem).filter(k => k.startsWith(prefix))); try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith('py313:' + prefix)) out.add(k.slice(6)); } } catch (e) {} return [...out]; },
+    available() { try { localStorage.setItem('py313:test', '1'); localStorage.removeItem('py313:test'); return true; } catch (e) { return false; } }
   };
 
   /* ---------- course structure ---------- */
   const PIECES = [
-    ['intro', 'Introduction', [['0001-three-easy-pieces', 'Three easy pieces', 'ch 1–2']]],
-    ['virt', 'Virtualization', [
-      ['0002-processes', 'Processes & the process API', 'ch 4–5'],
-      ['0003-limited-direct-execution', 'Limited direct execution', 'ch 6'],
-      ['0004-scheduling', 'Scheduling', 'ch 7–10'],
-      ['0005-address-spaces', 'Address spaces & segments', 'ch 13–16'],
-      ['0006-paging-and-tlbs', 'Paging & TLBs', 'ch 17–20'],
-      ['0007-swapping', 'Swapping & policies', 'ch 21–23']]],
-    ['conc', 'Concurrency', [
-      ['0008-threads-and-locks', 'Threads & locks', 'ch 26–28'],
-      ['0009-cvs-and-semaphores', 'CVs & semaphores', 'ch 29–31'],
-      ['0010-bugs-and-events', 'Bugs & events', 'ch 32–33']]],
-    ['pers', 'Persistence', [
-      ['0011-devices-disks-raid', 'Devices, disks, RAID', 'ch 36–38'],
-      ['0012-files-and-vsfs', 'Files & a simple FS', 'ch 39–40'],
-      ['0013-ffs-journaling-lfs', 'FFS, journaling, LFS', 'ch 41–43'],
-      ['0014-ssd-and-integrity', 'SSDs & integrity', 'ch 44–45'],
-      ['0015-distributed-nfs-afs', 'Distributed FS', 'ch 48–50']]],
-    ['sec', 'Security', [['0016-security-and-vmms', 'Security & VMMs', 'ch 53–57, App B']]]
+    ['spec', 'The language, as specified', [
+      ['0001-objects-values-types', 'Objects, values and types', 'Ref §3.1–3.2'],
+      ['0002-lexical-structure-and-expressions', 'Lexical structure & expressions', 'Ref §2, §6'],
+      ['0003-execution-model', 'Execution model: names, scopes, closures', 'Ref §4'],
+      ['0004-data-model-special-methods', 'Data model I: special methods', 'Ref §3.3'],
+      ['0005-attribute-access-and-descriptors', 'Data model II: attributes & descriptors', 'Ref §3.3.2, HOWTO'],
+      ['0006-classes-mro-metaclasses', 'Classes, MRO, metaclasses', 'Ref §3.3.3, HOWTO'],
+      ['0007-functions-generators-coroutines', 'Functions, generators, coroutines', 'Ref §6.3, §3.4'],
+      ['0008-statements-and-pattern-matching', 'Statements, exceptions, pattern matching', 'Ref §7–8'],
+      ['0009-import-system', 'The import system', 'Ref §5'],
+      ['0010-typing', 'Typing: the PEP 484 lineage to 3.13', 'PEPs 484…742']]],
+    ['internals', 'CPython 3.13 internals', [
+      ['0011-compiler-and-bytecode', 'From source to bytecode', 'InternalDocs compiler, dis'],
+      ['0012-eval-loop-and-specialization', 'The eval loop, specialization, JIT', 'InternalDocs interpreter, PEPs 659/744'],
+      ['0013-memory-refcounting-gc', 'Memory, refcounting, garbage collection', 'InternalDocs GC, PEP 683'],
+      ['0014-gil-and-free-threading', 'The GIL and free-threaded Python', 'PEP 703, HOWTO']]],
+    ['data', 'DataFrames: pandas vs Polars', [
+      ['0015-dataframe-data-models', 'Two data models', 'pandas dsintro, Polars concepts'],
+      ['0016-selection-and-indexing', 'Selecting, filtering, assigning', 'pandas indexing, Polars expressions'],
+      ['0017-expressions-and-lazy', 'Expressions, contexts, lazy queries', 'Polars lazy, pandas chaining'],
+      ['0018-groupby-joins-reshaping', 'Groupby, joins, reshaping', 'pandas groupby/merging, Polars transformations'],
+      ['0019-time-series', 'Time series', 'pandas timeseries, Polars time-series'],
+      ['0020-performance-and-scale', 'Performance, memory, scale', 'pandas enhancingperf/scale, Modern Polars']]]
   ];
   const LESSONS = PIECES.flatMap(p => p[2].map(l => [l[0], l[1], p[0], l[2]]));
   const title = id => (LESSONS.find(l => l[0] === id) || [])[1] || id;
@@ -257,7 +295,7 @@ window.OS = (function () {
     const isLesson = i >= 0;
     const top = document.createElement('header'); top.className = 'topbar';
     top.innerHTML = `<button class="menu" aria-label="Open directory" aria-expanded="false">☰<span>Directory</span></button>
-      <a class="brand" href="${root}index.html"><span class="dot"></span>OSTEP course</a>
+      <a class="brand" href="${root}index.html"><span class="dot"></span>Python 3.13 course</a>
       <nav class="links"><a href="${root}reference/glossary.html">Glossary</a><a href="${root}reference/cheatsheets.html">Cheat sheets</a><a href="${root}notes.html">My notes</a></nav>
       ${isLesson ? `<span class="where">${i+1} / ${LESSONS.length}</span>` : ''}`;
     document.body.prepend(top);
@@ -341,6 +379,42 @@ window.OS = (function () {
     });
   }
 
+
+  /* ---------- runnable Python (Pyodide, loaded on first use) ---------- */
+  const pyodideP = {};
+  function loadPy(status, version) {
+    version = version || '0.28.3';
+    if (pyodideP[version]) return pyodideP[version];
+    status('loading Python (Pyodide ' + version + ', ~10 MB, once per page)…');
+    pyodideP[version] = new Promise((res, rej) => {
+      const s = document.createElement('script'); s.src = 'https://cdn.jsdelivr.net/pyodide/v' + version + '/full/pyodide.js';
+      s.onload = () => window.loadPyodide({ indexURL: 'https://cdn.jsdelivr.net/pyodide/v' + version + '/full/' }).then(res, rej);
+      s.onerror = () => rej(new Error('Could not load Pyodide (offline, or blocked by this preview).'));
+      document.head.append(s);
+    });
+    return pyodideP[version];
+  }
+  function py(el, code, opts) {
+    el = typeof el === 'string' ? document.getElementById(el) : el; opts = opts || {};
+    el.classList.add('pyrun');
+    el.innerHTML = `<div class="pyhead"><span>Python${opts.note ? ' · ' + esc(opts.note) : ''}</span><span class="pystatus"></span><button class="primary run">▶ Run</button><button class="reset">Reset</button></div><textarea spellcheck="false">${esc(code.trim())}</textarea><pre class="pyout" hidden></pre>`;
+    const ta = el.querySelector('textarea'), out = el.querySelector('.pyout'), st = el.querySelector('.pystatus');
+    const fit = () => { ta.style.height = 'auto'; ta.style.height = Math.min(480, ta.scrollHeight + 4) + 'px'; }; fit(); ta.addEventListener('input', fit);
+    el.querySelector('.reset').onclick = () => { ta.value = code.trim(); fit(); out.hidden = true; };
+    el.querySelector('.run').onclick = async () => {
+      out.hidden = false; out.textContent = ''; st.textContent = '';
+      try {
+        const pyo = await loadPy(m => st.textContent = m, opts.pyodide || ((opts.packages||[]).includes('polars') ? '0.27.7' : '0.28.3'));
+        if (opts.packages) { st.textContent = 'loading ' + opts.packages.join(', ') + '…'; await pyo.loadPackage(opts.packages).catch(() => {}); }
+        st.textContent = 'running…';
+        pyo.setStdout({ batched: s => out.textContent += s + '\n' }); pyo.setStderr({ batched: s => out.textContent += s + '\n' });
+        const r = await pyo.runPythonAsync(ta.value);
+        if (r !== undefined && r !== null && String(r) !== 'None') out.textContent += String(r);
+        st.textContent = 'done · CPython ' + pyo.runPython('import sys; f"{sys.version_info.major}.{sys.version_info.minor}"') + ' in WebAssembly';
+      } catch (e) { out.textContent += String(e); st.textContent = 'error'; }
+    };
+  }
+
   /* ---------- flip cards ---------- */
   function cards(el, list) {
     el = typeof el === 'string' ? document.getElementById(el) : el;
@@ -385,17 +459,49 @@ window.OS = (function () {
     el.querySelectorAll('input').forEach(c => c.onchange = () => { const s = [...el.querySelectorAll('input:checked')].map(x => +x.dataset.i); if (pageId) store.set('obj:' + pageId, s); });
   }
 
-  return { chrome, quiz, cards, stepper, gantt, objectives, esc, store, LESSONS, PIECES, title };
+  return { chrome, quiz, cards, stepper, gantt, objectives, py, esc, store, LESSONS, PIECES, title };
 })();
 
 </script>
 <script>
-OS.chrome('index','');
-const P=[['intro','Introduction','What an OS is: the three pieces, design goals, history.',['0001-three-easy-pieces','Three easy pieces','ch 1–2']],
-['virt','Virtualization','The CPU and memory made private and plentiful.',['0002-processes','Processes & the process API','ch 4–5'],['0003-limited-direct-execution','Limited direct execution','ch 6'],['0004-scheduling','Scheduling: FIFO to CFS and multi-CPU','ch 7–10'],['0005-address-spaces','Address spaces, base/bounds, segments','ch 13–16'],['0006-paging-and-tlbs','Free space, paging, TLBs, small tables','ch 17–20'],['0007-swapping','Swapping, replacement, VAX/VMS & Linux','ch 21–23']],
-['conc','Concurrency','Threads and the primitives that make them safe.',['0008-threads-and-locks','Threads, thread API, locks','ch 26–28'],['0009-cvs-and-semaphores','Locked structures, CVs, semaphores','ch 29–31'],['0010-bugs-and-events','Concurrency bugs & event-based servers','ch 32–33']],
-['pers','Persistence + Security','Storage from the device up; then protecting it all.',['0011-devices-disks-raid','Devices, disks, RAID','ch 36–38'],['0012-files-and-vsfs','Files, directories, a simple file system','ch 39–40'],['0013-ffs-journaling-lfs','FFS, crash consistency, LFS','ch 41–43'],['0014-ssd-and-integrity','SSDs & data integrity','ch 44–45'],['0015-distributed-nfs-afs','Distributed systems, NFS, AFS','ch 48–50'],['0016-security-and-vmms','Security (ch 53–57) & VMMs','ch 53–57, App B']]];
-const m=document.getElementById('map');let idx=0;const S=OS.store;
-m.innerHTML=P.map(([cls,name,desc,...ls])=>`<div class="piece piece-${cls}"><h3>${name}</h3><p>${desc}</p>${ls.map(l=>{idx++;const q=S.get('quiz:'+l[0]),nt=(S.get('notes:'+l[0])||{}).text;return `<a href="lessons/${l[0]}.html" data-id="${l[0]}" class="${q&&q.score===q.total?'done':''}">${idx}. ${l[1]}<small>${l[2]}${q?` · quiz ${q.score}/${q.total}`:''}${nt?' · ✎ notes':''}</small></a>`;}).join('')}</div>`).join('');
-const done=OS.LESSONS.filter(l=>S.get('quiz:'+l[0])).length;const ph=document.createElement('p');ph.className='cap';ph.textContent=done?`${done} of 16 lesson quizzes attempted — see My notes & progress for details.`:'Quiz scores, checked objectives and notes are saved in this browser as you go.';document.getElementById('map').after(ph);
+OS.chrome('0002-lexical-structure-and-expressions');
+OS.objectives('obj',['Explain how the tokenizer produces INDENT/DEDENT with an indentation stack, and when TabError arises.','Distinguish keywords from soft keywords and say where the distinction is made.','Read the operator-precedence table and predict -2**2, 2**-1, 7 // -2, -7 % 3.','State the evaluation-order rule and its assignment exception.','Explain comparison chaining and what and/or return.']);
+/* indentation stack */
+function indent(src){const lines=src.split('\n');let stack=[0],out=[],paren=0;lines.forEach((l,i)=>{const stripped=l.replace(/\t/g,m=>'        ');if(!stripped.trim()||stripped.trim().startsWith('#')){out.push({t:'NL',s:'(blank/comment)'});return;}const lvl=stripped.match(/^ */)[0].length;if(paren===0){if(lvl>stack[stack.length-1]){stack.push(lvl);out.push({t:'INDENT',s:'INDENT → stack '+JSON.stringify(stack)});}else{while(lvl<stack[stack.length-1]){stack.pop();out.push({t:'DEDENT',s:'DEDENT → stack '+JSON.stringify(stack)});}if(lvl!==stack[stack.length-1])out.push({t:'DEDENT',s:'IndentationError: unindent does not match any outer level'});}}out.push({t:'CODE',s:stripped.trim().slice(0,40)+(stripped.trim().length>40?'…':'')});paren+= (stripped.match(/[\(\[\{]/g)||[]).length-(stripped.match(/[\)\]\}]/g)||[]).length;});while(stack.length>1){stack.pop();out.push({t:'DEDENT',s:'DEDENT (end of file) → stack '+JSON.stringify(stack)});}document.getElementById('toks').innerHTML=out.map(o=>`<span class="${o.t}">${OS.esc(o.s)}</span>`).join('');document.getElementById('stack').textContent=`final stack ${JSON.stringify(stack)} · ${out.filter(o=>o.t==='INDENT').length} INDENT, ${out.filter(o=>o.t==='DEDENT').length} DEDENT`;}
+const srcEl=document.getElementById('src');srcEl.addEventListener('input',()=>indent(srcEl.value));indent(srcEl.value);
+const KW='False await else import pass None break except in raise True class finally is return and continue for lambda try as def from nonlocal while assert del global not with async elif if or yield'.split(' ');
+document.getElementById('kw').innerHTML=KW.map(k=>`<span>${k}</span>`).join('')+['match','case','_','type'].map(k=>`<span class="soft">${k}</span>`).join('');
+OS.py('py1',`
+import tokenize, io
+src = 'x = 0x_ff + 1_000\\nname = f"{x=}, {x!r:>8}"\\n'
+for tok in tokenize.generate_tokens(io.StringIO(src).readline):
+    print(f"{tokenize.tok_name[tok.type]:<10} {tok.string!r}")
+print("adjacent literals concatenate:", "ab" 'cd' f"{1+1}")
+print("-1 ** 2 =", -1 ** 2, "  (unary minus applied after **)")
+match = 3; type = "soft keywords are still valid names"; print(match, type)`);
+OS.py('py2',`
+calls = []
+def f(tag): calls.append(tag); return tag
+d = {}
+d[f("index")] = f("value")          # RHS first, then LHS
+print("evaluation order:", calls)
+print("7 // -2 =", 7 // -2, "| -7 % 3 =", -7 % 3, "| 7 % -3 =", 7 % -3, "  (sign follows the second operand)")
+print("2 ** -1 =", 2 ** -1, "| 2 ** 3 ** 2 =", 2 ** 3 ** 2, "| -2 ** 2 =", -2 ** 2)
+print("1 < 2 < 3:", 1 < 2 < 3, "| 3 > 2 > 2:", 3 > 2 > 2, "| 'a' in 'abc' == True:", 'a' in 'abc' == True, "(chaining trap!)")
+print("and/or return operands:", 0 or "default", "|", [] and "never", "|", 3 and 4)
+if (n := len("walrus")) > 3: print("walrus bound n =", n)
+print("truth values:", bool(0.0), bool(""), bool([0]), bool(None))`);
+OS.py('py3',`
+import ast
+expr = "-a ** 2 + b * c if x < y <= z else f(*args, k=1) or default"
+print(ast.dump(ast.parse(expr, mode="eval").body, indent=2))`);
+OS.cards('cards',[['Logical line','What the tokenizer feeds the parser; may span physical lines via backslash or open brackets.'],['INDENT / DEDENT','Tokens generated from the indentation stack: push → INDENT, each pop → DEDENT; mismatch → IndentationError.'],['TabError','Raised when tabs and spaces are mixed so that the meaning depends on the tab width (tabs expand to multiples of 8).'],['Soft keyword','Identifier reserved only in context (match, case, _, type); resolved by the parser, so still usable as a name.'],['NotImplemented vs NotImplementedError','The singleton returned by binary special methods vs the exception raised by abstract methods — unrelated.'],['Right-hand side first','In assignments the RHS is evaluated before the target expressions; everything else is left to right.'],['Chained comparison','a < b <= c means a < b and b <= c with b evaluated once; also makes a in b == c mean a in b and b == c.'],['Walrus :=','Assignment expression: binds a name inside an expression; needs parentheses in most statement-level positions.']]);
+OS.quiz('quiz',[
+{q:'What produces the INDENT and DEDENT tokens?',o:['the PEG parser','the tokenizer, from a stack','the compiler pass','the AST optimizer'],a:1,why:'Lexical analysis compares each logical line\'s indentation with a stack of levels; pushes emit INDENT and pops emit DEDENT before the parser ever runs.'},
+{q:'Why can match = 3 be valid Python 3.13?',o:['match is not reserved at all','match is a soft keyword, contextual','the tokenizer ignores keywords','it is only valid inside functions'],a:1,why:'Soft keywords act as keywords only in specific grammatical contexts (the match statement); elsewhere they are ordinary identifiers.'},
+{q:'The value of -2 ** 2 is:',o:['4','-4','a SyntaxError','0'],a:1,why:'** binds tighter than the unary minus on its left, so this is -(2**2). Note 2**-1 = 0.5 because ** binds less tightly than a unary operator on its right.'},
+{q:'-7 % 3 evaluates to:',o:['-1','2','1','-2'],a:1,why:'The result takes the sign of the second operand and satisfies x == (x//y)*y + x%y: -7 // 3 = -3, so -7 - (-9) = 2.'},
+{q:'In d[f()] = g(), which is called first?',o:['f, then g','g, then f','depends on the values','they run concurrently'],a:1,why:'§6.17: the right-hand side of an assignment is evaluated before the left-hand side; otherwise evaluation is left to right.'},
+{q:'What does 0 or "x" evaluate to?',o:['True','"x"','0','False'],a:1,why:'or returns the first truthy operand (or the last operand); and/or short-circuit and return operands, not booleans.'},
+{q:'Which 3.12 change (PEP 701) applies to f-strings?',o:['they became bytes-compatible','quotes may be reused inside {} fields','the = debug form was removed','they can no longer nest'],a:1,why:'PEP 701 made f-strings a proper grammar construct: reused quotes, comments and newlines inside replacement fields, arbitrary nesting.'}]);
 </script></body></html>

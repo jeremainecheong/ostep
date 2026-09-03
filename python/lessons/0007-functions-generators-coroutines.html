@@ -1,0 +1,552 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>7 · Functions, generators, coroutines — Python 3.13 course</title><style>
+/* OSTEP course — shared stylesheet. Three pieces, three hues. */
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+:root{
+  --ink:#151b2f; --ink-2:#1e2540; --ink-3:#28304f; --line:#3a4368;
+  --paper:#eef0f7; --muted:#a9b1cf; --faint:#6e779a;
+  --virt:#e8b84a; --conc:#5bc8f5; --pers:#6bcb77; --sec:#f47fa0; --intro:#c9a8ff; --spec:#ffd166; --internals:#5bc8f5; --data:#6bcb77;
+  --ok:#6bcb77; --bad:#ff6b6b;
+  --accent:var(--virt);
+  --radius:6px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--ink);color:var(--paper);font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:17px;line-height:1.6}
+a{color:var(--accent)}
+code,pre,kbd,.mono{font-family:'IBM Plex Mono',ui-monospace,monospace}
+code{background:var(--ink-3);padding:1px 5px;border-radius:4px;font-size:.9em}
+pre{background:#0f1424;border:1px solid var(--line);border-left:4px solid var(--accent);padding:14px 16px;overflow:auto;border-radius:var(--radius);font-size:.86em;line-height:1.5}
+pre code{background:none;padding:0;font-size:inherit}
+h1,h2,h3,h4{font-family:'Fraunces',Georgia,serif;font-weight:700;line-height:1.15;margin:0 0 .4em}
+h1{font-size:2.6rem;letter-spacing:-.01em}
+h2{font-size:1.9rem;margin-top:2.6rem;padding-top:1.2rem;border-top:1px solid var(--line)}
+h3{font-size:1.3rem;margin-top:1.8rem;color:var(--accent)}
+h4{font-size:1.05rem;margin-top:1.2rem}
+p,li{max-width:72ch}
+.wrap{max-width:1100px;margin:0 auto;padding:0 28px 96px}
+.hero{padding:44px 0 16px}
+.hero .chapters{color:var(--muted);font-size:.95rem;margin-bottom:6px}
+.lede{font-size:1.2rem;color:var(--muted);max-width:66ch}
+.piece-spec{--accent:var(--spec)} .piece-internals{--accent:var(--internals)} .piece-data{--accent:var(--data)} .piece-virt{--accent:var(--virt)} .piece-conc{--accent:var(--conc)} .piece-pers{--accent:var(--pers)} .piece-sec{--accent:var(--sec)} .piece-intro{--accent:var(--intro)}
+.fig{background:var(--ink-2);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;margin:22px 0}
+.fig figcaption,.cap{color:var(--muted);font-size:.9rem;margin-top:10px}
+.fig svg{max-width:100%;height:auto;display:block}
+svg text{font-family:'IBM Plex Sans',sans-serif}
+svg .mono{font-family:'IBM Plex Mono',monospace}
+.crux{border:1px solid var(--accent);border-radius:var(--radius);padding:14px 18px;margin:22px 0;background:color-mix(in srgb,var(--accent) 8%,transparent)}
+.crux b{color:var(--accent)}
+.tip{border-left:4px solid var(--muted);padding:6px 16px;margin:18px 0;color:var(--muted)}
+.tip b{color:var(--paper)}
+table{border-collapse:collapse;width:100%;margin:16px 0;font-size:.95rem}
+th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{color:var(--muted);font-weight:500}
+td.mono,th.mono{font-family:'IBM Plex Mono',monospace}
+button,.btn{font:inherit;font-size:.9rem;background:var(--ink-3);color:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:7px 13px;cursor:pointer}
+button:hover{border-color:var(--accent)}
+button.primary{background:var(--accent);color:#111;border-color:var(--accent);font-weight:600}
+button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+input[type=range]{accent-color:var(--accent)}
+input[type=text],input[type=number],select{font:inherit;background:#0f1424;color:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:6px 10px}
+.controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:10px 0}
+.controls label{font-size:.9rem;color:var(--muted)}
+details{border:1px solid var(--line);border-radius:var(--radius);margin:10px 0;background:var(--ink-2)}
+summary{cursor:pointer;padding:12px 16px;font-weight:600;list-style:none}
+summary::before{content:"+";display:inline-block;width:1.2em;color:var(--accent)}
+details[open] summary::before{content:"–"}
+details>div{padding:0 16px 14px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;margin:16px 0}
+.card{perspective:900px;min-height:140px;cursor:pointer}
+.card .inner{position:relative;width:100%;height:100%;min-height:140px;transition:transform .45s;transform-style:preserve-3d}
+.card.flipped .inner{transform:rotateY(180deg)}
+.card .face{position:absolute;inset:0;padding:14px;border-radius:var(--radius);border:1px solid var(--line);background:var(--ink-2);backface-visibility:hidden;display:flex;align-items:center;justify-content:center;text-align:center;font-size:.95rem}
+.card .back{transform:rotateY(180deg);background:var(--ink-3);border-color:var(--accent);font-size:.88rem;line-height:1.45}
+.card .front{font-weight:600}
+@media (prefers-reduced-motion:reduce){.card .inner{transition:none}}
+.quiz .q{border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin:12px 0;background:var(--ink-2)}
+.quiz .q p{margin:0 0 10px;font-weight:600}
+.quiz .opts{display:grid;gap:8px}
+.quiz .opt{text-align:left;background:var(--ink);width:100%}
+.quiz .opt.right{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 15%,var(--ink))}
+.quiz .opt.wrong{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 15%,var(--ink))}
+.quiz .why{margin-top:10px;color:var(--muted);font-size:.93rem;display:none}
+.quiz .q.done .why{display:block}
+.quiz .score{margin-top:12px;font-weight:600}
+.stepper .stage{min-height:60px;background:#0f1424;border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin:10px 0}
+.stepper .idx{color:var(--muted);font-size:.85rem}
+.gantt{display:grid;gap:6px;margin:10px 0}
+.gantt .row{display:grid;grid-template-columns:60px 1fr;align-items:center;gap:8px;font-size:.85rem}
+.gantt .track{position:relative;height:26px;background:#0f1424;border-radius:4px;overflow:hidden}
+.gantt .seg{position:absolute;top:0;bottom:0;display:flex;align-items:center;justify-content:center;font-size:.75rem;color:#111;font-weight:600;border-right:1px solid rgba(0,0,0,.3)}
+.cells{display:grid;gap:4px;margin:10px 0}
+.cell{background:#0f1424;border:1px solid var(--line);border-radius:4px;padding:6px;text-align:center;font-family:'IBM Plex Mono',monospace;font-size:.8rem;min-height:36px;display:flex;align-items:center;justify-content:center}
+.cell.hit{background:color-mix(in srgb,var(--ok) 35%,#0f1424);border-color:var(--ok)}
+.cell.miss{background:color-mix(in srgb,var(--bad) 35%,#0f1424);border-color:var(--bad)}
+.cell.active{outline:2px solid var(--accent)}
+.cell.free{opacity:.45}
+.hl{background:color-mix(in srgb,var(--accent) 30%,transparent);padding:1px 5px;border-radius:3px}
+.k{color:var(--accent);font-weight:600}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media (max-width:760px){.two{grid-template-columns:1fr}.topbar{gap:10px}h1{font-size:2rem}}
+.nav-bottom{display:flex;justify-content:space-between;gap:16px;margin-top:56px;padding-top:20px;border-top:1px solid var(--line)}
+.nav-bottom a{text-decoration:none;padding:12px 16px;border:1px solid var(--line);border-radius:var(--radius);color:var(--paper)}
+.source{background:var(--ink-2);border-radius:var(--radius);padding:14px 18px;margin:22px 0;font-size:.95rem}
+.source b{color:var(--accent)}
+.objectives li{list-style:none;margin:6px 0}
+.objectives input{margin-right:8px;accent-color:var(--accent)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.85rem;color:var(--muted)}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:5px;vertical-align:-2px}
+.tag{display:inline-block;font-size:.75rem;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted);margin-right:6px}
+.log{font-family:'IBM Plex Mono',monospace;font-size:.82rem;background:#0f1424;border:1px solid var(--line);border-radius:var(--radius);padding:10px 12px;max-height:220px;overflow:auto;white-space:pre-wrap}
+@media print{body{background:#fff;color:#111}.topbar,.nav-bottom,button{display:none}.fig,.crux,details,.source{border-color:#bbb;background:#fff}pre{background:#f5f5f5;color:#111}}
+
+/* ---------- site chrome: sticky header + directory drawer ---------- */
+.topbar{position:sticky;top:0;z-index:30;display:flex;gap:14px;align-items:center;padding:10px 16px;background:color-mix(in srgb,var(--ink) 92%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);font-size:.9rem}
+.topbar .menu{display:flex;align-items:center;gap:8px;padding:8px 12px;font-size:1rem}
+.topbar .menu span{font-size:.85rem}
+.topbar .brand{color:var(--paper);text-decoration:none;font-weight:600;display:flex;align-items:center;gap:8px}
+.topbar .dot{width:10px;height:10px;border-radius:50%;background:var(--accent);display:inline-block}
+.topbar .links{display:flex;gap:16px;margin-left:8px}
+.topbar .links a{color:var(--muted);text-decoration:none}
+.topbar .links a:hover{color:var(--paper)}
+.topbar .where{margin-left:auto;color:var(--faint);font-variant-numeric:tabular-nums}
+.drawer{position:fixed;top:0;left:0;bottom:0;width:min(340px,88vw);background:var(--ink-2);border-right:1px solid var(--line);z-index:50;transform:translateX(-102%);transition:transform .25s;overflow-y:auto;padding:0 0 24px;box-shadow:0 0 40px rgba(0,0,0,.5)}
+.drawer-open .drawer{transform:none}
+.scrim{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:40;opacity:0;pointer-events:none;transition:opacity .2s}
+.drawer-open .scrim{opacity:1;pointer-events:auto}
+.drawer .dhead{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--ink-2)}
+.drawer .close,.notes-sheet .close{font-size:1.3rem;line-height:1;padding:4px 10px}
+.drawer .dgroup{padding:8px 0 4px}
+.drawer .dname{padding:8px 16px 4px;color:var(--accent);font-family:'Fraunces',serif;font-weight:700}
+.drawer .ditem{display:flex;gap:10px;align-items:center;padding:9px 16px;color:var(--paper);text-decoration:none;border-left:3px solid transparent;font-size:.92rem}
+.drawer .ditem:hover{background:var(--ink-3)}
+.drawer .ditem.cur{border-left-color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
+.drawer .ditem .n{color:var(--faint);min-width:1.4em;font-variant-numeric:tabular-nums}
+.drawer .ditem .t{flex:1;line-height:1.25}
+.drawer .ditem .t small{display:block;color:var(--faint);font-size:.75rem}
+.drawer .badges{display:flex;gap:6px;align-items:center}
+.drawer .badges i{font-style:normal;color:var(--accent)}
+.drawer .badges em{font-style:normal;font-size:.75rem;padding:1px 6px;border-radius:999px;background:var(--ink-3);color:var(--muted);font-variant-numeric:tabular-nums}
+.drawer .dfoot{padding:16px;color:var(--faint);font-size:.8rem}
+/* ---------- notes: floating button + bottom sheet ---------- */
+.notes-fab{position:fixed;right:16px;bottom:16px;z-index:35;display:flex;gap:8px;align-items:center;padding:12px 16px;border-radius:999px;background:var(--accent);color:#111;border:none;font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,.4)}
+.notes-sheet{position:fixed;left:0;right:0;bottom:0;z-index:45;background:var(--ink-2);border-top:1px solid var(--line);border-radius:14px 14px 0 0;transform:translateY(105%);transition:transform .25s;box-shadow:0 -10px 40px rgba(0,0,0,.5);max-width:900px;margin:0 auto;padding-bottom:env(safe-area-inset-bottom)}
+.notes-open .notes-sheet{transform:none}
+.notes-open .notes-fab{display:none}
+.notes-sheet .nhead{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line)}
+.notes-sheet .nhead b{flex:1;font-size:.95rem}
+.notes-sheet .nstatus{color:var(--faint);font-size:.8rem}
+.notes-sheet textarea{display:block;width:100%;min-height:36vh;max-height:60vh;resize:vertical;border:none;background:#0f1424;color:var(--paper);font:inherit;font-size:1rem;line-height:1.5;padding:14px 16px;outline:none}
+.notes-sheet .nfoot{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;font-size:.85rem;color:var(--muted)}
+/* ---------- wide widgets scroll sideways instead of breaking the page ---------- */
+.tw{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:16px 0}
+.tw table{margin:0;min-width:520px}
+.fig{overflow-x:auto}
+@media (prefers-reduced-motion:reduce){.drawer,.notes-sheet,.scrim{transition:none}}
+/* ---------- phones ---------- */
+@media (max-width:760px){
+  body{font-size:16px}
+  .wrap{padding:0 16px 110px}
+  h1{font-size:1.85rem} h2{font-size:1.45rem;margin-top:2rem} h3{font-size:1.15rem}
+  .lede{font-size:1.05rem}
+  .topbar{padding:8px 12px;gap:10px}
+  .topbar .links{display:none}
+  .topbar .menu span{display:none}
+  .topbar .menu{padding:8px 11px}
+  .fig{padding:12px 12px;margin:16px -4px;border-radius:8px}
+  .crux,.source{padding:12px 14px}
+  pre{font-size:.8em;padding:12px 12px}
+  button,.btn{padding:10px 14px;font-size:.92rem}
+  .controls{gap:8px}
+  .controls label{display:flex;align-items:center;gap:6px}
+  input[type=number]{max-width:96px}
+  .cards{grid-template-columns:1fr 1fr;gap:8px}
+  .card,.card .inner{min-height:120px}
+  .card .face{font-size:.88rem;padding:10px}
+  .cells{min-width:420px}
+  .quiz .opt{padding:12px 12px;line-height:1.35}
+  .nav-bottom{flex-direction:column}
+  .nav-bottom a{text-align:center}
+  .notes-fab span{display:none}
+  .notes-fab{padding:14px;right:12px;bottom:12px}
+  .notes-sheet textarea{min-height:44vh}
+  .stepper .stage{padding:12px}
+  .gantt .row{grid-template-columns:44px 1fr;font-size:.75rem}
+  /* lesson-specific grids collapse */
+  .lde,.il,.two,.cry,.flash,.dl,.fdt,.how,.cards.wide,.vm{grid-template-columns:1fr}
+  .map{grid-template-columns:1fr}
+  .net{grid-template-columns:1fr}.net .arrow{padding:0;transform:rotate(90deg)}
+  .phil{grid-template-columns:repeat(2,1fr)}
+  .jobs{max-width:100%}
+  .trace{min-width:620px}.tl{min-width:720px}.disk{min-width:560px}
+}
+@media (max-width:420px){.cards{grid-template-columns:1fr}}
+
+/* ---------- runnable Python ---------- */
+.pyrun{border:1px solid var(--line);border-radius:var(--radius);background:#0f1424;margin:18px 0;overflow:hidden}
+.pyrun .pyhead{display:flex;gap:10px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--line);font-size:.85rem;color:var(--muted);background:var(--ink-2)}
+.pyrun .pyhead span:first-child{flex:1;font-weight:600;color:var(--paper)}
+.pyrun .pystatus{font-size:.78rem}
+.pyrun textarea{display:block;width:100%;border:none;background:#0f1424;color:var(--paper);font-family:'IBM Plex Mono',monospace;font-size:.86rem;line-height:1.5;padding:12px 14px;resize:vertical;outline:none;min-height:60px;tab-size:4}
+.pyrun .pyout{margin:0;border:none;border-top:1px solid var(--line);border-left:none;border-radius:0;background:#0a0e1a;color:#cfe3ff;max-height:320px}
+
+</style>
+<style>.slots{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}.slots div{min-width:70px;padding:8px;border:1px solid var(--line);border-radius:6px;background:#0f1424;text-align:center;font-family:'IBM Plex Mono',monospace;font-size:.8rem}.slots div.f{background:#6bcb77;color:#111}.slots div.d{background:#28304f}.slots div.e{border-color:var(--bad)}.slots small{display:block;color:inherit;opacity:.7}.gen{display:grid;grid-template-columns:1fr 1fr;gap:12px}.gen .st{background:#0f1424;border:1px solid var(--line);border-radius:6px;padding:10px;font-family:'IBM Plex Mono',monospace;font-size:.82rem;min-height:120px;white-space:pre-wrap}@media(max-width:700px){.gen{grid-template-columns:1fr}}</style></head>
+<body class="piece-spec"><div class="wrap">
+<header class="hero"><div class="chapters">Language Reference §6.3.4 Calls · §6.2.9 Yield expressions · §3.2 Callable types · §3.4 Coroutines · §8.8 Coroutine function definitions</div>
+<h1>Functions, generators, coroutines: one calling convention, three kinds of frame</h1>
+<p class="lede">A function call binds arguments to parameter slots by a fixed algorithm the reference spells out; a generator is a function whose frame <em>suspends</em> at <code>yield</code> and can be resumed, sent values, thrown exceptions, or closed; a coroutine is the same machinery with <code>await</code> instead of <code>yield</code> and an event loop instead of a <code>for</code> loop. Understanding the protocol underneath — <code>__next__</code>, <code>send</code>, <code>throw</code>, <code>close</code>, <code>StopIteration.value</code>, <code>__await__</code> — makes async code stop looking magical.</p></header>
+<div class="source"><b>Primary sources:</b> <a href="https://docs.python.org/3.13/reference/expressions.html#calls">§6.3.4 Calls</a>, <a href="https://docs.python.org/3.13/reference/expressions.html#yield-expressions">§6.2.9 Yield expressions</a> (generator-iterator methods), <a href="https://docs.python.org/3.13/reference/datamodel.html#coroutines">§3.4 Coroutines</a>, <a href="https://docs.python.org/3.13/reference/compound_stmts.html#function-definitions">§8.7–8.8</a>. Internals: <code>InternalDocs/generators.md</code> (frames embedded in generator objects).</div>
+<h2>What you'll be able to do</h2><ul id="obj"></ul>
+
+<h2>Calls: the slot-filling algorithm</h2>
+<div class="crux"><b>§6.3.4:</b> create one unfilled slot per formal parameter. Place the N positional arguments in the first N slots. For each keyword argument, find the slot with that name; if it is already filled → <code>TypeError</code>; otherwise fill it (even with <code>None</code>). Remaining unfilled slots take their default values — defaults are evaluated <em>once</em>, when the function is defined. Any slot still empty → <code>TypeError</code>. Extra positional arguments go to <code>*args</code> if present (else <code>TypeError</code>); extra keywords go to <code>**kwargs</code> if present (else <code>TypeError</code>). <code>*iterable</code> and <code>**mapping</code> at the call site are unpacked first. Parameters before <code>/</code> are positional-only; after a bare <code>*</code> or <code>*args</code>, keyword-only.</div>
+<div class="fig"><h4>Bind a call to <code>def f(a, b=2, /, c=3, *args, d, e=5, **kw)</code></h4><div class="controls"><input type="text" id="call" value="f(1, 10, 20, 30, 40, d=7, z=9)" style="width:min(100%,420px)"><button class="primary" id="bind">bind</button></div><div class="slots" id="slots"></div><div class="cap" id="bmsg"></div></div>
+<div id="py1"></div>
+
+<h2>Function objects</h2>
+<p>A user-defined function object (§3.2) carries: <code>__code__</code> (the compiled body), <code>__globals__</code> (the module namespace where it was defined — the reference to global names), <code>__defaults__</code>/<code>__kwdefaults__</code>, <code>__closure__</code> (cells for free variables), <code>__dict__</code> (arbitrary attributes), <code>__annotations__</code>, <code>__type_params__</code> (3.12+), <code>__name__</code>, <code>__qualname__</code>, <code>__module__</code>, <code>__doc__</code>. Lambdas are the same objects with a single expression body. Because <code>__defaults__</code> is created once, a mutable default (<code>def f(x, acc=[])</code>) is shared across calls — the classic trap.</p>
+<div id="py2"></div>
+
+<h2>Generators: suspended frames</h2>
+<p>Any function containing <code>yield</code> becomes a <b>generator function</b>: calling it runs nothing and returns a <b>generator iterator</b>. Each <code>__next__()</code> resumes the frame until the next <code>yield</code>, whose operand is returned to the caller; the yield expression itself evaluates to whatever was <b>sent</b> (<code>None</code> for plain <code>__next__</code>). When the function returns, <code>StopIteration</code> is raised and the return value becomes <code>StopIteration.value</code> — which is exactly what <code>yield from sub</code> evaluates to when the sub-generator finishes. Since PEP 479, a <code>StopIteration</code> escaping the body is turned into <code>RuntimeError</code>. Calling any method while the generator is already executing → <code>ValueError</code>.</p>
+<div class="fig"><h4>Drive a generator by hand</h4><pre><code>def gen():
+    print("  started")
+    received = yield 1          # first suspension point
+    print("  got", received)
+    try:
+        yield 2
+    except KeyError:
+        print("  caught KeyError, yielding 3")
+        yield 3
+    return "done"</code></pre><div class="controls"><button class="primary" data-g="next">next(g)</button><button data-g="send">g.send("hi")</button><button data-g="throw">g.throw(KeyError)</button><button data-g="close">g.close()</button><button data-g="reset">new generator</button></div><div class="gen"><div class="st" id="gstate"></div><div class="st" id="glog"></div></div></div>
+<div id="py3"></div>
+<div class="two"><div class="fig"><h4>close() precisely</h4><p>Raises <code>GeneratorExit</code> at the paused <code>yield</code> (same as <code>throw(GeneratorExit)</code>). If the body catches it and <em>returns</em>, that value is <code>close()</code>'s result (3.13); if it lets it propagate or was already closed, <code>close()</code> returns <code>None</code>; if it <em>yields</em> again → <code>RuntimeError</code>; other exceptions propagate. Also called by the generator's finalizer, so <code>finally</code>/<code>with</code> blocks inside generators do run on collection.</p></div><div class="fig"><h4>Under the hood (InternalDocs)</h4><p>The generator object embeds a <code>_PyInterpreterFrame</code>: locals, the evaluation stack and the instruction pointer live inside the generator, so suspending is just returning from the eval loop with that frame preserved. <code>RETURN_GENERATOR</code> creates the object on the first call; <code>SEND</code>/<code>YIELD_VALUE</code> handle <code>yield from</code> and <code>await</code>. That's why generators are cheap: no thread, no stack copying.</p></div></div>
+
+<h2>Coroutines and awaitables</h2>
+<p><code>async def</code> defines a <b>coroutine function</b>; calling it returns a <b>coroutine object</b>, an <em>awaitable</em>. <code>await x</code> requires <code>x</code> to be awaitable: a coroutine, or an object whose <code>__await__()</code> returns an iterator (that is how <code>asyncio.Future</code> plugs in). Driving works exactly like generators — <code>send(None)</code> to start, the underlying iterator raises <code>StopIteration</code> with the return value in <code>.value</code> — but coroutines do not support <code>__next__</code>/iteration directly, may not be awaited twice (<code>RuntimeError</code>), and must not raise bare <code>StopIteration</code>. <code>async for</code> uses <code>__aiter__</code>/<code>__anext__</code> (awaitable, raising <code>StopAsyncIteration</code>); <code>async with</code> awaits <code>__aenter__</code>/<code>__aexit__</code>; async generators mix <code>yield</code> into <code>async def</code>. An event loop is just a scheduler that calls <code>send()</code> on many coroutine objects and parks the ones whose awaitable said "not yet".</p>
+<div id="py4"></div>
+
+<h2>Flash cards</h2><div id="cards"></div>
+<h2>Retrieval practice</h2><div id="quiz"></div>
+<p class="tip">Want to write a 30-line event loop that runs coroutines, or dig into <code>yield from</code>'s full delegation semantics (PEP 380)? Ask me in the chat.</p>
+</div>
+<script>
+/* OSTEP course — shared components. Every page loads this file (inlined by build.py). */
+window.OS = (function () {
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+  /* ---------- persistent storage (localStorage on a real site; in-memory fallback in sandboxes) ---------- */
+  const mem = {};
+  const store = {
+    get(k) { try { const v = localStorage.getItem('py313:' + k); return v === null ? (mem[k] ?? null) : JSON.parse(v); } catch (e) { return mem[k] ?? null; } },
+    set(k, v) { mem[k] = v; try { localStorage.setItem('py313:' + k, JSON.stringify(v)); } catch (e) {} },
+    del(k) { delete mem[k]; try { localStorage.removeItem('py313:' + k); } catch (e) {} },
+    keys(prefix) { const out = new Set(Object.keys(mem).filter(k => k.startsWith(prefix))); try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith('py313:' + prefix)) out.add(k.slice(6)); } } catch (e) {} return [...out]; },
+    available() { try { localStorage.setItem('py313:test', '1'); localStorage.removeItem('py313:test'); return true; } catch (e) { return false; } }
+  };
+
+  /* ---------- course structure ---------- */
+  const PIECES = [
+    ['spec', 'The language, as specified', [
+      ['0001-objects-values-types', 'Objects, values and types', 'Ref §3.1–3.2'],
+      ['0002-lexical-structure-and-expressions', 'Lexical structure & expressions', 'Ref §2, §6'],
+      ['0003-execution-model', 'Execution model: names, scopes, closures', 'Ref §4'],
+      ['0004-data-model-special-methods', 'Data model I: special methods', 'Ref §3.3'],
+      ['0005-attribute-access-and-descriptors', 'Data model II: attributes & descriptors', 'Ref §3.3.2, HOWTO'],
+      ['0006-classes-mro-metaclasses', 'Classes, MRO, metaclasses', 'Ref §3.3.3, HOWTO'],
+      ['0007-functions-generators-coroutines', 'Functions, generators, coroutines', 'Ref §6.3, §3.4'],
+      ['0008-statements-and-pattern-matching', 'Statements, exceptions, pattern matching', 'Ref §7–8'],
+      ['0009-import-system', 'The import system', 'Ref §5'],
+      ['0010-typing', 'Typing: the PEP 484 lineage to 3.13', 'PEPs 484…742']]],
+    ['internals', 'CPython 3.13 internals', [
+      ['0011-compiler-and-bytecode', 'From source to bytecode', 'InternalDocs compiler, dis'],
+      ['0012-eval-loop-and-specialization', 'The eval loop, specialization, JIT', 'InternalDocs interpreter, PEPs 659/744'],
+      ['0013-memory-refcounting-gc', 'Memory, refcounting, garbage collection', 'InternalDocs GC, PEP 683'],
+      ['0014-gil-and-free-threading', 'The GIL and free-threaded Python', 'PEP 703, HOWTO']]],
+    ['data', 'DataFrames: pandas vs Polars', [
+      ['0015-dataframe-data-models', 'Two data models', 'pandas dsintro, Polars concepts'],
+      ['0016-selection-and-indexing', 'Selecting, filtering, assigning', 'pandas indexing, Polars expressions'],
+      ['0017-expressions-and-lazy', 'Expressions, contexts, lazy queries', 'Polars lazy, pandas chaining'],
+      ['0018-groupby-joins-reshaping', 'Groupby, joins, reshaping', 'pandas groupby/merging, Polars transformations'],
+      ['0019-time-series', 'Time series', 'pandas timeseries, Polars time-series'],
+      ['0020-performance-and-scale', 'Performance, memory, scale', 'pandas enhancingperf/scale, Modern Polars']]]
+  ];
+  const LESSONS = PIECES.flatMap(p => p[2].map(l => [l[0], l[1], p[0], l[2]]));
+  const title = id => (LESSONS.find(l => l[0] === id) || [])[1] || id;
+  let pageId = null, root = '../';
+
+  /* ---------- chrome: sticky header, slide-out directory, notes drawer, prev/next ---------- */
+  function chrome(id, rootPath) {
+    pageId = id; root = rootPath === undefined ? '../' : rootPath;
+    const i = LESSONS.findIndex(l => l[0] === id);
+    const isLesson = i >= 0;
+    const top = document.createElement('header'); top.className = 'topbar';
+    top.innerHTML = `<button class="menu" aria-label="Open directory" aria-expanded="false">☰<span>Directory</span></button>
+      <a class="brand" href="${root}index.html"><span class="dot"></span>Python 3.13 course</a>
+      <nav class="links"><a href="${root}reference/glossary.html">Glossary</a><a href="${root}reference/cheatsheets.html">Cheat sheets</a><a href="${root}notes.html">My notes</a></nav>
+      ${isLesson ? `<span class="where">${i+1} / ${LESSONS.length}</span>` : ''}`;
+    document.body.prepend(top);
+    // directory drawer
+    const drawer = document.createElement('aside'); drawer.className = 'drawer'; drawer.setAttribute('aria-label', 'Course directory');
+    const scores = Object.fromEntries(LESSONS.map(l => [l[0], store.get('quiz:' + l[0])]));
+    const notes = new Set(store.keys('notes:').map(k => k.slice(6)).filter(k => (store.get('notes:' + k) || {}).text));
+    drawer.innerHTML = `<div class="dhead"><b>Directory</b><button class="close" aria-label="Close">×</button></div>
+      <a class="ditem ${id === 'index' ? 'cur' : ''}" href="${root}index.html">Course hub</a>
+      ${PIECES.map(([cls, name, ls]) => `<div class="dgroup piece-${cls}"><div class="dname">${name}</div>${ls.map(l => {
+        const n = LESSONS.findIndex(x => x[0] === l[0]) + 1, s = scores[l[0]];
+        return `<a class="ditem ${l[0] === id ? 'cur' : ''}" href="${root}lessons/${l[0]}.html"><span class="n">${n}</span><span class="t">${l[1]}<small>${l[3]}</small></span><span class="badges">${notes.has(l[0]) ? '<i title="you have notes">✎</i>' : ''}${s ? `<em title="best quiz score">${s.score}/${s.total}</em>` : ''}</span></a>`; }).join('')}</div>`).join('')}
+      <div class="dgroup piece-intro"><div class="dname">Reference</div>
+        <a class="ditem ${id === 'glossary' ? 'cur' : ''}" href="${root}reference/glossary.html"><span class="t">Glossary</span></a>
+        <a class="ditem ${id === 'cheatsheets' ? 'cur' : ''}" href="${root}reference/cheatsheets.html"><span class="t">Cheat sheets</span></a>
+        <a class="ditem ${id === 'notes' ? 'cur' : ''}" href="${root}notes.html"><span class="t">My notes &amp; progress</span></a></div>
+      <div class="dfoot">${store.available() ? 'Notes and scores are saved in this browser.' : 'Notes and scores are kept for this session only (storage unavailable here).'}</div>`;
+    document.body.append(drawer);
+    const scrim = document.createElement('div'); scrim.className = 'scrim'; document.body.append(scrim);
+    const open = o => { document.body.classList.toggle('drawer-open', o); top.querySelector('.menu').setAttribute('aria-expanded', o); if (o) drawer.querySelector('.cur, .ditem')?.focus(); };
+    top.querySelector('.menu').onclick = () => open(!document.body.classList.contains('drawer-open'));
+    drawer.querySelector('.close').onclick = () => open(false); scrim.onclick = () => open(false);
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') { open(false); notesOpen(false); } });
+    // prev/next for lessons
+    if (isLesson) {
+      const nav = document.createElement('div'); nav.className = 'nav-bottom';
+      const prev = LESSONS[i-1], next = LESSONS[i+1];
+      nav.innerHTML = (prev ? `<a href="${prev[0]}.html">← ${i}. ${prev[1]}</a>` : '<span></span>') +
+                      (next ? `<a href="${next[0]}.html">${i+2}. ${next[1]} →</a>` : `<a href="${root}index.html">Back to course hub →</a>`);
+      document.querySelector('.wrap').append(nav);
+    }
+    // wrap tables so they scroll sideways on phones
+    document.querySelectorAll('.wrap table').forEach(t => { if (t.parentElement.classList.contains('tw')) return; const w = document.createElement('div'); w.className = 'tw'; t.replaceWith(w); w.append(t); });
+    // notes drawer (every page except the notes page itself)
+    if (id !== 'notes') notesUI(id, isLesson ? `${i+1}. ${LESSONS[i][1]}` : (document.title.split(' — ')[0]));
+  }
+
+  /* ---------- notes: floating button + bottom sheet, autosaved ---------- */
+  let notesOpen = () => {};
+  function notesUI(id, label) {
+    const btn = document.createElement('button'); btn.className = 'notes-fab'; btn.innerHTML = '✎ <span>Notes</span>'; btn.setAttribute('aria-label', 'Open notes');
+    const sheet = document.createElement('section'); sheet.className = 'notes-sheet'; sheet.setAttribute('aria-label', 'Notes for this page');
+    const saved = store.get('notes:' + id) || {};
+    sheet.innerHTML = `<div class="nhead"><b>Notes · ${esc(label)}</b><span class="nstatus"></span><button class="close" aria-label="Close notes">×</button></div>
+      <textarea placeholder="Your notes for this page. Markdown is fine. Saved automatically.">${esc(saved.text || '')}</textarea>
+      <div class="nfoot"><span class="ncount"></span><a href="${root}notes.html">All notes &amp; export →</a></div>`;
+    document.body.append(btn, sheet);
+    const ta = sheet.querySelector('textarea'), status = sheet.querySelector('.nstatus'), count = sheet.querySelector('.ncount');
+    const upd = () => { count.textContent = ta.value.trim() ? ta.value.trim().split(/\s+/).length + ' words' : ''; };
+    let t; ta.addEventListener('input', () => { status.textContent = 'saving…'; clearTimeout(t); t = setTimeout(() => { store.set('notes:' + id, { text: ta.value, title: label, updated: new Date().toISOString() }); status.textContent = 'saved'; upd(); }, 400); });
+    upd();
+    notesOpen = o => { document.body.classList.toggle('notes-open', o); if (o) ta.focus(); };
+    btn.onclick = () => notesOpen(!document.body.classList.contains('notes-open'));
+    sheet.querySelector('.close').onclick = () => notesOpen(false);
+  }
+
+  /* ---------- quiz: immediate feedback; best score persisted ---------- */
+  function quiz(el, qs) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('quiz');
+    let score = 0, answered = 0;
+    const best = pageId ? store.get('quiz:' + pageId) : null;
+    el.innerHTML = qs.map((q, i) => `<div class="q" data-i="${i}"><p>${i+1}. ${q.q}</p>
+      <div class="opts">${q.o.map((o, j) => `<button class="opt" data-j="${j}">${esc(o)}</button>`).join('')}</div>
+      <div class="why">${q.why}</div></div>`).join('') + `<div class="score">${best ? `Best so far: ${best.score}/${best.total} (${new Date(best.date).toLocaleDateString()})` : ''}</div>`;
+    el.querySelectorAll('.q').forEach(qd => {
+      const q = qs[+qd.dataset.i];
+      qd.querySelectorAll('.opt').forEach(b => b.addEventListener('click', () => {
+        if (qd.classList.contains('done')) return;
+        qd.classList.add('done'); answered++;
+        const j = +b.dataset.j;
+        if (j === q.a) { b.classList.add('right'); score++; }
+        else { b.classList.add('wrong'); qd.querySelectorAll('.opt')[q.a].classList.add('right'); }
+        const s = el.querySelector('.score');
+        s.textContent = `${score} / ${answered} correct`;
+        if (answered === qs.length) {
+          s.textContent += score === qs.length ? ' — all of them. Retry from memory in two days.' : ' — reread the sections you missed, then retry.';
+          if (pageId && (!best || score >= best.score)) store.set('quiz:' + pageId, { score, total: qs.length, date: new Date().toISOString() });
+        }
+      }));
+    });
+  }
+
+
+  /* ---------- runnable Python (Pyodide, loaded on first use) ---------- */
+  const pyodideP = {};
+  function loadPy(status, version) {
+    version = version || '0.28.3';
+    if (pyodideP[version]) return pyodideP[version];
+    status('loading Python (Pyodide ' + version + ', ~10 MB, once per page)…');
+    pyodideP[version] = new Promise((res, rej) => {
+      const s = document.createElement('script'); s.src = 'https://cdn.jsdelivr.net/pyodide/v' + version + '/full/pyodide.js';
+      s.onload = () => window.loadPyodide({ indexURL: 'https://cdn.jsdelivr.net/pyodide/v' + version + '/full/' }).then(res, rej);
+      s.onerror = () => rej(new Error('Could not load Pyodide (offline, or blocked by this preview).'));
+      document.head.append(s);
+    });
+    return pyodideP[version];
+  }
+  function py(el, code, opts) {
+    el = typeof el === 'string' ? document.getElementById(el) : el; opts = opts || {};
+    el.classList.add('pyrun');
+    el.innerHTML = `<div class="pyhead"><span>Python${opts.note ? ' · ' + esc(opts.note) : ''}</span><span class="pystatus"></span><button class="primary run">▶ Run</button><button class="reset">Reset</button></div><textarea spellcheck="false">${esc(code.trim())}</textarea><pre class="pyout" hidden></pre>`;
+    const ta = el.querySelector('textarea'), out = el.querySelector('.pyout'), st = el.querySelector('.pystatus');
+    const fit = () => { ta.style.height = 'auto'; ta.style.height = Math.min(480, ta.scrollHeight + 4) + 'px'; }; fit(); ta.addEventListener('input', fit);
+    el.querySelector('.reset').onclick = () => { ta.value = code.trim(); fit(); out.hidden = true; };
+    el.querySelector('.run').onclick = async () => {
+      out.hidden = false; out.textContent = ''; st.textContent = '';
+      try {
+        const pyo = await loadPy(m => st.textContent = m, opts.pyodide || ((opts.packages||[]).includes('polars') ? '0.27.7' : '0.28.3'));
+        if (opts.packages) { st.textContent = 'loading ' + opts.packages.join(', ') + '…'; await pyo.loadPackage(opts.packages).catch(() => {}); }
+        st.textContent = 'running…';
+        pyo.setStdout({ batched: s => out.textContent += s + '\n' }); pyo.setStderr({ batched: s => out.textContent += s + '\n' });
+        const r = await pyo.runPythonAsync(ta.value);
+        if (r !== undefined && r !== null && String(r) !== 'None') out.textContent += String(r);
+        st.textContent = 'done · CPython ' + pyo.runPython('import sys; f"{sys.version_info.major}.{sys.version_info.minor}"') + ' in WebAssembly';
+      } catch (e) { out.textContent += String(e); st.textContent = 'error'; }
+    };
+  }
+
+  /* ---------- flip cards ---------- */
+  function cards(el, list) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('cards');
+    el.innerHTML = list.map(([f, b]) => `<div class="card" tabindex="0" role="button" aria-label="flip card"><div class="inner"><div class="face front">${f}</div><div class="face back">${b}</div></div></div>`).join('');
+    el.querySelectorAll('.card').forEach(c => {
+      const t = () => c.classList.toggle('flipped');
+      c.addEventListener('click', t);
+      c.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); t(); } });
+    });
+  }
+
+  /* ---------- stepper ---------- */
+  function stepper(el, steps, render) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('stepper');
+    let i = 0;
+    el.innerHTML = `<div class="controls"><button class="prev">← Back</button><button class="next primary">Next step →</button><span class="idx"></span></div><div class="stage"></div><div class="extra"></div>`;
+    const stage = el.querySelector('.stage'), idx = el.querySelector('.idx'), extra = el.querySelector('.extra');
+    const draw = () => { stage.innerHTML = steps[i]; idx.textContent = `step ${i+1} / ${steps.length}`; if (render) render(i, extra); };
+    el.querySelector('.prev').onclick = () => { i = Math.max(0, i-1); draw(); };
+    el.querySelector('.next').onclick = () => { i = Math.min(steps.length-1, i+1); draw(); };
+    draw();
+  }
+
+  /* ---------- gantt ---------- */
+  function gantt(el, rows, total, colors) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('gantt');
+    const pal = colors || ['#e8b84a','#5bc8f5','#6bcb77','#f47fa0','#c9a8ff','#ffb86b'];
+    el.innerHTML = rows.map((r, i) => `<div class="row"><span>${esc(r.name)}</span><div class="track">${r.segs.map(s =>
+      `<div class="seg" style="left:${100*s.start/total}%;width:${100*(s.end-s.start)/total}%;background:${pal[i%pal.length]}" title="${s.start}–${s.end}">${(s.end-s.start)/total > .06 ? (s.end-s.start) : ''}</div>`).join('')}</div></div>`).join('') +
+      `<div class="row"><span></span><div style="display:flex;justify-content:space-between;font-size:.75rem;color:var(--muted)"><span>0</span><span>${total}</span></div></div>`;
+  }
+
+  /* ---------- objectives checklist (persisted) ---------- */
+  function objectives(el, items) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('objectives');
+    const saved = (pageId && store.get('obj:' + pageId)) || [];
+    el.innerHTML = items.map((t, i) => `<li><label><input type="checkbox" data-i="${i}" ${saved.includes(i) ? 'checked' : ''}>${t}</label></li>`).join('');
+    el.querySelectorAll('input').forEach(c => c.onchange = () => { const s = [...el.querySelectorAll('input:checked')].map(x => +x.dataset.i); if (pageId) store.set('obj:' + pageId, s); });
+  }
+
+  return { chrome, quiz, cards, stepper, gantt, objectives, py, esc, store, LESSONS, PIECES, title };
+})();
+
+</script>
+<script>
+OS.chrome('0007-functions-generators-coroutines');
+OS.objectives('obj',['Run the §6.3.4 slot-filling algorithm and predict every TypeError case.','List the attributes of a function object and explain the mutable-default trap from __defaults__.','Drive a generator with next/send/throw/close and state what each does at the suspension point.','Explain StopIteration.value, yield from, and the PEP 479 rule.','Describe awaitables, __await__, and why an event loop is a scheduler of send() calls.']);
+/* binder */
+function bind(){const src=document.getElementById('call').value.trim();const m=src.match(/^f\((.*)\)$/s);const out=document.getElementById('slots'),msg=document.getElementById('bmsg');if(!m){msg.textContent='write a call like f(1, 2, d=3)';return;}const parts=m[1].split(',').map(s=>s.trim()).filter(Boolean);const pos=[],kw={};let err=null;for(const p of parts){const k=p.match(/^(\w+)\s*=\s*(.+)$/);if(k){if(k[1] in kw)err=`TypeError: keyword argument repeated: ${k[1]}`;kw[k[1]]=k[2];}else if(Object.keys(kw).length)err='SyntaxError: positional argument follows keyword argument';else pos.push(p);}
+const S=[{n:'a',kind:'pos-only'},{n:'b',kind:'pos-only',def:'2'},{n:'c',kind:'pos-or-kw',def:'3'},{n:'*args',kind:'var'},{n:'d',kind:'kw-only'},{n:'e',kind:'kw-only',def:'5'},{n:'**kw',kind:'varkw'}];const fill={};let i=0;for(;i<Math.min(pos.length,3);i++)fill[S[i].n]=pos[i];const extra=pos.slice(3);fill['*args']=extra.length?'('+extra.join(', ')+')':'()';const kwrest={};for(const [k,v] of Object.entries(kw)){if(k==='a'||k==='b'){err=err||`TypeError: f() got some positional-only arguments passed as keyword arguments: '${k}'`;}else if(['c','d','e'].includes(k)){if(k in fill)err=err||`TypeError: f() got multiple values for argument '${k}'`;else fill[k]=v;}else kwrest[k]=v;}
+fill['**kw']='{'+Object.entries(kwrest).map(([k,v])=>`'${k}': ${v}`).join(', ')+'}';S.forEach(s=>{if(!(s.n in fill)){if(s.def!==undefined)fill[s.n]=s.def+' (default)';else if(s.kind!=='var'&&s.kind!=='varkw')err=err||`TypeError: f() missing 1 required ${s.kind==='kw-only'?'keyword-only ':'positional '}argument: '${s.n}'`;}});
+out.innerHTML=S.map(s=>`<div class="${fill[s.n]===undefined?'e':String(fill[s.n]).includes('(default)')?'d':'f'}">${s.n}<small>${s.kind}</small>${fill[s.n]===undefined?'—':fill[s.n]}</div>`).join('');msg.textContent=err||'bound successfully · a,b positional-only (before /) · d,e keyword-only (after *args) · extras → *args / **kw';msg.style.color=err?'var(--bad)':'var(--muted)';}
+document.getElementById('bind').onclick=bind;document.getElementById('call').addEventListener('keydown',e=>{if(e.key==='Enter')bind();});bind();
+OS.py('py1',`
+def f(a, b=2, /, c=3, *args, d, e=5, **kw):
+    return dict(a=a, b=b, c=c, args=args, d=d, e=e, kw=kw)
+print(f(1, 10, 20, 30, 40, d=7, z=9))
+for call in ["f(1, d=1, c=2, c=3)", "f(1, 2, 3, c=4, d=5)", "f(1, d=1, b=2)", "f(1)"]:
+    try:
+        eval(call)
+    except (TypeError, SyntaxError) as e:
+        print(f"{call:<28} → {type(e).__name__}: {e}")
+args, kwargs = (1, 2), {"d": 4}
+print("unpacking at the call site:", f(*args, **kwargs)["d"])`);
+OS.py('py2',`
+def make(x, acc=[]):            # __defaults__ is evaluated ONCE, at def time
+    acc.append(x); return acc
+print(make(1), make(2), "← shared default list; use acc=None and create inside")
+print("defaults object:", make.__defaults__)
+def outer():
+    y = 10
+    def inner(a: int, *, k=5) -> int:
+        "doc"
+        return a + y
+    return inner
+g = outer()
+print("__code__.co_varnames:", g.__code__.co_varnames, "| co_freevars:", g.__code__.co_freevars)
+print("__closure__ cell:", g.__closure__[0].cell_contents, "| __kwdefaults__:", g.__kwdefaults__)
+print("__annotations__:", g.__annotations__, "| __qualname__:", g.__qualname__, "| __globals__ is module dict:", g.__globals__ is globals())
+g.tag = "functions have a __dict__"; print(g.__dict__)`);
+/* generator sim */
+const GLOG=[];let gs;function greset(){gs={state:'created (not started)',pos:0,closed:false};GLOG.length=0;gdraw('g = gen()  → nothing runs yet');}
+function gdraw(m){GLOG.push(m);document.getElementById('gstate').textContent='generator state: '+gs.state;document.getElementById('glog').textContent=GLOG.slice(-9).join('\n');}
+const G={next(){if(gs.closed)return gdraw('next(g) → StopIteration (already closed)');if(gs.pos===0){gs.pos=1;gs.state='suspended at yield 1';return gdraw('next(g): "started" printed; yields 1 → returns 1');}if(gs.pos===1){gs.pos=2;gs.state='suspended at yield 2';return gdraw('next(g): yield 1 evaluates to None → "got None"; yields 2');}if(gs.pos===2||gs.pos===3){gs.closed=true;gs.state='finished';return gdraw('next(g): body returns "done" → StopIteration("done")  (.value == "done")');}},
+send(){if(gs.pos===0)return gdraw('g.send("hi") → TypeError: can\'t send non-None value to a just-started generator');if(gs.closed)return gdraw('send → StopIteration');if(gs.pos===1){gs.pos=2;gs.state='suspended at yield 2';return gdraw('g.send("hi"): yield 1 evaluates to "hi" → "got hi"; yields 2 → returns 2');}return G.next();},
+throw(){if(gs.closed)return gdraw('throw → KeyError propagates (generator finished)');if(gs.pos===2){gs.pos=3;gs.state='suspended at yield 3';return gdraw('g.throw(KeyError): raised at yield 2, caught → yields 3 → returns 3');}gs.closed=true;gs.state='finished (exception propagated)';return gdraw('g.throw(KeyError): not caught at this point → KeyError propagates to caller');},
+close(){if(gs.closed||gs.pos===0){gs.closed=true;gs.state='closed';return gdraw('g.close() → None (never started or already finished)');}gs.closed=true;gs.state='closed';return gdraw('g.close(): GeneratorExit raised at the yield; not caught → close() returns None; finally/with blocks would run');},reset(){greset();}};
+document.querySelectorAll('[data-g]').forEach(b=>b.onclick=()=>G[b.dataset.g]());greset();
+OS.py('py3',`
+def gen():
+    print("  started")
+    received = yield 1
+    print("  got", received)
+    try:
+        yield 2
+    except KeyError:
+        print("  caught KeyError, yielding 3")
+        yield 3
+    return "done"
+g = gen()
+print("next →", next(g)); print("send('hi') →", g.send("hi")); print("throw(KeyError) →", g.throw(KeyError))
+try: next(g)
+except StopIteration as e: print("StopIteration.value =", e.value)
+
+def sub(): yield "a"; return "sub-result"
+def outer(): r = yield from sub(); print("  yield from evaluated to", repr(r)); yield "b"
+print(list(outer()))
+
+def bad():
+    raise StopIteration            # PEP 479
+    yield
+try: next(bad())
+except RuntimeError as e: print("RuntimeError:", e)`);
+OS.py('py4',`
+import types
+class Sleep:                       # a hand-made awaitable
+    def __await__(self):
+        print("  Sleep.__await__: yield control to the loop")
+        yield "sleeping"           # what a real loop would use to park the task
+        return "woke"
+async def task(n):
+    r = await Sleep()
+    return f"task {n} {r}"
+# a 6-line event loop: drive coroutine objects with send(None)
+coros = [task(1), task(2)]; results = []
+while coros:
+    c = coros.pop(0)
+    try:
+        signal = c.send(None); print("  loop got", repr(signal), "from", c.__name__); coros.append(c)
+    except StopIteration as e:
+        results.append(e.value)
+print(results)
+c = task(3); print("coroutine objects are awaitables, not iterators:", hasattr(c, "__await__"), hasattr(c, "__next__")); c.close()`);
+OS.cards('cards',[['Slot filling','Positional args fill the first slots, keywords fill named slots (TypeError if already filled), defaults fill the rest; empty slot → TypeError.'],['Positional-only / keyword-only','Parameters before / can\'t be passed by keyword; parameters after * or *args must be.'],['__defaults__','Tuple of default values created once at def time — the reason mutable defaults are shared.'],['Generator iterator','Object returned by calling a generator function; holds a suspended frame; supports __next__, send, throw, close.'],['send(value)','Resumes the generator with value as the result of the current yield expression; must be None on first call.'],['StopIteration.value','Carries a generator\'s return value; it is what `yield from` and `await` evaluate to.'],['PEP 479','A StopIteration raised inside a generator body is converted to RuntimeError.'],['close()','Throws GeneratorExit at the pause point; yielding again is a RuntimeError; returning ends cleanly.'],['Awaitable','A coroutine object, or any object whose __await__ returns an iterator; required operand of await.']]);
+OS.quiz('quiz',[
+{q:'def f(a, b=2, /, c=3): called as f(1, b=5). Result?',o:['b becomes 5','TypeError: positional-only passed as keyword','c becomes 5','a becomes 5'],a:1,why:'Parameters before / are positional-only; naming them in a call is a TypeError.'},
+{q:'Why does def f(x, acc=[]) share the list across calls?',o:['lists are always shared','defaults are evaluated once at def time and stored in __defaults__','acc is a global name','the slot algorithm copies by reference'],a:1,why:'The default expression runs when def executes; the resulting object lives in f.__defaults__ and is reused every time the slot is unfilled.'},
+{q:'Calling g.send("x") on a just-created generator:',o:['starts it with x as the first yield\'s value','raises TypeError','yields x','is the same as next(g)'],a:1,why:'There is no yield expression waiting to receive a value yet; the first call must be send(None) or next().'},
+{q:'A generator body executes return "r". A caller\'s next(g) sees:',o:['the value "r"','StopIteration with .value == "r"','GeneratorExit','RuntimeError'],a:1,why:'Return terminates iteration; the return value is attached to StopIteration and is what yield from / await evaluate to.'},
+{q:'What does g.close() do at the pause point?',o:['raises StopIteration inside the body','raises GeneratorExit inside the body','deletes the frame silently','raises KeyboardInterrupt'],a:1,why:'close() is throw(GeneratorExit); the body may run finally/except blocks but must not yield again (RuntimeError).'},
+{q:'await x is legal when:',o:['x is any iterator','x is a coroutine or defines __await__ returning an iterator','x defines __iter__','x is a generator function'],a:1,why:'§3.4: an awaitable is a coroutine object or an object whose __await__ returns an iterator, e.g. asyncio.Future.'},
+{q:'Why are generators cheap to suspend?',o:['each has its own OS thread','the frame lives inside the generator object','locals are copied to the heap on each yield','the compiler inlines them'],a:1,why:'InternalDocs: generators embed a _PyInterpreterFrame; suspending returns from the eval loop leaving locals, stack and instruction pointer in place.'}]);
+</script></body></html>
