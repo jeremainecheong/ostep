@@ -1,0 +1,438 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>13 · FFS, journaling, LFS — OSTEP course</title><style>
+/* OSTEP course — shared stylesheet. Three pieces, three hues. */
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+:root{
+  --ink:#151b2f; --ink-2:#1e2540; --ink-3:#28304f; --line:#3a4368;
+  --paper:#eef0f7; --muted:#a9b1cf; --faint:#6e779a;
+  --virt:#e8b84a; --conc:#5bc8f5; --pers:#6bcb77; --sec:#f47fa0; --intro:#c9a8ff;
+  --ok:#6bcb77; --bad:#ff6b6b;
+  --accent:var(--virt);
+  --radius:6px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--ink);color:var(--paper);font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:17px;line-height:1.6}
+a{color:var(--accent)}
+code,pre,kbd,.mono{font-family:'IBM Plex Mono',ui-monospace,monospace}
+code{background:var(--ink-3);padding:1px 5px;border-radius:4px;font-size:.9em}
+pre{background:#0f1424;border:1px solid var(--line);border-left:4px solid var(--accent);padding:14px 16px;overflow:auto;border-radius:var(--radius);font-size:.86em;line-height:1.5}
+pre code{background:none;padding:0;font-size:inherit}
+h1,h2,h3,h4{font-family:'Fraunces',Georgia,serif;font-weight:700;line-height:1.15;margin:0 0 .4em}
+h1{font-size:2.6rem;letter-spacing:-.01em}
+h2{font-size:1.9rem;margin-top:2.6rem;padding-top:1.2rem;border-top:1px solid var(--line)}
+h3{font-size:1.3rem;margin-top:1.8rem;color:var(--accent)}
+h4{font-size:1.05rem;margin-top:1.2rem}
+p,li{max-width:72ch}
+.wrap{max-width:1100px;margin:0 auto;padding:0 28px 96px}
+.hero{padding:44px 0 16px}
+.hero .chapters{color:var(--muted);font-size:.95rem;margin-bottom:6px}
+.lede{font-size:1.2rem;color:var(--muted);max-width:66ch}
+.piece-virt{--accent:var(--virt)} .piece-conc{--accent:var(--conc)} .piece-pers{--accent:var(--pers)} .piece-sec{--accent:var(--sec)} .piece-intro{--accent:var(--intro)}
+.fig{background:var(--ink-2);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;margin:22px 0}
+.fig figcaption,.cap{color:var(--muted);font-size:.9rem;margin-top:10px}
+.fig svg{max-width:100%;height:auto;display:block}
+svg text{font-family:'IBM Plex Sans',sans-serif}
+svg .mono{font-family:'IBM Plex Mono',monospace}
+.crux{border:1px solid var(--accent);border-radius:var(--radius);padding:14px 18px;margin:22px 0;background:color-mix(in srgb,var(--accent) 8%,transparent)}
+.crux b{color:var(--accent)}
+.tip{border-left:4px solid var(--muted);padding:6px 16px;margin:18px 0;color:var(--muted)}
+.tip b{color:var(--paper)}
+table{border-collapse:collapse;width:100%;margin:16px 0;font-size:.95rem}
+th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{color:var(--muted);font-weight:500}
+td.mono,th.mono{font-family:'IBM Plex Mono',monospace}
+button,.btn{font:inherit;font-size:.9rem;background:var(--ink-3);color:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:7px 13px;cursor:pointer}
+button:hover{border-color:var(--accent)}
+button.primary{background:var(--accent);color:#111;border-color:var(--accent);font-weight:600}
+button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+input[type=range]{accent-color:var(--accent)}
+input[type=text],input[type=number],select{font:inherit;background:#0f1424;color:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:6px 10px}
+.controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:10px 0}
+.controls label{font-size:.9rem;color:var(--muted)}
+details{border:1px solid var(--line);border-radius:var(--radius);margin:10px 0;background:var(--ink-2)}
+summary{cursor:pointer;padding:12px 16px;font-weight:600;list-style:none}
+summary::before{content:"+";display:inline-block;width:1.2em;color:var(--accent)}
+details[open] summary::before{content:"–"}
+details>div{padding:0 16px 14px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;margin:16px 0}
+.card{perspective:900px;min-height:140px;cursor:pointer}
+.card .inner{position:relative;width:100%;height:100%;min-height:140px;transition:transform .45s;transform-style:preserve-3d}
+.card.flipped .inner{transform:rotateY(180deg)}
+.card .face{position:absolute;inset:0;padding:14px;border-radius:var(--radius);border:1px solid var(--line);background:var(--ink-2);backface-visibility:hidden;display:flex;align-items:center;justify-content:center;text-align:center;font-size:.95rem}
+.card .back{transform:rotateY(180deg);background:var(--ink-3);border-color:var(--accent);font-size:.88rem;line-height:1.45}
+.card .front{font-weight:600}
+@media (prefers-reduced-motion:reduce){.card .inner{transition:none}}
+.quiz .q{border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin:12px 0;background:var(--ink-2)}
+.quiz .q p{margin:0 0 10px;font-weight:600}
+.quiz .opts{display:grid;gap:8px}
+.quiz .opt{text-align:left;background:var(--ink);width:100%}
+.quiz .opt.right{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 15%,var(--ink))}
+.quiz .opt.wrong{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 15%,var(--ink))}
+.quiz .why{margin-top:10px;color:var(--muted);font-size:.93rem;display:none}
+.quiz .q.done .why{display:block}
+.quiz .score{margin-top:12px;font-weight:600}
+.stepper .stage{min-height:60px;background:#0f1424;border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin:10px 0}
+.stepper .idx{color:var(--muted);font-size:.85rem}
+.gantt{display:grid;gap:6px;margin:10px 0}
+.gantt .row{display:grid;grid-template-columns:60px 1fr;align-items:center;gap:8px;font-size:.85rem}
+.gantt .track{position:relative;height:26px;background:#0f1424;border-radius:4px;overflow:hidden}
+.gantt .seg{position:absolute;top:0;bottom:0;display:flex;align-items:center;justify-content:center;font-size:.75rem;color:#111;font-weight:600;border-right:1px solid rgba(0,0,0,.3)}
+.cells{display:grid;gap:4px;margin:10px 0}
+.cell{background:#0f1424;border:1px solid var(--line);border-radius:4px;padding:6px;text-align:center;font-family:'IBM Plex Mono',monospace;font-size:.8rem;min-height:36px;display:flex;align-items:center;justify-content:center}
+.cell.hit{background:color-mix(in srgb,var(--ok) 35%,#0f1424);border-color:var(--ok)}
+.cell.miss{background:color-mix(in srgb,var(--bad) 35%,#0f1424);border-color:var(--bad)}
+.cell.active{outline:2px solid var(--accent)}
+.cell.free{opacity:.45}
+.hl{background:color-mix(in srgb,var(--accent) 30%,transparent);padding:1px 5px;border-radius:3px}
+.k{color:var(--accent);font-weight:600}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media (max-width:760px){.two{grid-template-columns:1fr}.topbar{gap:10px}h1{font-size:2rem}}
+.nav-bottom{display:flex;justify-content:space-between;gap:16px;margin-top:56px;padding-top:20px;border-top:1px solid var(--line)}
+.nav-bottom a{text-decoration:none;padding:12px 16px;border:1px solid var(--line);border-radius:var(--radius);color:var(--paper)}
+.source{background:var(--ink-2);border-radius:var(--radius);padding:14px 18px;margin:22px 0;font-size:.95rem}
+.source b{color:var(--accent)}
+.objectives li{list-style:none;margin:6px 0}
+.objectives input{margin-right:8px;accent-color:var(--accent)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.85rem;color:var(--muted)}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:5px;vertical-align:-2px}
+.tag{display:inline-block;font-size:.75rem;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted);margin-right:6px}
+.log{font-family:'IBM Plex Mono',monospace;font-size:.82rem;background:#0f1424;border:1px solid var(--line);border-radius:var(--radius);padding:10px 12px;max-height:220px;overflow:auto;white-space:pre-wrap}
+@media print{body{background:#fff;color:#111}.topbar,.nav-bottom,button{display:none}.fig,.crux,details,.source{border-color:#bbb;background:#fff}pre{background:#f5f5f5;color:#111}}
+
+/* ---------- site chrome: sticky header + directory drawer ---------- */
+.topbar{position:sticky;top:0;z-index:30;display:flex;gap:14px;align-items:center;padding:10px 16px;background:color-mix(in srgb,var(--ink) 92%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);font-size:.9rem}
+.topbar .menu{display:flex;align-items:center;gap:8px;padding:8px 12px;font-size:1rem}
+.topbar .menu span{font-size:.85rem}
+.topbar .brand{color:var(--paper);text-decoration:none;font-weight:600;display:flex;align-items:center;gap:8px}
+.topbar .dot{width:10px;height:10px;border-radius:50%;background:var(--accent);display:inline-block}
+.topbar .links{display:flex;gap:16px;margin-left:8px}
+.topbar .links a{color:var(--muted);text-decoration:none}
+.topbar .links a:hover{color:var(--paper)}
+.topbar .where{margin-left:auto;color:var(--faint);font-variant-numeric:tabular-nums}
+.drawer{position:fixed;top:0;left:0;bottom:0;width:min(340px,88vw);background:var(--ink-2);border-right:1px solid var(--line);z-index:50;transform:translateX(-102%);transition:transform .25s;overflow-y:auto;padding:0 0 24px;box-shadow:0 0 40px rgba(0,0,0,.5)}
+.drawer-open .drawer{transform:none}
+.scrim{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:40;opacity:0;pointer-events:none;transition:opacity .2s}
+.drawer-open .scrim{opacity:1;pointer-events:auto}
+.drawer .dhead{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--ink-2)}
+.drawer .close,.notes-sheet .close{font-size:1.3rem;line-height:1;padding:4px 10px}
+.drawer .dgroup{padding:8px 0 4px}
+.drawer .dname{padding:8px 16px 4px;color:var(--accent);font-family:'Fraunces',serif;font-weight:700}
+.drawer .ditem{display:flex;gap:10px;align-items:center;padding:9px 16px;color:var(--paper);text-decoration:none;border-left:3px solid transparent;font-size:.92rem}
+.drawer .ditem:hover{background:var(--ink-3)}
+.drawer .ditem.cur{border-left-color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
+.drawer .ditem .n{color:var(--faint);min-width:1.4em;font-variant-numeric:tabular-nums}
+.drawer .ditem .t{flex:1;line-height:1.25}
+.drawer .ditem .t small{display:block;color:var(--faint);font-size:.75rem}
+.drawer .badges{display:flex;gap:6px;align-items:center}
+.drawer .badges i{font-style:normal;color:var(--accent)}
+.drawer .badges em{font-style:normal;font-size:.75rem;padding:1px 6px;border-radius:999px;background:var(--ink-3);color:var(--muted);font-variant-numeric:tabular-nums}
+.drawer .dfoot{padding:16px;color:var(--faint);font-size:.8rem}
+/* ---------- notes: floating button + bottom sheet ---------- */
+.notes-fab{position:fixed;right:16px;bottom:16px;z-index:35;display:flex;gap:8px;align-items:center;padding:12px 16px;border-radius:999px;background:var(--accent);color:#111;border:none;font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,.4)}
+.notes-sheet{position:fixed;left:0;right:0;bottom:0;z-index:45;background:var(--ink-2);border-top:1px solid var(--line);border-radius:14px 14px 0 0;transform:translateY(105%);transition:transform .25s;box-shadow:0 -10px 40px rgba(0,0,0,.5);max-width:900px;margin:0 auto;padding-bottom:env(safe-area-inset-bottom)}
+.notes-open .notes-sheet{transform:none}
+.notes-open .notes-fab{display:none}
+.notes-sheet .nhead{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line)}
+.notes-sheet .nhead b{flex:1;font-size:.95rem}
+.notes-sheet .nstatus{color:var(--faint);font-size:.8rem}
+.notes-sheet textarea{display:block;width:100%;min-height:36vh;max-height:60vh;resize:vertical;border:none;background:#0f1424;color:var(--paper);font:inherit;font-size:1rem;line-height:1.5;padding:14px 16px;outline:none}
+.notes-sheet .nfoot{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;font-size:.85rem;color:var(--muted)}
+/* ---------- wide widgets scroll sideways instead of breaking the page ---------- */
+.tw{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:16px 0}
+.tw table{margin:0;min-width:520px}
+.fig{overflow-x:auto}
+@media (prefers-reduced-motion:reduce){.drawer,.notes-sheet,.scrim{transition:none}}
+/* ---------- phones ---------- */
+@media (max-width:760px){
+  body{font-size:16px}
+  .wrap{padding:0 16px 110px}
+  h1{font-size:1.85rem} h2{font-size:1.45rem;margin-top:2rem} h3{font-size:1.15rem}
+  .lede{font-size:1.05rem}
+  .topbar{padding:8px 12px;gap:10px}
+  .topbar .links{display:none}
+  .topbar .menu span{display:none}
+  .topbar .menu{padding:8px 11px}
+  .fig{padding:12px 12px;margin:16px -4px;border-radius:8px}
+  .crux,.source{padding:12px 14px}
+  pre{font-size:.8em;padding:12px 12px}
+  button,.btn{padding:10px 14px;font-size:.92rem}
+  .controls{gap:8px}
+  .controls label{display:flex;align-items:center;gap:6px}
+  input[type=number]{max-width:96px}
+  .cards{grid-template-columns:1fr 1fr;gap:8px}
+  .card,.card .inner{min-height:120px}
+  .card .face{font-size:.88rem;padding:10px}
+  .cells{min-width:420px}
+  .quiz .opt{padding:12px 12px;line-height:1.35}
+  .nav-bottom{flex-direction:column}
+  .nav-bottom a{text-align:center}
+  .notes-fab span{display:none}
+  .notes-fab{padding:14px;right:12px;bottom:12px}
+  .notes-sheet textarea{min-height:44vh}
+  .stepper .stage{padding:12px}
+  .gantt .row{grid-template-columns:44px 1fr;font-size:.75rem}
+  /* lesson-specific grids collapse */
+  .lde,.il,.two,.cry,.flash,.dl,.fdt,.how,.cards.wide,.vm{grid-template-columns:1fr}
+  .map{grid-template-columns:1fr}
+  .net{grid-template-columns:1fr}.net .arrow{padding:0;transform:rotate(90deg)}
+  .phil{grid-template-columns:repeat(2,1fr)}
+  .jobs{max-width:100%}
+  .trace{min-width:620px}.tl{min-width:720px}.disk{min-width:560px}
+}
+@media (max-width:420px){.cards{grid-template-columns:1fr}}
+
+</style>
+<style>.state{display:flex;gap:10px;margin:8px 0}.state div{flex:1;padding:10px;border-radius:6px;border:1px solid var(--line);background:#0f1424;text-align:center;font-family:'IBM Plex Mono',monospace;font-size:.85rem}.state .new{background:#6bcb77;color:#111;border-color:#6bcb77}.jl{display:flex;gap:4px;margin:8px 0;flex-wrap:wrap}.jl div{padding:8px 10px;border-radius:4px;border:1px dashed var(--line);font-family:'IBM Plex Mono',monospace;font-size:.8rem;min-width:56px;text-align:center;opacity:.35}.jl div.w{opacity:1;border-style:solid;background:#28304f}.jl div.c{background:#6bcb77;color:#111;border-color:#6bcb77}.lfs{display:flex;gap:3px;flex-wrap:wrap;margin:8px 0}.lfs div{padding:6px 8px;border-radius:3px;font-family:'IBM Plex Mono',monospace;font-size:.75rem;background:#28304f;border:1px solid var(--line)}.lfs .D{background:#28304f}.lfs .I{background:#e8b84a;color:#111}.lfs .M{background:#c9a8ff;color:#111}.lfs .dead{opacity:.35;text-decoration:line-through}</style></head>
+<body class="piece-pers"><div class="wrap">
+<header class="hero"><div class="chapters">OSTEP chapters 41–43 · Locality and the Fast File System · Crash Consistency: FSCK and Journaling · Log-structured File Systems</div>
+<h1>Three file systems, three ideas: locality, crash consistency, and never overwriting</h1>
+<p class="lede">vsfs works but treats the disk like memory. FFS treats the disk like a disk. Then the problem every file system must face — the power goes out halfway through an update — solved first by checking the whole disk (fsck), then by write-ahead logging (journaling). Finally LFS turns every write into a sequential one and asks: what if the log <em>is</em> the file system?</p></header>
+<div class="source"><b>Primary sources:</b> <a href="https://pages.cs.wisc.edu/~remzi/OSTEP/file-ffs.pdf">Ch 41</a>, <a href="https://pages.cs.wisc.edu/~remzi/OSTEP/file-journaling.pdf">Ch 42</a>, <a href="https://pages.cs.wisc.edu/~remzi/OSTEP/file-lfs.pdf">Ch 43</a>. Homework: <code>ffs.py</code>, <code>fsck.py</code>, <code>lfs.py</code>. Original papers: McKusick et al. (FFS, 1984), Hagmann (journaling in Cedar), Rosenblum &amp; Ousterhout (LFS, 1992).</div>
+<h2>What you'll be able to do</h2><ul id="obj"></ul>
+
+<h2>FFS: disk awareness (chapter 41)</h2>
+<div class="crux"><b>Crux: how to organize on-disk data to improve performance.</b> The old UNIX FS put all inodes at the start and data after: a file's inode and data were a long seek apart, free lists fragmented so files ended up scattered (the book: delivering only <b>2%</b> of disk bandwidth), and 512-byte blocks were too small. What structures and allocation policies make a file system "disk aware"?</div>
+<figure class="fig"><svg viewBox="0 0 900 220" role="img" aria-label="cylinder groups">
+<g id="cg"></g></svg><figcaption>FFS divides the disk into <b>cylinder groups</b> (modern FSes like ext2/3/4: <b>block groups</b>, consecutive chunks of the address space). Each group is a mini-vsfs: a copy of the superblock, inode and data bitmaps, an inode table, and data blocks. Anything placed within one group is close on disk.</figcaption></figure>
+<div class="two"><div class="fig"><h4>Policies: keep related things together</h4><ul><li><b>Directories</b>: put a new directory in the group with few allocated directories and many free inodes (balance).</li><li><b>Files</b>: put a file's data blocks in the same group as its inode, and put files in the <em>same directory</em> in the same group. Reading <code>/a/b</code> and <code>/a/c</code> stays in one cylinder group; the book's traces show ~7% of accesses are to the same file, ~40% within the same directory or one level up — namespace locality is real.</li></ul></div>
+<div class="fig"><h4>The large-file exception</h4><p>One big file would fill its group and push its neighbours away. FFS instead spreads it: the first 12 (direct) blocks in the inode's group, then each indirect block's worth in another group. The cost is a seek per chunk — but if chunks are large, seek cost is <b>amortized</b>: at 10 ms positioning and 40 MB/s, a 409.6 KB chunk keeps the disk half busy; 3.6 MB gets you 90%. (FFS chose chunk placement by indirect-block boundaries; modern systems compute it.)</p></div></div>
+<p>Other FFS gifts: 4 KB blocks with 512-byte <b>sub-blocks</b> for small files (copy up when a file reaches 4 KB — and <code>libc</code> buffers writes to avoid the dance); <b>parameterization</b> of the disk (layout sector skipping so sequential reads don't miss a rotation, until track buffers made it moot); <b>long file names</b>; <b>symbolic links</b>; atomic <b>rename</b>. The lesson the book distills: <em>treat the disk like it's a disk</em>.</p>
+
+<h2>Crash consistency (chapter 42)</h2>
+<div class="crux"><b>Crux: how to update the disk despite crashes.</b> A crash or power loss can land between any two writes; the disk is only partially updated. How do we keep the on-disk image in a reasonable state?</div>
+<p>The book's workload: append one block to a one-block file. Three writes are needed: the <b>inode</b> (new pointer, size), the <b>data bitmap</b> (block 5 allocated), and the <b>data block</b> itself. Only one of them makes it — or two. Click to see what each outcome does:</p>
+<div class="fig"><div class="controls"><button data-c="d">only Db</button><button data-c="i">only I[v2]</button><button data-c="b">only B[v2]</button><button data-c="ib">I + B, no Db</button><button data-c="id">I + Db, no B</button><button data-c="bd">B + Db, no I</button></div><div class="state"><div id="s-i">I[v1]</div><div id="s-b">B[v1]</div><div id="s-d">Db (none)</div></div><div class="cap" id="cmsg">Pick a crash scenario.</div></div>
+<h3>Solution 1: the file system checker (fsck)</h3>
+<p>Let inconsistencies happen; fix them at boot, before mounting. fsck checks the <b>superblock</b> (sanity; use a copy if bad), <b>free blocks</b> (rebuild bitmaps from the inodes' pointers — trust the inodes), <b>inode state</b> (valid types), <b>inode links</b> (recount by scanning directories; orphans go to <code>lost+found</code>), <b>duplicates</b> (two inodes claiming one block: clear one or copy it), <b>bad blocks</b> (pointers outside the disk), and <b>directories</b> (<code>.</code>, <code>..</code>, referenced inodes exist, no directory linked twice). Two flaws: it can't tell that the third scenario above is a <em>bug</em> — it only restores metadata consistency, the file happily points at garbage — and it is <b>too slow</b>: scanning a whole volume to fix three blocks, the book's analogy, is dropping your keys in your bedroom and searching the entire house.</p>
+<h3>Solution 2: journaling (write-ahead logging)</h3>
+<p>Before touching the real structures, write a note in a <b>journal</b> saying what you're about to do. If you crash mid-update, replay the note; recovery is O(log size), not O(disk). Step through both protocols (ext3 has both modes):</p>
+<div class="fig"><div class="controls"><button class="primary" data-j="data">data journaling</button><button data-j="meta">ordered metadata journaling (ext3 default)</button></div><div id="jst"></div><div><small class="cap">journal:</small><div class="jl" id="jl"></div><small class="cap">final locations:</small><div class="jl" id="fl"></div></div></div>
+<ul><li><b>Why the commit is a separate write.</b> The disk may reorder the five journal blocks; if TxE lands before Db and you crash, replay writes garbage over Db's slot (possibly the superblock!). So: write everything except TxE, wait, then write the single-sector TxE (a 512-byte write is atomic). Or include a <b>checksum</b> of the transaction in TxB/TxE (ext4) and do it in one go.</li><li><b>Batching</b>: buffer many updates into one global transaction (5 s in ext3) to avoid writing the same inode block again and again. The journal is a <b>circular log</b>; a <b>journal superblock</b> marks the oldest and newest live transactions; a <b>free</b> step releases space after checkpointing.</li><li><b>Metadata journaling</b> halves write traffic (user data is written once, not twice) but must order things: write data to its final location <em>first</em>, so a pointer never points at garbage ("write the pointed-to object before the object that points to it" — also the rule behind LFS and soft updates). A tricky case remains: delete a directory, reuse its block for file data, then replay a journaled directory write over the new data — hence <b>revoke</b> records.</li></ul>
+<div class="tip"><b>Other approaches.</b> <b>Soft updates</b> order every write carefully (complex, needs FS-specific knowledge). <b>Copy-on-write</b> (ZFS, btrfs, LFS below) never overwrites in place — flip a root pointer atomically instead. <b>Backpointer-based consistency</b> puts a back pointer in every block and checks it on read. <b>Optimistic crash consistency</b> issues more writes concurrently and uses checksums to detect the rare inconsistency. Strong guarantees for user <em>data</em> (not just metadata) are still, in the book's words, "a work in progress".</div>
+
+<h2>Log-structured file systems (chapter 43)</h2>
+<div class="crux"><b>Crux: how to make all writes sequential writes.</b> Memory is growing (reads hit the cache), the gap between sequential and random disk I/O is widening, and existing FSes do many small writes (five writes to create a file). For reads you can't choose where to go; for writes you always can.</div>
+<p>LFS buffers every update — data blocks, inodes, directory blocks — in an in-memory <b>segment</b> (a few MB) and writes the whole segment sequentially to a fresh place on disk, never overwriting. Build one:</p>
+<div class="fig"><div class="controls"><button class="primary" id="l-w1">write block 0 of file k</button><button id="l-w2">write 4 blocks of file j</button><button id="l-w3">overwrite block 0 of file k</button><button id="l-cr">write checkpoint region</button><button id="l-rs">reset</button></div><div class="lfs" id="log"></div><div class="cap" id="lmsg">Segments accumulate in memory and hit disk as one big sequential write. D = data, I = inode, imap = a piece of the inode map.</div></div>
+<div class="two"><div class="fig"><h4>Finding inodes: the inode map</h4><p>In FFS inode <em>k</em> is at a fixed address; in LFS it's wherever it was last written. The <b>imap</b> maps inode number → latest disk address, and pieces of it are written into the log right after the inodes they cover. To find the imap: the <b>checkpoint region (CR)</b> at a fixed address holds pointers to the latest imap pieces, updated only every ~30 s. Reading file k: CR → imap → inode → block (the CR and imap are cached in memory, so it's FFS cost after that). Directories work the same way, and the imap solves the <b>recursive update problem</b>: an inode moving doesn't force its parent directory to be rewritten, because the directory stores the inode <em>number</em>, which the imap resolves.</p></div>
+<div class="fig"><h4>Garbage collection</h4><p>Overwrites leave old versions in the log (a versioning FS would keep them; LFS reclaims them). The <b>cleaner</b> reads M partially-dead segments, writes their live blocks into N &lt; M new segments, and frees the old ones. <b>Liveness</b>: each segment starts with a <b>segment summary block</b> recording (inode number, offset) for every block; a block is live iff the imap → inode → offset lookup still points at it (a version number shortcut avoids reads). <b>Policy</b>: clean <em>cold</em> segments soon (their live blocks are stable), <em>hot</em> ones later (more of them will die). Cleaning cost was LFS's great controversy.</p></div></div>
+<p><b>Crash recovery</b>: two CRs updated alternately with timestamps at head and tail, so a torn CR write is detected and the other used. Then <b>roll forward</b> from the last checkpoint through the segments written since. Write-anywhere/copy-on-write lives on in NetApp's WAFL (which turns old versions into snapshots — <em>turn flaws into virtues</em>), ZFS, btrfs — and in flash SSDs' translation layers, next lesson, where large writes are essential.</p>
+
+<h2>Flash cards</h2><div id="cards"></div>
+<h2>Retrieval practice</h2><div id="quiz"></div>
+<p class="tip">Want to work through the block-reuse revoke case, or compute LFS cleaning cost for a given utilization? Ask me in the chat.</p>
+</div>
+<script>
+/* OSTEP course — shared components. Every page loads this file (inlined by build.py). */
+window.OS = (function () {
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+  /* ---------- persistent storage (localStorage on a real site; in-memory fallback in sandboxes) ---------- */
+  const mem = {};
+  const store = {
+    get(k) { try { const v = localStorage.getItem('ostep:' + k); return v === null ? (mem[k] ?? null) : JSON.parse(v); } catch (e) { return mem[k] ?? null; } },
+    set(k, v) { mem[k] = v; try { localStorage.setItem('ostep:' + k, JSON.stringify(v)); } catch (e) {} },
+    del(k) { delete mem[k]; try { localStorage.removeItem('ostep:' + k); } catch (e) {} },
+    keys(prefix) { const out = new Set(Object.keys(mem).filter(k => k.startsWith(prefix))); try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith('ostep:' + prefix)) out.add(k.slice(6)); } } catch (e) {} return [...out]; },
+    available() { try { localStorage.setItem('ostep:test', '1'); localStorage.removeItem('ostep:test'); return true; } catch (e) { return false; } }
+  };
+
+  /* ---------- course structure ---------- */
+  const PIECES = [
+    ['intro', 'Introduction', [['0001-three-easy-pieces', 'Three easy pieces', 'ch 1–2']]],
+    ['virt', 'Virtualization', [
+      ['0002-processes', 'Processes & the process API', 'ch 4–5'],
+      ['0003-limited-direct-execution', 'Limited direct execution', 'ch 6'],
+      ['0004-scheduling', 'Scheduling', 'ch 7–10'],
+      ['0005-address-spaces', 'Address spaces & segments', 'ch 13–16'],
+      ['0006-paging-and-tlbs', 'Paging & TLBs', 'ch 17–20'],
+      ['0007-swapping', 'Swapping & policies', 'ch 21–23']]],
+    ['conc', 'Concurrency', [
+      ['0008-threads-and-locks', 'Threads & locks', 'ch 26–28'],
+      ['0009-cvs-and-semaphores', 'CVs & semaphores', 'ch 29–31'],
+      ['0010-bugs-and-events', 'Bugs & events', 'ch 32–33']]],
+    ['pers', 'Persistence', [
+      ['0011-devices-disks-raid', 'Devices, disks, RAID', 'ch 36–38'],
+      ['0012-files-and-vsfs', 'Files & a simple FS', 'ch 39–40'],
+      ['0013-ffs-journaling-lfs', 'FFS, journaling, LFS', 'ch 41–43'],
+      ['0014-ssd-and-integrity', 'SSDs & integrity', 'ch 44–45'],
+      ['0015-distributed-nfs-afs', 'Distributed FS', 'ch 48–50']]],
+    ['sec', 'Security', [['0016-security-and-vmms', 'Security & VMMs', 'ch 53–57, App B']]]
+  ];
+  const LESSONS = PIECES.flatMap(p => p[2].map(l => [l[0], l[1], p[0], l[2]]));
+  const title = id => (LESSONS.find(l => l[0] === id) || [])[1] || id;
+  let pageId = null, root = '../';
+
+  /* ---------- chrome: sticky header, slide-out directory, notes drawer, prev/next ---------- */
+  function chrome(id, rootPath) {
+    pageId = id; root = rootPath === undefined ? '../' : rootPath;
+    const i = LESSONS.findIndex(l => l[0] === id);
+    const isLesson = i >= 0;
+    const top = document.createElement('header'); top.className = 'topbar';
+    top.innerHTML = `<button class="menu" aria-label="Open directory" aria-expanded="false">☰<span>Directory</span></button>
+      <a class="brand" href="${root}index.html"><span class="dot"></span>OSTEP course</a>
+      <nav class="links"><a href="${root}reference/glossary.html">Glossary</a><a href="${root}reference/cheatsheets.html">Cheat sheets</a><a href="${root}notes.html">My notes</a></nav>
+      ${isLesson ? `<span class="where">${i+1} / ${LESSONS.length}</span>` : ''}`;
+    document.body.prepend(top);
+    // directory drawer
+    const drawer = document.createElement('aside'); drawer.className = 'drawer'; drawer.setAttribute('aria-label', 'Course directory');
+    const scores = Object.fromEntries(LESSONS.map(l => [l[0], store.get('quiz:' + l[0])]));
+    const notes = new Set(store.keys('notes:').map(k => k.slice(6)).filter(k => (store.get('notes:' + k) || {}).text));
+    drawer.innerHTML = `<div class="dhead"><b>Directory</b><button class="close" aria-label="Close">×</button></div>
+      <a class="ditem ${id === 'index' ? 'cur' : ''}" href="${root}index.html">Course hub</a>
+      ${PIECES.map(([cls, name, ls]) => `<div class="dgroup piece-${cls}"><div class="dname">${name}</div>${ls.map(l => {
+        const n = LESSONS.findIndex(x => x[0] === l[0]) + 1, s = scores[l[0]];
+        return `<a class="ditem ${l[0] === id ? 'cur' : ''}" href="${root}lessons/${l[0]}.html"><span class="n">${n}</span><span class="t">${l[1]}<small>${l[3]}</small></span><span class="badges">${notes.has(l[0]) ? '<i title="you have notes">✎</i>' : ''}${s ? `<em title="best quiz score">${s.score}/${s.total}</em>` : ''}</span></a>`; }).join('')}</div>`).join('')}
+      <div class="dgroup piece-intro"><div class="dname">Reference</div>
+        <a class="ditem ${id === 'glossary' ? 'cur' : ''}" href="${root}reference/glossary.html"><span class="t">Glossary</span></a>
+        <a class="ditem ${id === 'cheatsheets' ? 'cur' : ''}" href="${root}reference/cheatsheets.html"><span class="t">Cheat sheets</span></a>
+        <a class="ditem ${id === 'notes' ? 'cur' : ''}" href="${root}notes.html"><span class="t">My notes &amp; progress</span></a></div>
+      <div class="dfoot">${store.available() ? 'Notes and scores are saved in this browser.' : 'Notes and scores are kept for this session only (storage unavailable here).'}</div>`;
+    document.body.append(drawer);
+    const scrim = document.createElement('div'); scrim.className = 'scrim'; document.body.append(scrim);
+    const open = o => { document.body.classList.toggle('drawer-open', o); top.querySelector('.menu').setAttribute('aria-expanded', o); if (o) drawer.querySelector('.cur, .ditem')?.focus(); };
+    top.querySelector('.menu').onclick = () => open(!document.body.classList.contains('drawer-open'));
+    drawer.querySelector('.close').onclick = () => open(false); scrim.onclick = () => open(false);
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') { open(false); notesOpen(false); } });
+    // prev/next for lessons
+    if (isLesson) {
+      const nav = document.createElement('div'); nav.className = 'nav-bottom';
+      const prev = LESSONS[i-1], next = LESSONS[i+1];
+      nav.innerHTML = (prev ? `<a href="${prev[0]}.html">← ${i}. ${prev[1]}</a>` : '<span></span>') +
+                      (next ? `<a href="${next[0]}.html">${i+2}. ${next[1]} →</a>` : `<a href="${root}index.html">Back to course hub →</a>`);
+      document.querySelector('.wrap').append(nav);
+    }
+    // wrap tables so they scroll sideways on phones
+    document.querySelectorAll('.wrap table').forEach(t => { if (t.parentElement.classList.contains('tw')) return; const w = document.createElement('div'); w.className = 'tw'; t.replaceWith(w); w.append(t); });
+    // notes drawer (every page except the notes page itself)
+    if (id !== 'notes') notesUI(id, isLesson ? `${i+1}. ${LESSONS[i][1]}` : (document.title.split(' — ')[0]));
+  }
+
+  /* ---------- notes: floating button + bottom sheet, autosaved ---------- */
+  let notesOpen = () => {};
+  function notesUI(id, label) {
+    const btn = document.createElement('button'); btn.className = 'notes-fab'; btn.innerHTML = '✎ <span>Notes</span>'; btn.setAttribute('aria-label', 'Open notes');
+    const sheet = document.createElement('section'); sheet.className = 'notes-sheet'; sheet.setAttribute('aria-label', 'Notes for this page');
+    const saved = store.get('notes:' + id) || {};
+    sheet.innerHTML = `<div class="nhead"><b>Notes · ${esc(label)}</b><span class="nstatus"></span><button class="close" aria-label="Close notes">×</button></div>
+      <textarea placeholder="Your notes for this page. Markdown is fine. Saved automatically.">${esc(saved.text || '')}</textarea>
+      <div class="nfoot"><span class="ncount"></span><a href="${root}notes.html">All notes &amp; export →</a></div>`;
+    document.body.append(btn, sheet);
+    const ta = sheet.querySelector('textarea'), status = sheet.querySelector('.nstatus'), count = sheet.querySelector('.ncount');
+    const upd = () => { count.textContent = ta.value.trim() ? ta.value.trim().split(/\s+/).length + ' words' : ''; };
+    let t; ta.addEventListener('input', () => { status.textContent = 'saving…'; clearTimeout(t); t = setTimeout(() => { store.set('notes:' + id, { text: ta.value, title: label, updated: new Date().toISOString() }); status.textContent = 'saved'; upd(); }, 400); });
+    upd();
+    notesOpen = o => { document.body.classList.toggle('notes-open', o); if (o) ta.focus(); };
+    btn.onclick = () => notesOpen(!document.body.classList.contains('notes-open'));
+    sheet.querySelector('.close').onclick = () => notesOpen(false);
+  }
+
+  /* ---------- quiz: immediate feedback; best score persisted ---------- */
+  function quiz(el, qs) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('quiz');
+    let score = 0, answered = 0;
+    const best = pageId ? store.get('quiz:' + pageId) : null;
+    el.innerHTML = qs.map((q, i) => `<div class="q" data-i="${i}"><p>${i+1}. ${q.q}</p>
+      <div class="opts">${q.o.map((o, j) => `<button class="opt" data-j="${j}">${esc(o)}</button>`).join('')}</div>
+      <div class="why">${q.why}</div></div>`).join('') + `<div class="score">${best ? `Best so far: ${best.score}/${best.total} (${new Date(best.date).toLocaleDateString()})` : ''}</div>`;
+    el.querySelectorAll('.q').forEach(qd => {
+      const q = qs[+qd.dataset.i];
+      qd.querySelectorAll('.opt').forEach(b => b.addEventListener('click', () => {
+        if (qd.classList.contains('done')) return;
+        qd.classList.add('done'); answered++;
+        const j = +b.dataset.j;
+        if (j === q.a) { b.classList.add('right'); score++; }
+        else { b.classList.add('wrong'); qd.querySelectorAll('.opt')[q.a].classList.add('right'); }
+        const s = el.querySelector('.score');
+        s.textContent = `${score} / ${answered} correct`;
+        if (answered === qs.length) {
+          s.textContent += score === qs.length ? ' — all of them. Retry from memory in two days.' : ' — reread the sections you missed, then retry.';
+          if (pageId && (!best || score >= best.score)) store.set('quiz:' + pageId, { score, total: qs.length, date: new Date().toISOString() });
+        }
+      }));
+    });
+  }
+
+  /* ---------- flip cards ---------- */
+  function cards(el, list) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('cards');
+    el.innerHTML = list.map(([f, b]) => `<div class="card" tabindex="0" role="button" aria-label="flip card"><div class="inner"><div class="face front">${f}</div><div class="face back">${b}</div></div></div>`).join('');
+    el.querySelectorAll('.card').forEach(c => {
+      const t = () => c.classList.toggle('flipped');
+      c.addEventListener('click', t);
+      c.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); t(); } });
+    });
+  }
+
+  /* ---------- stepper ---------- */
+  function stepper(el, steps, render) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('stepper');
+    let i = 0;
+    el.innerHTML = `<div class="controls"><button class="prev">← Back</button><button class="next primary">Next step →</button><span class="idx"></span></div><div class="stage"></div><div class="extra"></div>`;
+    const stage = el.querySelector('.stage'), idx = el.querySelector('.idx'), extra = el.querySelector('.extra');
+    const draw = () => { stage.innerHTML = steps[i]; idx.textContent = `step ${i+1} / ${steps.length}`; if (render) render(i, extra); };
+    el.querySelector('.prev').onclick = () => { i = Math.max(0, i-1); draw(); };
+    el.querySelector('.next').onclick = () => { i = Math.min(steps.length-1, i+1); draw(); };
+    draw();
+  }
+
+  /* ---------- gantt ---------- */
+  function gantt(el, rows, total, colors) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('gantt');
+    const pal = colors || ['#e8b84a','#5bc8f5','#6bcb77','#f47fa0','#c9a8ff','#ffb86b'];
+    el.innerHTML = rows.map((r, i) => `<div class="row"><span>${esc(r.name)}</span><div class="track">${r.segs.map(s =>
+      `<div class="seg" style="left:${100*s.start/total}%;width:${100*(s.end-s.start)/total}%;background:${pal[i%pal.length]}" title="${s.start}–${s.end}">${(s.end-s.start)/total > .06 ? (s.end-s.start) : ''}</div>`).join('')}</div></div>`).join('') +
+      `<div class="row"><span></span><div style="display:flex;justify-content:space-between;font-size:.75rem;color:var(--muted)"><span>0</span><span>${total}</span></div></div>`;
+  }
+
+  /* ---------- objectives checklist (persisted) ---------- */
+  function objectives(el, items) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('objectives');
+    const saved = (pageId && store.get('obj:' + pageId)) || [];
+    el.innerHTML = items.map((t, i) => `<li><label><input type="checkbox" data-i="${i}" ${saved.includes(i) ? 'checked' : ''}>${t}</label></li>`).join('');
+    el.querySelectorAll('input').forEach(c => c.onchange = () => { const s = [...el.querySelectorAll('input:checked')].map(x => +x.dataset.i); if (pageId) store.set('obj:' + pageId, s); });
+  }
+
+  return { chrome, quiz, cards, stepper, gantt, objectives, esc, store, LESSONS, PIECES, title };
+})();
+
+</script>
+<script>
+OS.chrome('0013-ffs-journaling-lfs');
+OS.objectives('obj',['Explain cylinder/block groups and FFS\'s placement policies, including the large-file exception and amortization.','Enumerate the six partial-write outcomes of the append example and their consequences.','State what fsck checks and its two fundamental limitations.','Walk the data-journaling and ordered-metadata-journaling protocols, including why TxE is written separately.','Explain how LFS finds an inode (imap, CR), why it needs a cleaner, and how it determines block liveness.']);
+/* cylinder groups svg */
+let cg='';for(let g=0;g<4;g++){const x=20+g*220;cg+=`<rect x="${x}" y="20" width="200" height="150" rx="6" fill="#1e2540" stroke="#6bcb77"/><text x="${x+100}" y="14" text-anchor="middle" fill="#a9b1cf" font-size="12">group ${g}</text>`;const parts=[['S',20,'#f47fa0'],['ib',14,'#c9a8ff'],['db',14,'#c9a8ff'],['inodes',40,'#e8b84a'],['data',100,'#28304f']];let cx=x+6;parts.forEach(([n,w,c])=>{cg+=`<rect x="${cx}" y="60" width="${w}" height="80" fill="${c}"/><text x="${cx+w/2}" y="105" text-anchor="middle" fill="${c==='#28304f'?'#eef0f7':'#111'}" font-size="10">${n}</text>`;cx+=w+2;});}document.getElementById('cg').innerHTML=cg;
+/* crash scenarios */
+const C={d:['I[v1]','B[v1]','Db',{d:1},'Data written but no inode points to it and the bitmap says the block is free. As if the write never happened — not a consistency problem at all.'],i:['I[v2]','B[v1]','garbage',{i:1},'The inode points to block 5 but block 5 holds garbage, and the bitmap says it is free: <b>inconsistency</b> between inode and bitmap, and the user will read garbage.'],b:['I[v1]','B[v2]','garbage',{b:1},'Bitmap says block 5 is allocated, no inode uses it: a <b>space leak</b>. Inconsistent metadata.'],ib:['I[v2]','B[v2]','garbage',{i:1,b:1},'Metadata is perfectly <b>consistent</b> — and the file points at garbage. fsck cannot detect this; only journaling of data (or ordered data writes) prevents it.'],id:['I[v2]','B[v1]','Db',{i:1,d:1},'Inode and data are right, but the bitmap says block 5 is free: inconsistency; the block could be handed out again to another file.'],bd:['I[v1]','B[v2]','Db',{b:1,d:1},'Bitmap and data are right, but no inode references block 5: a space leak; nobody can find the data.']};
+document.querySelectorAll('[data-c]').forEach(b=>b.onclick=()=>{const [i,bm,d,n,m]=C[b.dataset.c];document.getElementById('s-i').textContent=i;document.getElementById('s-b').textContent=bm;document.getElementById('s-d').textContent=d;['i','b','d'].forEach(k=>document.getElementById('s-'+k).classList.toggle('new',!!n[k]));document.getElementById('cmsg').innerHTML=m;});
+/* journaling */
+const JD={data:{blocks:['TxB','I[v2]','B[v2]','Db','TxE'],steps:[['<b>1. Journal write.</b> Write TxB (transaction id, final addresses of the blocks), I[v2], B[v2], Db to the log. Wait for completion.',[0,1,2,3],[],[]],['<b>2. Journal commit.</b> Now write TxE. Once it is on disk the transaction is <b>committed</b>. A crash before this: recovery skips the transaction (no TxE); the update is simply lost, but the FS is consistent.',[0,1,2,3],[4],[]],['<b>3. Checkpoint.</b> Write I[v2], B[v2], Db to their final locations. A crash here: recovery <b>replays</b> the committed transaction (redo logging), rewriting all three — idempotent, so repeating is harmless.',[0,1,2,3],[4],[0,1,2]],['<b>4. Free.</b> Mark the transaction free in the journal superblock so the circular log can reuse the space. Cost of data journaling: every data block is written <b>twice</b>.',[0,1,2,3],[4],[0,1,2]]]},
+meta:{blocks:['TxB','I[v2]','B[v2]','TxE'],steps:[['<b>1. Data write.</b> Write Db to its <em>final</em> location first (the wait is optional but the data must be down before commit).',[],[],[2]],['<b>2. Journal metadata write.</b> Write TxB, I[v2], B[v2] to the log; wait.',[0,1,2],[],[2]],['<b>3. Journal commit.</b> Write TxE; wait. Transaction (including data) is committed. If we crash before this, Db is orphaned but nothing points at garbage.',[0,1,2],[3],[2]],['<b>4. Checkpoint metadata.</b> Write I[v2], B[v2] to their final locations. <b>5. Free.</b> Half the write traffic of data journaling; the ext3/ext4 default (Windows NTFS and SGI XFS journal metadata too).',[0,1,2],[3],[0,1,2]]]}};
+let jk='data';const finals=['inode','bitmap','data block'];
+function jdraw(i){const d=JD[jk],s=d.steps[i];document.getElementById('jl').innerHTML=d.blocks.map((b,k)=>`<div class="${s[1].includes(k)?'w':''} ${s[2].includes(k)?'c':''}">${b}</div>`).join('');document.getElementById('fl').innerHTML=finals.map((f,k)=>`<div class="${s[3].includes(k)?'w':''}">${f}${s[3].includes(k)?' ✓':''}</div>`).join('');}
+function jbuild(){OS.stepper('jst',JD[jk].steps.map(s=>s[0]),jdraw);}
+document.querySelectorAll('[data-j]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-j]').forEach(x=>x.classList.remove('primary'));b.classList.add('primary');jk=b.dataset.j;jbuild();});jbuild();
+/* LFS */
+let log=[],addr=0;const L=document.getElementById('log');
+function ldraw(){L.innerHTML=log.map((b,i)=>`<div class="${b.t}${b.dead?' dead':''}" title="A${i}">${b.n}</div>`).join('')||'<div>empty log</div>';}
+document.getElementById('l-w1').onclick=()=>{log.push({t:'D',n:'D k[0]'},{t:'I',n:'I[k]'},{t:'M',n:'imap'});document.getElementById('lmsg').innerHTML='Writing a block means writing the data, the file\'s new inode (pointing at the data), and the imap piece recording where inode k now lives — all appended, all sequential.';ldraw();};
+document.getElementById('l-w2').onclick=()=>{log.push({t:'D',n:'D j[0]'},{t:'D',n:'D j[1]'},{t:'D',n:'D j[2]'},{t:'D',n:'D j[3]'},{t:'I',n:'I[j]'},{t:'M',n:'imap'});document.getElementById('lmsg').innerHTML='Four blocks of j, then one inode, then the imap piece: one long write. Small writes to different files still coalesce into a single segment.';ldraw();};
+document.getElementById('l-w3').onclick=()=>{log.forEach(b=>{if(b.n==='D k[0]'||b.n==='I[k]')b.dead=true;});log.push({t:'D',n:'D k[0]\''},{t:'I',n:'I[k]\''},{t:'M',n:'imap'});document.getElementById('lmsg').innerHTML='No overwrite: the new data and a new inode go to the end of the log. The old versions (struck through) are now <b>garbage</b> for the cleaner to reclaim; the imap now points at the new inode.';ldraw();};
+document.getElementById('l-cr').onclick=()=>{document.getElementById('lmsg').innerHTML='Checkpoint region (fixed address, updated every ~30 s, two copies with timestamps): pointers to the latest imap pieces. Reading file k: CR → imap → I[k] → D k[0]. After a crash, roll forward from the last CR through the newer segments.';};
+document.getElementById('l-rs').onclick=()=>{log=[];ldraw();};ldraw();
+OS.cards('cards',[['Cylinder group','FFS unit of locality: a set of nearby tracks containing its own superblock copy, bitmaps, inodes and data.'],['Large-file exception','Spread a big file across groups in large chunks so it doesn\'t crowd out its directory\'s neighbours; seeks amortized.'],['Sub-block','512-byte piece of a 4 KB block used for small files to avoid internal fragmentation.'],['fsck','Boot-time checker that scans the whole volume to restore metadata consistency; slow and blind to data correctness.'],['Write-ahead logging','Record intended updates in a journal before applying them; replay committed transactions after a crash.'],['TxB / TxE','Transaction begin (id + target addresses) and end/commit blocks; TxE is written separately (or checksummed) to survive reordering.'],['Ordered journaling','Metadata journaling that writes data to its final place before committing metadata, so pointers never reference garbage.'],['Revoke record','Journal entry telling recovery not to replay an earlier logged block (e.g. a deleted directory block since reused).'],['Inode map (imap)','LFS table from inode number to the latest on-disk inode address; pieces are logged, found via the checkpoint region.'],['Segment summary block','Per-segment record of (inode number, offset) for each block, used by the cleaner to decide liveness.']]);
+OS.quiz('quiz',[
+{q:'What fraction of disk bandwidth did the old UNIX file system deliver in the FFS paper\'s measurements?',o:['about 50%','about 2%','about 20%','nearly all'],a:1,why:'Fragmentation and inodes far from data reduced throughput to roughly 2%. FFS\'s cylinder groups and placement policies fixed this.'},
+{q:'Where does FFS place a new file\'s data blocks?',o:['in the emptiest group on disk','in the same group as its inode','at the outer edge of the disk','in the group with most directories'],a:1,why:'Data goes next to the inode, and files in the same directory share a group — exploiting namespace locality. Large files are the exception.'},
+{q:'After the append example, only the inode and bitmap are written (no data). What can fsck do?',o:['restore the missing data block','nothing — metadata is consistent','free the block and fix the inode','replay the write from the log'],a:1,why:'Everything looks consistent; the inode simply points at garbage. Only journaling data or ordering the data write first prevents this.'},
+{q:'Why does data journaling write TxE only after the other journal blocks are known to be on disk?',o:['to save one rotation','because the disk may reorder writes','so the checksum can be computed','to keep the log circular'],a:1,why:'If TxE landed before a data block and the system crashed, recovery would replay garbage into a final location. Separating TxE (or adding checksums) prevents that.'},
+{q:'Ordered metadata journaling requires which write to complete first?',o:['the transaction-begin block','the data block to its final location','the inode to the journal','the journal superblock update'],a:1,why:'Data goes to its final home before metadata is committed, so a committed inode never points to an unwritten (garbage) block.'},
+{q:'In LFS, how is the current location of inode k found after a reboot?',o:['at a fixed address like FFS','via the checkpoint region and imap','by scanning the log from the start','from the segment summary block'],a:1,why:'The CR (fixed address) points to the latest imap pieces; the imap maps k to its most recent inode address. Both are then cached in memory.'},
+{q:'How does the LFS cleaner tell whether a data block in an old segment is live?',o:['by checking the dirty bit','via imap → inode → offset lookup','by reading the file\'s directory','by comparing block checksums'],a:1,why:'The segment summary gives the block\'s inode number and offset; if that inode\'s current pointer at that offset still equals the block\'s address, the block is live.'}]);
+</script></body></html>

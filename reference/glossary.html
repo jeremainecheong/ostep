@@ -1,0 +1,495 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Glossary — OSTEP course</title><style>
+/* OSTEP course — shared stylesheet. Three pieces, three hues. */
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+:root{
+  --ink:#151b2f; --ink-2:#1e2540; --ink-3:#28304f; --line:#3a4368;
+  --paper:#eef0f7; --muted:#a9b1cf; --faint:#6e779a;
+  --virt:#e8b84a; --conc:#5bc8f5; --pers:#6bcb77; --sec:#f47fa0; --intro:#c9a8ff;
+  --ok:#6bcb77; --bad:#ff6b6b;
+  --accent:var(--virt);
+  --radius:6px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--ink);color:var(--paper);font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:17px;line-height:1.6}
+a{color:var(--accent)}
+code,pre,kbd,.mono{font-family:'IBM Plex Mono',ui-monospace,monospace}
+code{background:var(--ink-3);padding:1px 5px;border-radius:4px;font-size:.9em}
+pre{background:#0f1424;border:1px solid var(--line);border-left:4px solid var(--accent);padding:14px 16px;overflow:auto;border-radius:var(--radius);font-size:.86em;line-height:1.5}
+pre code{background:none;padding:0;font-size:inherit}
+h1,h2,h3,h4{font-family:'Fraunces',Georgia,serif;font-weight:700;line-height:1.15;margin:0 0 .4em}
+h1{font-size:2.6rem;letter-spacing:-.01em}
+h2{font-size:1.9rem;margin-top:2.6rem;padding-top:1.2rem;border-top:1px solid var(--line)}
+h3{font-size:1.3rem;margin-top:1.8rem;color:var(--accent)}
+h4{font-size:1.05rem;margin-top:1.2rem}
+p,li{max-width:72ch}
+.wrap{max-width:1100px;margin:0 auto;padding:0 28px 96px}
+.hero{padding:44px 0 16px}
+.hero .chapters{color:var(--muted);font-size:.95rem;margin-bottom:6px}
+.lede{font-size:1.2rem;color:var(--muted);max-width:66ch}
+.piece-virt{--accent:var(--virt)} .piece-conc{--accent:var(--conc)} .piece-pers{--accent:var(--pers)} .piece-sec{--accent:var(--sec)} .piece-intro{--accent:var(--intro)}
+.fig{background:var(--ink-2);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;margin:22px 0}
+.fig figcaption,.cap{color:var(--muted);font-size:.9rem;margin-top:10px}
+.fig svg{max-width:100%;height:auto;display:block}
+svg text{font-family:'IBM Plex Sans',sans-serif}
+svg .mono{font-family:'IBM Plex Mono',monospace}
+.crux{border:1px solid var(--accent);border-radius:var(--radius);padding:14px 18px;margin:22px 0;background:color-mix(in srgb,var(--accent) 8%,transparent)}
+.crux b{color:var(--accent)}
+.tip{border-left:4px solid var(--muted);padding:6px 16px;margin:18px 0;color:var(--muted)}
+.tip b{color:var(--paper)}
+table{border-collapse:collapse;width:100%;margin:16px 0;font-size:.95rem}
+th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{color:var(--muted);font-weight:500}
+td.mono,th.mono{font-family:'IBM Plex Mono',monospace}
+button,.btn{font:inherit;font-size:.9rem;background:var(--ink-3);color:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:7px 13px;cursor:pointer}
+button:hover{border-color:var(--accent)}
+button.primary{background:var(--accent);color:#111;border-color:var(--accent);font-weight:600}
+button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+input[type=range]{accent-color:var(--accent)}
+input[type=text],input[type=number],select{font:inherit;background:#0f1424;color:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:6px 10px}
+.controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:10px 0}
+.controls label{font-size:.9rem;color:var(--muted)}
+details{border:1px solid var(--line);border-radius:var(--radius);margin:10px 0;background:var(--ink-2)}
+summary{cursor:pointer;padding:12px 16px;font-weight:600;list-style:none}
+summary::before{content:"+";display:inline-block;width:1.2em;color:var(--accent)}
+details[open] summary::before{content:"–"}
+details>div{padding:0 16px 14px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;margin:16px 0}
+.card{perspective:900px;min-height:140px;cursor:pointer}
+.card .inner{position:relative;width:100%;height:100%;min-height:140px;transition:transform .45s;transform-style:preserve-3d}
+.card.flipped .inner{transform:rotateY(180deg)}
+.card .face{position:absolute;inset:0;padding:14px;border-radius:var(--radius);border:1px solid var(--line);background:var(--ink-2);backface-visibility:hidden;display:flex;align-items:center;justify-content:center;text-align:center;font-size:.95rem}
+.card .back{transform:rotateY(180deg);background:var(--ink-3);border-color:var(--accent);font-size:.88rem;line-height:1.45}
+.card .front{font-weight:600}
+@media (prefers-reduced-motion:reduce){.card .inner{transition:none}}
+.quiz .q{border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin:12px 0;background:var(--ink-2)}
+.quiz .q p{margin:0 0 10px;font-weight:600}
+.quiz .opts{display:grid;gap:8px}
+.quiz .opt{text-align:left;background:var(--ink);width:100%}
+.quiz .opt.right{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 15%,var(--ink))}
+.quiz .opt.wrong{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 15%,var(--ink))}
+.quiz .why{margin-top:10px;color:var(--muted);font-size:.93rem;display:none}
+.quiz .q.done .why{display:block}
+.quiz .score{margin-top:12px;font-weight:600}
+.stepper .stage{min-height:60px;background:#0f1424;border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin:10px 0}
+.stepper .idx{color:var(--muted);font-size:.85rem}
+.gantt{display:grid;gap:6px;margin:10px 0}
+.gantt .row{display:grid;grid-template-columns:60px 1fr;align-items:center;gap:8px;font-size:.85rem}
+.gantt .track{position:relative;height:26px;background:#0f1424;border-radius:4px;overflow:hidden}
+.gantt .seg{position:absolute;top:0;bottom:0;display:flex;align-items:center;justify-content:center;font-size:.75rem;color:#111;font-weight:600;border-right:1px solid rgba(0,0,0,.3)}
+.cells{display:grid;gap:4px;margin:10px 0}
+.cell{background:#0f1424;border:1px solid var(--line);border-radius:4px;padding:6px;text-align:center;font-family:'IBM Plex Mono',monospace;font-size:.8rem;min-height:36px;display:flex;align-items:center;justify-content:center}
+.cell.hit{background:color-mix(in srgb,var(--ok) 35%,#0f1424);border-color:var(--ok)}
+.cell.miss{background:color-mix(in srgb,var(--bad) 35%,#0f1424);border-color:var(--bad)}
+.cell.active{outline:2px solid var(--accent)}
+.cell.free{opacity:.45}
+.hl{background:color-mix(in srgb,var(--accent) 30%,transparent);padding:1px 5px;border-radius:3px}
+.k{color:var(--accent);font-weight:600}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media (max-width:760px){.two{grid-template-columns:1fr}.topbar{gap:10px}h1{font-size:2rem}}
+.nav-bottom{display:flex;justify-content:space-between;gap:16px;margin-top:56px;padding-top:20px;border-top:1px solid var(--line)}
+.nav-bottom a{text-decoration:none;padding:12px 16px;border:1px solid var(--line);border-radius:var(--radius);color:var(--paper)}
+.source{background:var(--ink-2);border-radius:var(--radius);padding:14px 18px;margin:22px 0;font-size:.95rem}
+.source b{color:var(--accent)}
+.objectives li{list-style:none;margin:6px 0}
+.objectives input{margin-right:8px;accent-color:var(--accent)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.85rem;color:var(--muted)}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:5px;vertical-align:-2px}
+.tag{display:inline-block;font-size:.75rem;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted);margin-right:6px}
+.log{font-family:'IBM Plex Mono',monospace;font-size:.82rem;background:#0f1424;border:1px solid var(--line);border-radius:var(--radius);padding:10px 12px;max-height:220px;overflow:auto;white-space:pre-wrap}
+@media print{body{background:#fff;color:#111}.topbar,.nav-bottom,button{display:none}.fig,.crux,details,.source{border-color:#bbb;background:#fff}pre{background:#f5f5f5;color:#111}}
+
+/* ---------- site chrome: sticky header + directory drawer ---------- */
+.topbar{position:sticky;top:0;z-index:30;display:flex;gap:14px;align-items:center;padding:10px 16px;background:color-mix(in srgb,var(--ink) 92%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);font-size:.9rem}
+.topbar .menu{display:flex;align-items:center;gap:8px;padding:8px 12px;font-size:1rem}
+.topbar .menu span{font-size:.85rem}
+.topbar .brand{color:var(--paper);text-decoration:none;font-weight:600;display:flex;align-items:center;gap:8px}
+.topbar .dot{width:10px;height:10px;border-radius:50%;background:var(--accent);display:inline-block}
+.topbar .links{display:flex;gap:16px;margin-left:8px}
+.topbar .links a{color:var(--muted);text-decoration:none}
+.topbar .links a:hover{color:var(--paper)}
+.topbar .where{margin-left:auto;color:var(--faint);font-variant-numeric:tabular-nums}
+.drawer{position:fixed;top:0;left:0;bottom:0;width:min(340px,88vw);background:var(--ink-2);border-right:1px solid var(--line);z-index:50;transform:translateX(-102%);transition:transform .25s;overflow-y:auto;padding:0 0 24px;box-shadow:0 0 40px rgba(0,0,0,.5)}
+.drawer-open .drawer{transform:none}
+.scrim{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:40;opacity:0;pointer-events:none;transition:opacity .2s}
+.drawer-open .scrim{opacity:1;pointer-events:auto}
+.drawer .dhead{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--ink-2)}
+.drawer .close,.notes-sheet .close{font-size:1.3rem;line-height:1;padding:4px 10px}
+.drawer .dgroup{padding:8px 0 4px}
+.drawer .dname{padding:8px 16px 4px;color:var(--accent);font-family:'Fraunces',serif;font-weight:700}
+.drawer .ditem{display:flex;gap:10px;align-items:center;padding:9px 16px;color:var(--paper);text-decoration:none;border-left:3px solid transparent;font-size:.92rem}
+.drawer .ditem:hover{background:var(--ink-3)}
+.drawer .ditem.cur{border-left-color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
+.drawer .ditem .n{color:var(--faint);min-width:1.4em;font-variant-numeric:tabular-nums}
+.drawer .ditem .t{flex:1;line-height:1.25}
+.drawer .ditem .t small{display:block;color:var(--faint);font-size:.75rem}
+.drawer .badges{display:flex;gap:6px;align-items:center}
+.drawer .badges i{font-style:normal;color:var(--accent)}
+.drawer .badges em{font-style:normal;font-size:.75rem;padding:1px 6px;border-radius:999px;background:var(--ink-3);color:var(--muted);font-variant-numeric:tabular-nums}
+.drawer .dfoot{padding:16px;color:var(--faint);font-size:.8rem}
+/* ---------- notes: floating button + bottom sheet ---------- */
+.notes-fab{position:fixed;right:16px;bottom:16px;z-index:35;display:flex;gap:8px;align-items:center;padding:12px 16px;border-radius:999px;background:var(--accent);color:#111;border:none;font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,.4)}
+.notes-sheet{position:fixed;left:0;right:0;bottom:0;z-index:45;background:var(--ink-2);border-top:1px solid var(--line);border-radius:14px 14px 0 0;transform:translateY(105%);transition:transform .25s;box-shadow:0 -10px 40px rgba(0,0,0,.5);max-width:900px;margin:0 auto;padding-bottom:env(safe-area-inset-bottom)}
+.notes-open .notes-sheet{transform:none}
+.notes-open .notes-fab{display:none}
+.notes-sheet .nhead{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line)}
+.notes-sheet .nhead b{flex:1;font-size:.95rem}
+.notes-sheet .nstatus{color:var(--faint);font-size:.8rem}
+.notes-sheet textarea{display:block;width:100%;min-height:36vh;max-height:60vh;resize:vertical;border:none;background:#0f1424;color:var(--paper);font:inherit;font-size:1rem;line-height:1.5;padding:14px 16px;outline:none}
+.notes-sheet .nfoot{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;font-size:.85rem;color:var(--muted)}
+/* ---------- wide widgets scroll sideways instead of breaking the page ---------- */
+.tw{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:16px 0}
+.tw table{margin:0;min-width:520px}
+.fig{overflow-x:auto}
+@media (prefers-reduced-motion:reduce){.drawer,.notes-sheet,.scrim{transition:none}}
+/* ---------- phones ---------- */
+@media (max-width:760px){
+  body{font-size:16px}
+  .wrap{padding:0 16px 110px}
+  h1{font-size:1.85rem} h2{font-size:1.45rem;margin-top:2rem} h3{font-size:1.15rem}
+  .lede{font-size:1.05rem}
+  .topbar{padding:8px 12px;gap:10px}
+  .topbar .links{display:none}
+  .topbar .menu span{display:none}
+  .topbar .menu{padding:8px 11px}
+  .fig{padding:12px 12px;margin:16px -4px;border-radius:8px}
+  .crux,.source{padding:12px 14px}
+  pre{font-size:.8em;padding:12px 12px}
+  button,.btn{padding:10px 14px;font-size:.92rem}
+  .controls{gap:8px}
+  .controls label{display:flex;align-items:center;gap:6px}
+  input[type=number]{max-width:96px}
+  .cards{grid-template-columns:1fr 1fr;gap:8px}
+  .card,.card .inner{min-height:120px}
+  .card .face{font-size:.88rem;padding:10px}
+  .cells{min-width:420px}
+  .quiz .opt{padding:12px 12px;line-height:1.35}
+  .nav-bottom{flex-direction:column}
+  .nav-bottom a{text-align:center}
+  .notes-fab span{display:none}
+  .notes-fab{padding:14px;right:12px;bottom:12px}
+  .notes-sheet textarea{min-height:44vh}
+  .stepper .stage{padding:12px}
+  .gantt .row{grid-template-columns:44px 1fr;font-size:.75rem}
+  /* lesson-specific grids collapse */
+  .lde,.il,.two,.cry,.flash,.dl,.fdt,.how,.cards.wide,.vm{grid-template-columns:1fr}
+  .map{grid-template-columns:1fr}
+  .net{grid-template-columns:1fr}.net .arrow{padding:0;transform:rotate(90deg)}
+  .phil{grid-template-columns:repeat(2,1fr)}
+  .jobs{max-width:100%}
+  .trace{min-width:620px}.tl{min-width:720px}.disk{min-width:560px}
+}
+@media (max-width:420px){.cards{grid-template-columns:1fr}}
+
+</style>
+<style>.g{display:grid;grid-template-columns:220px 1fr;gap:6px 18px;font-size:.95rem;margin:12px 0}.g dt{font-weight:600;color:var(--accent)}.g dd{margin:0;color:var(--paper)}.g dd small{color:var(--muted)}.g .hide{display:none}@media(max-width:700px){.g{grid-template-columns:1fr}.g dd{margin-bottom:8px}}@media print{.g{font-size:.8rem}}</style></head>
+<body class="piece-intro"><div class="wrap">
+<header class="hero"><div class="chapters">Reference · vocabulary used across all lessons</div><h1>Glossary</h1><p class="lede">Terms as the book defines them, one line each, grouped by piece. Lessons link here; every lesson uses these definitions. Print it or filter it.</p></header>
+<div class="controls"><label>filter <input type="text" id="f" placeholder="type to filter…" style="width:260px"></label><span class="cap" id="cnt"></span></div>
+<div id="all"></div>
+<p class="tip">Missing a term? Ask me in the chat and I'll add it (and cite the chapter).</p>
+</div>
+<script>
+/* OSTEP course — shared components. Every page loads this file (inlined by build.py). */
+window.OS = (function () {
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+  /* ---------- persistent storage (localStorage on a real site; in-memory fallback in sandboxes) ---------- */
+  const mem = {};
+  const store = {
+    get(k) { try { const v = localStorage.getItem('ostep:' + k); return v === null ? (mem[k] ?? null) : JSON.parse(v); } catch (e) { return mem[k] ?? null; } },
+    set(k, v) { mem[k] = v; try { localStorage.setItem('ostep:' + k, JSON.stringify(v)); } catch (e) {} },
+    del(k) { delete mem[k]; try { localStorage.removeItem('ostep:' + k); } catch (e) {} },
+    keys(prefix) { const out = new Set(Object.keys(mem).filter(k => k.startsWith(prefix))); try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith('ostep:' + prefix)) out.add(k.slice(6)); } } catch (e) {} return [...out]; },
+    available() { try { localStorage.setItem('ostep:test', '1'); localStorage.removeItem('ostep:test'); return true; } catch (e) { return false; } }
+  };
+
+  /* ---------- course structure ---------- */
+  const PIECES = [
+    ['intro', 'Introduction', [['0001-three-easy-pieces', 'Three easy pieces', 'ch 1–2']]],
+    ['virt', 'Virtualization', [
+      ['0002-processes', 'Processes & the process API', 'ch 4–5'],
+      ['0003-limited-direct-execution', 'Limited direct execution', 'ch 6'],
+      ['0004-scheduling', 'Scheduling', 'ch 7–10'],
+      ['0005-address-spaces', 'Address spaces & segments', 'ch 13–16'],
+      ['0006-paging-and-tlbs', 'Paging & TLBs', 'ch 17–20'],
+      ['0007-swapping', 'Swapping & policies', 'ch 21–23']]],
+    ['conc', 'Concurrency', [
+      ['0008-threads-and-locks', 'Threads & locks', 'ch 26–28'],
+      ['0009-cvs-and-semaphores', 'CVs & semaphores', 'ch 29–31'],
+      ['0010-bugs-and-events', 'Bugs & events', 'ch 32–33']]],
+    ['pers', 'Persistence', [
+      ['0011-devices-disks-raid', 'Devices, disks, RAID', 'ch 36–38'],
+      ['0012-files-and-vsfs', 'Files & a simple FS', 'ch 39–40'],
+      ['0013-ffs-journaling-lfs', 'FFS, journaling, LFS', 'ch 41–43'],
+      ['0014-ssd-and-integrity', 'SSDs & integrity', 'ch 44–45'],
+      ['0015-distributed-nfs-afs', 'Distributed FS', 'ch 48–50']]],
+    ['sec', 'Security', [['0016-security-and-vmms', 'Security & VMMs', 'ch 53–57, App B']]]
+  ];
+  const LESSONS = PIECES.flatMap(p => p[2].map(l => [l[0], l[1], p[0], l[2]]));
+  const title = id => (LESSONS.find(l => l[0] === id) || [])[1] || id;
+  let pageId = null, root = '../';
+
+  /* ---------- chrome: sticky header, slide-out directory, notes drawer, prev/next ---------- */
+  function chrome(id, rootPath) {
+    pageId = id; root = rootPath === undefined ? '../' : rootPath;
+    const i = LESSONS.findIndex(l => l[0] === id);
+    const isLesson = i >= 0;
+    const top = document.createElement('header'); top.className = 'topbar';
+    top.innerHTML = `<button class="menu" aria-label="Open directory" aria-expanded="false">☰<span>Directory</span></button>
+      <a class="brand" href="${root}index.html"><span class="dot"></span>OSTEP course</a>
+      <nav class="links"><a href="${root}reference/glossary.html">Glossary</a><a href="${root}reference/cheatsheets.html">Cheat sheets</a><a href="${root}notes.html">My notes</a></nav>
+      ${isLesson ? `<span class="where">${i+1} / ${LESSONS.length}</span>` : ''}`;
+    document.body.prepend(top);
+    // directory drawer
+    const drawer = document.createElement('aside'); drawer.className = 'drawer'; drawer.setAttribute('aria-label', 'Course directory');
+    const scores = Object.fromEntries(LESSONS.map(l => [l[0], store.get('quiz:' + l[0])]));
+    const notes = new Set(store.keys('notes:').map(k => k.slice(6)).filter(k => (store.get('notes:' + k) || {}).text));
+    drawer.innerHTML = `<div class="dhead"><b>Directory</b><button class="close" aria-label="Close">×</button></div>
+      <a class="ditem ${id === 'index' ? 'cur' : ''}" href="${root}index.html">Course hub</a>
+      ${PIECES.map(([cls, name, ls]) => `<div class="dgroup piece-${cls}"><div class="dname">${name}</div>${ls.map(l => {
+        const n = LESSONS.findIndex(x => x[0] === l[0]) + 1, s = scores[l[0]];
+        return `<a class="ditem ${l[0] === id ? 'cur' : ''}" href="${root}lessons/${l[0]}.html"><span class="n">${n}</span><span class="t">${l[1]}<small>${l[3]}</small></span><span class="badges">${notes.has(l[0]) ? '<i title="you have notes">✎</i>' : ''}${s ? `<em title="best quiz score">${s.score}/${s.total}</em>` : ''}</span></a>`; }).join('')}</div>`).join('')}
+      <div class="dgroup piece-intro"><div class="dname">Reference</div>
+        <a class="ditem ${id === 'glossary' ? 'cur' : ''}" href="${root}reference/glossary.html"><span class="t">Glossary</span></a>
+        <a class="ditem ${id === 'cheatsheets' ? 'cur' : ''}" href="${root}reference/cheatsheets.html"><span class="t">Cheat sheets</span></a>
+        <a class="ditem ${id === 'notes' ? 'cur' : ''}" href="${root}notes.html"><span class="t">My notes &amp; progress</span></a></div>
+      <div class="dfoot">${store.available() ? 'Notes and scores are saved in this browser.' : 'Notes and scores are kept for this session only (storage unavailable here).'}</div>`;
+    document.body.append(drawer);
+    const scrim = document.createElement('div'); scrim.className = 'scrim'; document.body.append(scrim);
+    const open = o => { document.body.classList.toggle('drawer-open', o); top.querySelector('.menu').setAttribute('aria-expanded', o); if (o) drawer.querySelector('.cur, .ditem')?.focus(); };
+    top.querySelector('.menu').onclick = () => open(!document.body.classList.contains('drawer-open'));
+    drawer.querySelector('.close').onclick = () => open(false); scrim.onclick = () => open(false);
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') { open(false); notesOpen(false); } });
+    // prev/next for lessons
+    if (isLesson) {
+      const nav = document.createElement('div'); nav.className = 'nav-bottom';
+      const prev = LESSONS[i-1], next = LESSONS[i+1];
+      nav.innerHTML = (prev ? `<a href="${prev[0]}.html">← ${i}. ${prev[1]}</a>` : '<span></span>') +
+                      (next ? `<a href="${next[0]}.html">${i+2}. ${next[1]} →</a>` : `<a href="${root}index.html">Back to course hub →</a>`);
+      document.querySelector('.wrap').append(nav);
+    }
+    // wrap tables so they scroll sideways on phones
+    document.querySelectorAll('.wrap table').forEach(t => { if (t.parentElement.classList.contains('tw')) return; const w = document.createElement('div'); w.className = 'tw'; t.replaceWith(w); w.append(t); });
+    // notes drawer (every page except the notes page itself)
+    if (id !== 'notes') notesUI(id, isLesson ? `${i+1}. ${LESSONS[i][1]}` : (document.title.split(' — ')[0]));
+  }
+
+  /* ---------- notes: floating button + bottom sheet, autosaved ---------- */
+  let notesOpen = () => {};
+  function notesUI(id, label) {
+    const btn = document.createElement('button'); btn.className = 'notes-fab'; btn.innerHTML = '✎ <span>Notes</span>'; btn.setAttribute('aria-label', 'Open notes');
+    const sheet = document.createElement('section'); sheet.className = 'notes-sheet'; sheet.setAttribute('aria-label', 'Notes for this page');
+    const saved = store.get('notes:' + id) || {};
+    sheet.innerHTML = `<div class="nhead"><b>Notes · ${esc(label)}</b><span class="nstatus"></span><button class="close" aria-label="Close notes">×</button></div>
+      <textarea placeholder="Your notes for this page. Markdown is fine. Saved automatically.">${esc(saved.text || '')}</textarea>
+      <div class="nfoot"><span class="ncount"></span><a href="${root}notes.html">All notes &amp; export →</a></div>`;
+    document.body.append(btn, sheet);
+    const ta = sheet.querySelector('textarea'), status = sheet.querySelector('.nstatus'), count = sheet.querySelector('.ncount');
+    const upd = () => { count.textContent = ta.value.trim() ? ta.value.trim().split(/\s+/).length + ' words' : ''; };
+    let t; ta.addEventListener('input', () => { status.textContent = 'saving…'; clearTimeout(t); t = setTimeout(() => { store.set('notes:' + id, { text: ta.value, title: label, updated: new Date().toISOString() }); status.textContent = 'saved'; upd(); }, 400); });
+    upd();
+    notesOpen = o => { document.body.classList.toggle('notes-open', o); if (o) ta.focus(); };
+    btn.onclick = () => notesOpen(!document.body.classList.contains('notes-open'));
+    sheet.querySelector('.close').onclick = () => notesOpen(false);
+  }
+
+  /* ---------- quiz: immediate feedback; best score persisted ---------- */
+  function quiz(el, qs) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('quiz');
+    let score = 0, answered = 0;
+    const best = pageId ? store.get('quiz:' + pageId) : null;
+    el.innerHTML = qs.map((q, i) => `<div class="q" data-i="${i}"><p>${i+1}. ${q.q}</p>
+      <div class="opts">${q.o.map((o, j) => `<button class="opt" data-j="${j}">${esc(o)}</button>`).join('')}</div>
+      <div class="why">${q.why}</div></div>`).join('') + `<div class="score">${best ? `Best so far: ${best.score}/${best.total} (${new Date(best.date).toLocaleDateString()})` : ''}</div>`;
+    el.querySelectorAll('.q').forEach(qd => {
+      const q = qs[+qd.dataset.i];
+      qd.querySelectorAll('.opt').forEach(b => b.addEventListener('click', () => {
+        if (qd.classList.contains('done')) return;
+        qd.classList.add('done'); answered++;
+        const j = +b.dataset.j;
+        if (j === q.a) { b.classList.add('right'); score++; }
+        else { b.classList.add('wrong'); qd.querySelectorAll('.opt')[q.a].classList.add('right'); }
+        const s = el.querySelector('.score');
+        s.textContent = `${score} / ${answered} correct`;
+        if (answered === qs.length) {
+          s.textContent += score === qs.length ? ' — all of them. Retry from memory in two days.' : ' — reread the sections you missed, then retry.';
+          if (pageId && (!best || score >= best.score)) store.set('quiz:' + pageId, { score, total: qs.length, date: new Date().toISOString() });
+        }
+      }));
+    });
+  }
+
+  /* ---------- flip cards ---------- */
+  function cards(el, list) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('cards');
+    el.innerHTML = list.map(([f, b]) => `<div class="card" tabindex="0" role="button" aria-label="flip card"><div class="inner"><div class="face front">${f}</div><div class="face back">${b}</div></div></div>`).join('');
+    el.querySelectorAll('.card').forEach(c => {
+      const t = () => c.classList.toggle('flipped');
+      c.addEventListener('click', t);
+      c.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); t(); } });
+    });
+  }
+
+  /* ---------- stepper ---------- */
+  function stepper(el, steps, render) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('stepper');
+    let i = 0;
+    el.innerHTML = `<div class="controls"><button class="prev">← Back</button><button class="next primary">Next step →</button><span class="idx"></span></div><div class="stage"></div><div class="extra"></div>`;
+    const stage = el.querySelector('.stage'), idx = el.querySelector('.idx'), extra = el.querySelector('.extra');
+    const draw = () => { stage.innerHTML = steps[i]; idx.textContent = `step ${i+1} / ${steps.length}`; if (render) render(i, extra); };
+    el.querySelector('.prev').onclick = () => { i = Math.max(0, i-1); draw(); };
+    el.querySelector('.next').onclick = () => { i = Math.min(steps.length-1, i+1); draw(); };
+    draw();
+  }
+
+  /* ---------- gantt ---------- */
+  function gantt(el, rows, total, colors) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('gantt');
+    const pal = colors || ['#e8b84a','#5bc8f5','#6bcb77','#f47fa0','#c9a8ff','#ffb86b'];
+    el.innerHTML = rows.map((r, i) => `<div class="row"><span>${esc(r.name)}</span><div class="track">${r.segs.map(s =>
+      `<div class="seg" style="left:${100*s.start/total}%;width:${100*(s.end-s.start)/total}%;background:${pal[i%pal.length]}" title="${s.start}–${s.end}">${(s.end-s.start)/total > .06 ? (s.end-s.start) : ''}</div>`).join('')}</div></div>`).join('') +
+      `<div class="row"><span></span><div style="display:flex;justify-content:space-between;font-size:.75rem;color:var(--muted)"><span>0</span><span>${total}</span></div></div>`;
+  }
+
+  /* ---------- objectives checklist (persisted) ---------- */
+  function objectives(el, items) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('objectives');
+    const saved = (pageId && store.get('obj:' + pageId)) || [];
+    el.innerHTML = items.map((t, i) => `<li><label><input type="checkbox" data-i="${i}" ${saved.includes(i) ? 'checked' : ''}>${t}</label></li>`).join('');
+    el.querySelectorAll('input').forEach(c => c.onchange = () => { const s = [...el.querySelectorAll('input:checked')].map(x => +x.dataset.i); if (pageId) store.set('obj:' + pageId, s); });
+  }
+
+  return { chrome, quiz, cards, stepper, gantt, objectives, esc, store, LESSONS, PIECES, title };
+})();
+
+</script><script>OS.chrome('glossary');</script>
+<script>
+const G={
+'Virtualization (CPU)':[
+['Process','A running program: its address space, registers (PC, SP), and open-file information, in some state. Ch 4.'],
+['Time sharing','Running one process for a while, then another, to create the illusion of many CPUs. Ch 4.'],
+['PCB / process list','Per-process control block in the OS\'s list of processes (state, PID, saved registers, open files). Ch 4.'],
+['Process states','Running, Ready, Blocked (+ initial, and final/zombie until wait() collects the exit status). Ch 4.'],
+['fork() / exec() / wait()','Copy the caller / replace the caller\'s program / wait for a child. Separation of fork and exec enables shell redirection and pipes. Ch 5.'],
+['Signal','Asynchronous notification to a process (SIGINT from Ctrl-C, SIGTSTP from Ctrl-Z), sent with kill(), caught with signal(). Ch 5.'],
+['Limited direct execution','Run the program directly on the CPU with hardware limits (modes, trap table, timer) so the OS keeps control. Ch 6.'],
+['User / kernel mode','Processor modes: restricted vs full privilege. Switched by trap and return-from-trap. Ch 6.'],
+['Trap / trap table','Instruction that jumps into the kernel and raises privilege; the table of handler addresses is installed by the OS at boot. Ch 6.'],
+['Timer interrupt','Periodic hardware interrupt that returns control to the OS regardless of the running process. Ch 6.'],
+['Context switch','OS saves the kernel registers of the current process into its process structure and restores another\'s, switching kernel stacks. Ch 6.'],
+['Turnaround / response time','Completion − arrival; first run − arrival. The two scheduling metrics. Ch 7.'],
+['FIFO, SJF, STCF, RR','First-in first-out; shortest job first; shortest time-to-completion first (preemptive); round robin with a time slice. Ch 7.'],
+['Convoy effect','Short jobs stuck behind a long one under FIFO. Ch 7.'],
+['MLFQ','Multi-level feedback queue: priorities learned from behaviour; five rules including allotment-based demotion and periodic boost. Ch 8.'],
+['Lottery / stride scheduling','Proportional share via random ticket draws / deterministic pass counters. Ch 9.'],
+['CFS, vruntime, nice','Linux\'s fair scheduler: run the lowest virtual runtime; nice values map to weights; sched_latency and min_granularity set slices. Ch 9.'],
+['Cache affinity','Performance benefit of keeping a job on the CPU whose cache holds its data; motivates per-CPU queues. Ch 10.'],
+['SQMS / MQMS','Single- vs multi-queue multiprocessor scheduling; the latter needs migration (work stealing) for load balance. Ch 10.']],
+'Virtualization (memory)':[
+['Address space','A process\'s view of memory: code, heap, stack, from address 0. Ch 13.'],
+['Virtual / physical address','What the program uses / where the bytes are; the hardware translates on every access. Ch 13, 15.'],
+['Base and bounds','Dynamic relocation: physical = virtual + base, valid if virtual < bounds. Ch 15.'],
+['MMU','Memory management unit: the CPU hardware that translates and checks addresses (base/bounds, segment regs, TLB). Ch 15.'],
+['Segmentation','A base/bounds pair per logical segment (code, heap, stack); explicit (top bits) or implicit segment selection. Ch 16.'],
+['Internal / external fragmentation','Waste inside an allocated unit / free space chopped into unusable holes. Ch 16, 17.'],
+['Splitting / coalescing','Allocator mechanisms to carve a free chunk and to merge adjacent free chunks. Ch 17.'],
+['Best/worst/first/next fit','Free-list search policies; plus segregated lists, slab and buddy allocators. Ch 17.'],
+['Page / page frame','Fixed-size unit of virtual memory / of physical memory. Ch 18.'],
+['Page table, PTE, PTBR','Per-process VPN→PFN map; an entry with valid/protection/present/dirty/reference bits; register holding the table\'s address. Ch 18.'],
+['TLB','Translation-lookaside buffer: MMU cache of recent translations; hit → no page-table access. Ch 19.'],
+['Hardware- vs software-managed TLB','Hardware walks the page table (x86) vs OS handler fills the TLB (MIPS). Ch 19.'],
+['ASID','Address-space identifier tag in TLB entries to avoid flushing on context switch. Ch 19.'],
+['Multi-level page table','Page directory pointing to page-sized pieces of the page table; unallocated pieces are skipped. Ch 20.'],
+['Inverted page table','One entry per physical frame; looked up by hashing. Ch 20.'],
+['Swap space, present bit, page fault','Disk area for pages; PTE bit saying in-memory or not; trap on access to a non-present page. Ch 21.'],
+['Page-fault handler','OS code that finds the page on disk, evicts if needed, reads it in, updates the PTE, retries. Ch 21.'],
+['AMAT','Average memory access time = T_M + P_miss × T_D. Ch 22.'],
+['OPT / FIFO / LRU / clock','Replacement policies: evict furthest-future use / oldest / least recently used / use-bit approximation of LRU. Ch 22.'],
+['Belady\'s anomaly','More memory yielding more misses (FIFO); LRU/OPT have the stack property and are immune. Ch 22.'],
+['Thrashing','Memory demand exceeds capacity so the system pages constantly; admission control or OOM killer. Ch 22.'],
+['Demand zeroing / copy-on-write','Lazy VM tricks: zero pages only on first touch; share pages until written. Ch 23.'],
+['Huge pages, 2Q, NX, ASLR, KPTI','Linux VM features: large pages; scan-resistant page cache; no-execute bit; layout randomization; kernel page-table isolation. Ch 23.']],
+'Concurrency':[
+['Thread','Execution context sharing an address space with siblings; own PC, registers, stack. Ch 26.'],
+['Race condition / critical section / mutual exclusion','Timing-dependent result / code touching shared state / at most one thread inside at a time. Ch 26.'],
+['Atomic','All-or-nothing; hardware supplies a few atomic instructions from which locks are built. Ch 26.'],
+['pthread_create / join / mutex / cond','POSIX thread API for creation, completion, locking, waiting/signalling. Ch 27.'],
+['Lock evaluation','Correctness (mutual exclusion), fairness (no starvation), performance (overhead). Ch 28.'],
+['Test-and-set / CAS / LL-SC / fetch-and-add','Atomic hardware primitives for building locks; fetch-and-add gives the fair ticket lock. Ch 28.'],
+['Spin lock','Lock that busy-waits; fine on multiprocessors with short critical sections, bad on one CPU. Ch 28.'],
+['park/unpark, setpark, futex','OS support to sleep instead of spin; setpark closes the wakeup/waiting race; futex is Linux\'s address-keyed queue. Ch 28.'],
+['Approximate counter','Per-CPU counters flushed to a global every S updates; scalable, slightly inexact. Ch 29.'],
+['Hand-over-hand locking','Per-node lock chaining along a list; rarely faster in practice. Ch 29.'],
+['Condition variable','Queue of waiting threads; wait() releases the lock and sleeps; signal/broadcast wake. Always re-check in a while loop. Ch 30.'],
+['Mesa vs Hoare semantics','Signal as a hint (re-check needed) vs woken thread runs immediately; all real systems are Mesa. Ch 30.'],
+['Producer/consumer','Bounded-buffer problem; correct with one lock, two CVs and while loops. Ch 30.'],
+['Covering condition','Use broadcast when a signal might wake the wrong waiter. Ch 30.'],
+['Semaphore','Integer with atomic wait (decrement; sleep if negative) and post (increment; wake one); value 1 = lock, 0 = ordering. Ch 31.'],
+['Reader-writer lock','Many readers or one writer; the simple version starves writers. Ch 31.'],
+['Dining philosophers','Deadlock-prone resource-sharing puzzle; broken by changing one philosopher\'s acquisition order. Ch 31.'],
+['Atomicity / order violation','The two dominant non-deadlock bug types (97% of them). Ch 32.'],
+['Deadlock conditions','Mutual exclusion, hold-and-wait, no preemption, circular wait. Ch 32.'],
+['Lock ordering / trylock / livelock','Prevent circular wait / avoid no-preemption / retrying threads that never progress. Ch 32.'],
+['Event loop, select()/poll()','Single-threaded concurrency: wait for ready descriptors, handle each event without blocking. Ch 33.'],
+['Asynchronous I/O, continuation','Non-blocking I/O with later completion; saved state for the completion handler. Ch 33.']],
+'Persistence':[
+['Status / command / data registers','Canonical device interface; the protocol polls status, writes data and command. Ch 36.'],
+['Interrupt, DMA','Device signals completion asynchronously; a DMA engine copies data without the CPU. Ch 36.'],
+['PIO, memory-mapped I/O','CPU copies data itself; device registers reached via ordinary loads/stores. Ch 36.'],
+['Device driver','OS code encapsulating a device\'s specifics; >70% of Linux kernel code. Ch 36.'],
+['Sector, track, platter, RPM','Disk geometry; 512-byte sectors are the atomic unit. Ch 37.'],
+['T_I/O = seek + rotation + transfer','Disk access time; rotation averages half a revolution. Ch 37.'],
+['SSTF / SCAN / C-SCAN / SPTF','Disk scheduling: nearest track (starvation) / elevator / one-way elevator / shortest positioning time. Ch 37.'],
+['RAID-0/1/4/5','Striping / mirroring / dedicated parity / rotated parity; fail-stop fault model. Ch 38.'],
+['Small-write problem','Parity RAID needs 4 I/Os per small write; RAID-4\'s parity disk bottlenecks at R/2. Ch 38.'],
+['File, directory, inode number','Byte array with a low-level number; name→number list; the low-level name. Ch 39.'],
+['File descriptor, open file table','Per-process handle; system-wide entry with offset and inode, shared by fork/dup. Ch 39.'],
+['Hard vs symbolic link','Second name for an inode (unlink decrements count) vs a file containing a path (can dangle). Ch 39.'],
+['fsync, rename','Force writes to disk; atomic rename for safe updates. Ch 39.'],
+['vsfs layout','Superblock, inode bitmap, data bitmap, inode table, data blocks. Ch 40.'],
+['Multi-level index','12 direct + indirect + double + triple pointers; biased toward small files. Ch 40.'],
+['Page cache, write buffering','Unified memory cache for file and VM pages; writes delayed 5–30 s. Ch 40.'],
+['Cylinder / block group','FFS unit of locality with its own inodes and data; files placed near their directory. Ch 41.'],
+['Crash consistency','Keeping on-disk structures sane when a crash interrupts multi-block updates. Ch 42.'],
+['fsck','Whole-disk metadata checker; slow and blind to data correctness. Ch 42.'],
+['Journaling (write-ahead logging)','Log the update (TxB … TxE), commit, checkpoint, free; data vs ordered metadata modes. Ch 42.'],
+['Revoke record','Journal entry preventing replay of a stale logged block. Ch 42.'],
+['LFS, segment, imap, checkpoint region','Log-structured FS: buffer updates into segments, write sequentially; inode map located via the CR. Ch 43.'],
+['Cleaner, segment summary block','LFS garbage collector and the per-segment record it uses to test liveness. Ch 43.'],
+['Page, erase block, program/erase','Flash units and operations; erase is block-granular and wears cells out. Ch 44.'],
+['FTL, write amplification','Flash translation layer mapping logical to physical pages; extra internal writes per client write. Ch 44.'],
+['Wear leveling, trim','Spread erases evenly; tell the SSD a range is free. Ch 44.'],
+['Latent sector error / corruption','Detected unreadable sector / silently wrong data. Ch 45.'],
+['Checksum (XOR, addition, Fletcher, CRC)','Small function of data stored alongside it to detect corruption. Ch 45.'],
+['Physical ID, write verify, scrubbing','Defences against misdirected writes, lost writes, and bit rot in cold data. Ch 45.'],
+['RPC, stub, idempotent','Remote procedure call; generated marshalling code; operation safe to repeat. Ch 48–49.'],
+['Statelessness, file handle','NFS server keeps no client state; handle = volume id + inode + generation number. Ch 49.'],
+['Flush-on-close, attribute cache','NFS consistency engineering: push writes at close; cache attributes ~3 s. Ch 49.'],
+['Whole-file caching, callback','AFS: fetch entire file on open; server promises to notify of changes. Ch 50.']],
+'Security & VMMs':[
+['Confidentiality, integrity, availability','The three classic security goals. Ch 53.'],
+['Saltzer–Schroeder principles','Economy of mechanism, fail-safe defaults, complete mediation, open design, separation of privilege, least privilege, least common mechanism, acceptability. Ch 53.'],
+['Principal, setuid','Identity a process acts under; permission that runs a program as its owner. Ch 54.'],
+['Salted hash','Password stored as hash(salt + password) to defeat precomputed guessing. Ch 54.'],
+['Multi-factor authentication','Combining what you know, have, and are. Ch 54.'],
+['Reference monitor, complete mediation','Access-decision component; checking every access. Ch 55.'],
+['ACL vs capability','Per-object list of allowed subjects vs per-subject unforgeable token. Ch 55.'],
+['DAC / MAC / RBAC / type enforcement','Owner-set vs system-imposed control; roles; typed rules. Ch 55.'],
+['Symmetric / asymmetric cipher, hash','Shared key (AES) / key pair (RSA) / keyless one-way fingerprint (SHA-3). Ch 56.'],
+['Full-disk encryption','At-rest protection decrypted as blocks enter the OS. Ch 56.'],
+['Certificate, CA, X.509','Signed binding of identity to public key by a trusted authority. Ch 57.'],
+['TLS, Diffie-Hellman, man-in-the-middle','Encrypted sockets; key agreement; the attack unauthenticated key exchange invites. Ch 57.'],
+['VMM / hypervisor','Software that virtualizes the machine under one or more operating systems. App B.'],
+['Trap-and-emulate, shadow page table','Run guest OS de-privileged and emulate its privileged ops; direct virtual→machine mapping kept by the VMM. App B.'],
+['Para-virtualization, information gap','Modify the guest to cooperate; the VMM\'s ignorance of guest intent. App B.']]};
+const all=document.getElementById('all');let n=0;for(const [sec,items] of Object.entries(G)){all.insertAdjacentHTML('beforeend',`<h2>${sec}</h2><dl class="g">${items.map(([t,d])=>{n++;return `<dt>${t}</dt><dd>${d}</dd>`;}).join('')}</dl>`);}
+document.getElementById('cnt').textContent=n+' terms';
+document.getElementById('f').oninput=e=>{const q=e.target.value.toLowerCase();let c=0;document.querySelectorAll('.g dt').forEach(dt=>{const dd=dt.nextElementSibling;const hit=!q||dt.textContent.toLowerCase().includes(q)||dd.textContent.toLowerCase().includes(q);dt.classList.toggle('hide',!hit);dd.classList.toggle('hide',!hit);if(hit)c++;});document.getElementById('cnt').textContent=c+' terms';};
+</script></body></html>

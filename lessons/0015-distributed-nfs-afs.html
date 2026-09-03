@@ -1,0 +1,429 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>15 · Distributed FS — OSTEP course</title><style>
+/* OSTEP course — shared stylesheet. Three pieces, three hues. */
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+:root{
+  --ink:#151b2f; --ink-2:#1e2540; --ink-3:#28304f; --line:#3a4368;
+  --paper:#eef0f7; --muted:#a9b1cf; --faint:#6e779a;
+  --virt:#e8b84a; --conc:#5bc8f5; --pers:#6bcb77; --sec:#f47fa0; --intro:#c9a8ff;
+  --ok:#6bcb77; --bad:#ff6b6b;
+  --accent:var(--virt);
+  --radius:6px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--ink);color:var(--paper);font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:17px;line-height:1.6}
+a{color:var(--accent)}
+code,pre,kbd,.mono{font-family:'IBM Plex Mono',ui-monospace,monospace}
+code{background:var(--ink-3);padding:1px 5px;border-radius:4px;font-size:.9em}
+pre{background:#0f1424;border:1px solid var(--line);border-left:4px solid var(--accent);padding:14px 16px;overflow:auto;border-radius:var(--radius);font-size:.86em;line-height:1.5}
+pre code{background:none;padding:0;font-size:inherit}
+h1,h2,h3,h4{font-family:'Fraunces',Georgia,serif;font-weight:700;line-height:1.15;margin:0 0 .4em}
+h1{font-size:2.6rem;letter-spacing:-.01em}
+h2{font-size:1.9rem;margin-top:2.6rem;padding-top:1.2rem;border-top:1px solid var(--line)}
+h3{font-size:1.3rem;margin-top:1.8rem;color:var(--accent)}
+h4{font-size:1.05rem;margin-top:1.2rem}
+p,li{max-width:72ch}
+.wrap{max-width:1100px;margin:0 auto;padding:0 28px 96px}
+.hero{padding:44px 0 16px}
+.hero .chapters{color:var(--muted);font-size:.95rem;margin-bottom:6px}
+.lede{font-size:1.2rem;color:var(--muted);max-width:66ch}
+.piece-virt{--accent:var(--virt)} .piece-conc{--accent:var(--conc)} .piece-pers{--accent:var(--pers)} .piece-sec{--accent:var(--sec)} .piece-intro{--accent:var(--intro)}
+.fig{background:var(--ink-2);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;margin:22px 0}
+.fig figcaption,.cap{color:var(--muted);font-size:.9rem;margin-top:10px}
+.fig svg{max-width:100%;height:auto;display:block}
+svg text{font-family:'IBM Plex Sans',sans-serif}
+svg .mono{font-family:'IBM Plex Mono',monospace}
+.crux{border:1px solid var(--accent);border-radius:var(--radius);padding:14px 18px;margin:22px 0;background:color-mix(in srgb,var(--accent) 8%,transparent)}
+.crux b{color:var(--accent)}
+.tip{border-left:4px solid var(--muted);padding:6px 16px;margin:18px 0;color:var(--muted)}
+.tip b{color:var(--paper)}
+table{border-collapse:collapse;width:100%;margin:16px 0;font-size:.95rem}
+th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{color:var(--muted);font-weight:500}
+td.mono,th.mono{font-family:'IBM Plex Mono',monospace}
+button,.btn{font:inherit;font-size:.9rem;background:var(--ink-3);color:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:7px 13px;cursor:pointer}
+button:hover{border-color:var(--accent)}
+button.primary{background:var(--accent);color:#111;border-color:var(--accent);font-weight:600}
+button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+input[type=range]{accent-color:var(--accent)}
+input[type=text],input[type=number],select{font:inherit;background:#0f1424;color:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:6px 10px}
+.controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:10px 0}
+.controls label{font-size:.9rem;color:var(--muted)}
+details{border:1px solid var(--line);border-radius:var(--radius);margin:10px 0;background:var(--ink-2)}
+summary{cursor:pointer;padding:12px 16px;font-weight:600;list-style:none}
+summary::before{content:"+";display:inline-block;width:1.2em;color:var(--accent)}
+details[open] summary::before{content:"–"}
+details>div{padding:0 16px 14px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;margin:16px 0}
+.card{perspective:900px;min-height:140px;cursor:pointer}
+.card .inner{position:relative;width:100%;height:100%;min-height:140px;transition:transform .45s;transform-style:preserve-3d}
+.card.flipped .inner{transform:rotateY(180deg)}
+.card .face{position:absolute;inset:0;padding:14px;border-radius:var(--radius);border:1px solid var(--line);background:var(--ink-2);backface-visibility:hidden;display:flex;align-items:center;justify-content:center;text-align:center;font-size:.95rem}
+.card .back{transform:rotateY(180deg);background:var(--ink-3);border-color:var(--accent);font-size:.88rem;line-height:1.45}
+.card .front{font-weight:600}
+@media (prefers-reduced-motion:reduce){.card .inner{transition:none}}
+.quiz .q{border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin:12px 0;background:var(--ink-2)}
+.quiz .q p{margin:0 0 10px;font-weight:600}
+.quiz .opts{display:grid;gap:8px}
+.quiz .opt{text-align:left;background:var(--ink);width:100%}
+.quiz .opt.right{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 15%,var(--ink))}
+.quiz .opt.wrong{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 15%,var(--ink))}
+.quiz .why{margin-top:10px;color:var(--muted);font-size:.93rem;display:none}
+.quiz .q.done .why{display:block}
+.quiz .score{margin-top:12px;font-weight:600}
+.stepper .stage{min-height:60px;background:#0f1424;border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin:10px 0}
+.stepper .idx{color:var(--muted);font-size:.85rem}
+.gantt{display:grid;gap:6px;margin:10px 0}
+.gantt .row{display:grid;grid-template-columns:60px 1fr;align-items:center;gap:8px;font-size:.85rem}
+.gantt .track{position:relative;height:26px;background:#0f1424;border-radius:4px;overflow:hidden}
+.gantt .seg{position:absolute;top:0;bottom:0;display:flex;align-items:center;justify-content:center;font-size:.75rem;color:#111;font-weight:600;border-right:1px solid rgba(0,0,0,.3)}
+.cells{display:grid;gap:4px;margin:10px 0}
+.cell{background:#0f1424;border:1px solid var(--line);border-radius:4px;padding:6px;text-align:center;font-family:'IBM Plex Mono',monospace;font-size:.8rem;min-height:36px;display:flex;align-items:center;justify-content:center}
+.cell.hit{background:color-mix(in srgb,var(--ok) 35%,#0f1424);border-color:var(--ok)}
+.cell.miss{background:color-mix(in srgb,var(--bad) 35%,#0f1424);border-color:var(--bad)}
+.cell.active{outline:2px solid var(--accent)}
+.cell.free{opacity:.45}
+.hl{background:color-mix(in srgb,var(--accent) 30%,transparent);padding:1px 5px;border-radius:3px}
+.k{color:var(--accent);font-weight:600}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media (max-width:760px){.two{grid-template-columns:1fr}.topbar{gap:10px}h1{font-size:2rem}}
+.nav-bottom{display:flex;justify-content:space-between;gap:16px;margin-top:56px;padding-top:20px;border-top:1px solid var(--line)}
+.nav-bottom a{text-decoration:none;padding:12px 16px;border:1px solid var(--line);border-radius:var(--radius);color:var(--paper)}
+.source{background:var(--ink-2);border-radius:var(--radius);padding:14px 18px;margin:22px 0;font-size:.95rem}
+.source b{color:var(--accent)}
+.objectives li{list-style:none;margin:6px 0}
+.objectives input{margin-right:8px;accent-color:var(--accent)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.85rem;color:var(--muted)}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:5px;vertical-align:-2px}
+.tag{display:inline-block;font-size:.75rem;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted);margin-right:6px}
+.log{font-family:'IBM Plex Mono',monospace;font-size:.82rem;background:#0f1424;border:1px solid var(--line);border-radius:var(--radius);padding:10px 12px;max-height:220px;overflow:auto;white-space:pre-wrap}
+@media print{body{background:#fff;color:#111}.topbar,.nav-bottom,button{display:none}.fig,.crux,details,.source{border-color:#bbb;background:#fff}pre{background:#f5f5f5;color:#111}}
+
+/* ---------- site chrome: sticky header + directory drawer ---------- */
+.topbar{position:sticky;top:0;z-index:30;display:flex;gap:14px;align-items:center;padding:10px 16px;background:color-mix(in srgb,var(--ink) 92%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);font-size:.9rem}
+.topbar .menu{display:flex;align-items:center;gap:8px;padding:8px 12px;font-size:1rem}
+.topbar .menu span{font-size:.85rem}
+.topbar .brand{color:var(--paper);text-decoration:none;font-weight:600;display:flex;align-items:center;gap:8px}
+.topbar .dot{width:10px;height:10px;border-radius:50%;background:var(--accent);display:inline-block}
+.topbar .links{display:flex;gap:16px;margin-left:8px}
+.topbar .links a{color:var(--muted);text-decoration:none}
+.topbar .links a:hover{color:var(--paper)}
+.topbar .where{margin-left:auto;color:var(--faint);font-variant-numeric:tabular-nums}
+.drawer{position:fixed;top:0;left:0;bottom:0;width:min(340px,88vw);background:var(--ink-2);border-right:1px solid var(--line);z-index:50;transform:translateX(-102%);transition:transform .25s;overflow-y:auto;padding:0 0 24px;box-shadow:0 0 40px rgba(0,0,0,.5)}
+.drawer-open .drawer{transform:none}
+.scrim{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:40;opacity:0;pointer-events:none;transition:opacity .2s}
+.drawer-open .scrim{opacity:1;pointer-events:auto}
+.drawer .dhead{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--ink-2)}
+.drawer .close,.notes-sheet .close{font-size:1.3rem;line-height:1;padding:4px 10px}
+.drawer .dgroup{padding:8px 0 4px}
+.drawer .dname{padding:8px 16px 4px;color:var(--accent);font-family:'Fraunces',serif;font-weight:700}
+.drawer .ditem{display:flex;gap:10px;align-items:center;padding:9px 16px;color:var(--paper);text-decoration:none;border-left:3px solid transparent;font-size:.92rem}
+.drawer .ditem:hover{background:var(--ink-3)}
+.drawer .ditem.cur{border-left-color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
+.drawer .ditem .n{color:var(--faint);min-width:1.4em;font-variant-numeric:tabular-nums}
+.drawer .ditem .t{flex:1;line-height:1.25}
+.drawer .ditem .t small{display:block;color:var(--faint);font-size:.75rem}
+.drawer .badges{display:flex;gap:6px;align-items:center}
+.drawer .badges i{font-style:normal;color:var(--accent)}
+.drawer .badges em{font-style:normal;font-size:.75rem;padding:1px 6px;border-radius:999px;background:var(--ink-3);color:var(--muted);font-variant-numeric:tabular-nums}
+.drawer .dfoot{padding:16px;color:var(--faint);font-size:.8rem}
+/* ---------- notes: floating button + bottom sheet ---------- */
+.notes-fab{position:fixed;right:16px;bottom:16px;z-index:35;display:flex;gap:8px;align-items:center;padding:12px 16px;border-radius:999px;background:var(--accent);color:#111;border:none;font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,.4)}
+.notes-sheet{position:fixed;left:0;right:0;bottom:0;z-index:45;background:var(--ink-2);border-top:1px solid var(--line);border-radius:14px 14px 0 0;transform:translateY(105%);transition:transform .25s;box-shadow:0 -10px 40px rgba(0,0,0,.5);max-width:900px;margin:0 auto;padding-bottom:env(safe-area-inset-bottom)}
+.notes-open .notes-sheet{transform:none}
+.notes-open .notes-fab{display:none}
+.notes-sheet .nhead{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line)}
+.notes-sheet .nhead b{flex:1;font-size:.95rem}
+.notes-sheet .nstatus{color:var(--faint);font-size:.8rem}
+.notes-sheet textarea{display:block;width:100%;min-height:36vh;max-height:60vh;resize:vertical;border:none;background:#0f1424;color:var(--paper);font:inherit;font-size:1rem;line-height:1.5;padding:14px 16px;outline:none}
+.notes-sheet .nfoot{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;font-size:.85rem;color:var(--muted)}
+/* ---------- wide widgets scroll sideways instead of breaking the page ---------- */
+.tw{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:16px 0}
+.tw table{margin:0;min-width:520px}
+.fig{overflow-x:auto}
+@media (prefers-reduced-motion:reduce){.drawer,.notes-sheet,.scrim{transition:none}}
+/* ---------- phones ---------- */
+@media (max-width:760px){
+  body{font-size:16px}
+  .wrap{padding:0 16px 110px}
+  h1{font-size:1.85rem} h2{font-size:1.45rem;margin-top:2rem} h3{font-size:1.15rem}
+  .lede{font-size:1.05rem}
+  .topbar{padding:8px 12px;gap:10px}
+  .topbar .links{display:none}
+  .topbar .menu span{display:none}
+  .topbar .menu{padding:8px 11px}
+  .fig{padding:12px 12px;margin:16px -4px;border-radius:8px}
+  .crux,.source{padding:12px 14px}
+  pre{font-size:.8em;padding:12px 12px}
+  button,.btn{padding:10px 14px;font-size:.92rem}
+  .controls{gap:8px}
+  .controls label{display:flex;align-items:center;gap:6px}
+  input[type=number]{max-width:96px}
+  .cards{grid-template-columns:1fr 1fr;gap:8px}
+  .card,.card .inner{min-height:120px}
+  .card .face{font-size:.88rem;padding:10px}
+  .cells{min-width:420px}
+  .quiz .opt{padding:12px 12px;line-height:1.35}
+  .nav-bottom{flex-direction:column}
+  .nav-bottom a{text-align:center}
+  .notes-fab span{display:none}
+  .notes-fab{padding:14px;right:12px;bottom:12px}
+  .notes-sheet textarea{min-height:44vh}
+  .stepper .stage{padding:12px}
+  .gantt .row{grid-template-columns:44px 1fr;font-size:.75rem}
+  /* lesson-specific grids collapse */
+  .lde,.il,.two,.cry,.flash,.dl,.fdt,.how,.cards.wide,.vm{grid-template-columns:1fr}
+  .map{grid-template-columns:1fr}
+  .net{grid-template-columns:1fr}.net .arrow{padding:0;transform:rotate(90deg)}
+  .phil{grid-template-columns:repeat(2,1fr)}
+  .jobs{max-width:100%}
+  .trace{min-width:620px}.tl{min-width:720px}.disk{min-width:560px}
+}
+@media (max-width:420px){.cards{grid-template-columns:1fr}}
+
+</style>
+<style>.net{display:grid;grid-template-columns:1fr 60px 1fr;gap:8px;align-items:start}.box{background:#0f1424;border:1px solid var(--line);border-radius:6px;padding:10px;font-size:.85rem;min-height:120px}.box h4{margin:0 0 6px;font-family:inherit;font-size:.8rem;color:var(--muted)}.box.down{border-color:var(--bad);opacity:.6}.arrow{text-align:center;color:var(--muted);font-size:1.4rem;padding-top:40px}.cache{font-family:'IBM Plex Mono',monospace;font-size:.85rem}.cache span{padding:2px 8px;border-radius:4px;background:#28304f;margin:2px;display:inline-block}.cache .stale{background:#ff6b6b;color:#111}.cache .fresh{background:#6bcb77;color:#111}</style></head>
+<body class="piece-pers"><div class="wrap">
+<header class="hero"><div class="chapters">OSTEP chapters 48–50 · Distributed Systems · Sun's Network File System · The Andrew File System</div>
+<h1>Files across a network: building on parts that fail</h1>
+<p class="lede">In a data centre something is always broken, so the question flips: how do you build a system that works when its components don't? Communication is the heart of it; RPC makes it look like a function call. Then two distributed file systems that made opposite choices — NFS bet on statelessness, AFS on whole-file caching and server-issued promises.</p></header>
+<div class="source"><b>Primary sources:</b> <a href="https://pages.cs.wisc.edu/~remzi/OSTEP/dist-intro.pdf">Ch 48</a>, <a href="https://pages.cs.wisc.edu/~remzi/OSTEP/dist-nfs.pdf">Ch 49</a>, <a href="https://pages.cs.wisc.edu/~remzi/OSTEP/dist-afs.pdf">Ch 50</a>. Papers: Sandberg et al. (NFS, 1985), Howard et al. (AFS scale and performance, 1988), Birrell &amp; Nelson (RPC). Try gRPC or Thrift to feel RPC yourself.</div>
+<h2>What you'll be able to do</h2><ul id="obj"></ul>
+
+<h2>Distributed systems (chapter 48)</h2>
+<div class="crux"><b>Crux: how to build systems that work when components fail.</b> Machines fail; that need not mean the system fails. Also in play: performance (few messages, fast handling) and security (authentication, privacy).</div>
+<p>Everything is built on <b>messages</b> over an unreliable network: packets are dropped by full buffers, corrupted by bit flips, misrouted. <b>UDP</b> gives you unreliable datagrams with a checksum. To get reliability, the sender waits for an <b>acknowledgment</b> and retries on <b>timeout</b>; but if only the ack was lost the receiver sees the message twice, so add <b>sequence counters</b> so the receiver can discard duplicates yet re-ack them. That's the core of <b>TCP</b> (plus exponential back-off on timeouts so a congested network isn't flooded). Which layer should guarantee what is the <b>end-to-end argument</b>: reliability the application needs must be checked by the application anyway.</p>
+<div class="fig"><h4>Message, ack, timeout, retry — with losses</h4><div class="net"><div class="box"><h4>Sender</h4><div id="snd"></div></div><div class="arrow">⇄</div><div class="box"><h4>Receiver</h4><div id="rcv"></div></div></div><div class="controls" style="margin-top:8px"><button class="primary" id="m-ok">send (delivered)</button><button id="m-lostreq">send, request lost</button><button id="m-lostack">send, ack lost</button><button id="m-rs">reset</button></div><div class="cap" id="mmsg">Sequence numbers let the receiver detect a retransmission caused by a lost ack and avoid processing it twice.</div></div>
+<p><b>Remote procedure call</b> makes this look like a call: a <b>stub generator</b> turns an interface into client stubs (marshal arguments into a buffer, send, wait, unmarshal the reply) and a server stub (unmarshal, call the real function, send the result). The <b>run-time library</b> handles naming, transport (usually built on UDP with its own acks/timeouts, since TCP's are redundant), timeouts and retries, byte ordering (Sun's XDR), and long-running calls (periodic acks to say "still working"). What doesn't translate: pointers (must be serialized), and the synchronous, blocking nature (some packages add async RPC). An older alternative, distributed shared memory, faded: failure handling and performance both suffer when a page fault may be a network round trip.</p>
+
+<h2>NFS (chapter 49)</h2>
+<div class="crux"><b>Crux: how to build a distributed file system.</b> Clients run applications that call <code>open/read/write</code>; a client-side file system turns them into messages to a file server, which stores the data. Goals: transparent sharing, central administration, security — and, above all for NFS, <b>simple and fast crash recovery</b>.</div>
+<div class="crux"><b>Crux: how to define a stateless file protocol.</b> The server keeps no per-client state, so it can crash and reboot and clients just retry. But POSIX has <code>open()</code>… The answer is the <b>file handle</b> — volume identifier + inode number + <b>generation number</b> (bumped when an inode is reused, so an old handle fails) — sent with every request instead of a descriptor. Client-side file system tracks the mapping from descriptors to handles and current offsets.</p></div>
+<table><tr><th class="mono">NFSv2 message</th><th>arguments</th><th>returns</th></tr>
+<tr><td class="mono">GETATTR / SETATTR</td><td>file handle (, attributes)</td><td>attributes</td></tr><tr><td class="mono">LOOKUP</td><td>directory handle, name</td><td>file handle + attributes</td></tr><tr><td class="mono">READ</td><td>handle, offset, count</td><td>data, attributes</td></tr><tr><td class="mono">WRITE</td><td>handle, offset, count, data</td><td>attributes</td></tr><tr><td class="mono">CREATE / REMOVE / MKDIR / RMDIR</td><td>directory handle, name (, attributes)</td><td>handle + attributes / nothing</td></tr><tr><td class="mono">READDIR</td><td>directory handle, count, cookie</td><td>entries</td></tr></table>
+<p><code>open("/home/remzi/foo.txt")</code> becomes three LOOKUPs (one per component) from the root handle obtained at mount; each <code>read()</code> a READ with an explicit offset; no OPEN or CLOSE messages exist. The client sets a timer; on timeout it <b>retries</b>. That is safe because the operations are <b>idempotent</b> — doing them twice equals doing them once (READ, WRITE with offset, LOOKUP; MKDIR is the awkward exception). Lost request, lost reply, or a server crash in between all look the same to the client and get the same fix: retry.</p>
+<h3>Client caching and the consistency problem</h3>
+<p>Caching blocks and buffering writes at the client cuts traffic, but with many clients: (1) <b>update visibility</b> — C1's buffered write isn't on the server yet; (2) <b>stale cache</b> — C2 cached the old version. NFS's engineering answers: <b>flush-on-close</b> (all dirty blocks are sent when a file is closed) and, before using a cached block, <b>GETATTR</b> to check the server's modification time — throttled by an <b>attribute cache</b> (~3 s) because the flood of GETATTRs was itself a problem. Result: behaviour that sometimes surprises (a fresh write may be invisible to another client for a few seconds).</p>
+<div class="fig"><h4>Two clients, one file</h4><div class="cache" id="nfsstate"></div><div class="controls" style="margin-top:8px"><button class="primary" id="n-w">C1: write(fd, "v2")</button><button id="n-c">C1: close()</button><button id="n-r">C2: read()</button><button id="n-t">3 s pass</button><button id="n-rs">reset</button></div><div class="cap" id="nmsg"></div></div>
+<p><b>Server-side</b>: the server must commit each WRITE to stable storage before replying, or a crash loses data the client believes is safe (the book's example: three writes a/b/c, server crashes with b in memory, client never retries b, file ends up a/x/c). That made writes slow; NetApp's early business was battery-backed memory to acknowledge writes quickly. Sun also introduced the <b>VFS/vnode</b> interface so NFS and local file systems coexist in one kernel. NFS's basic security was weak (client-asserted user IDs); Kerberos-based authentication came later.</p>
+
+<h2>AFS (chapter 50)</h2>
+<div class="crux"><b>Crux: how to design a scalable file protocol.</b> Carnegie Mellon's goal was one server for as many clients as possible. AFSv1 already cached <b>whole files</b> on the client's local disk (open fetches the file; reads and writes are local; close stores it back) — but measurement showed servers saturating at about <b>20 clients</b>: too much time walking pathnames, and too many <code>TestAuth</code> messages (clients asking "is my copy still valid?" on every open).</div>
+<div class="two"><div class="fig"><h4>AFSv2 fixes</h4><ul><li><b>Callbacks</b>: when a client fetches a file the server <em>promises</em> to tell it if the file changes. Subsequent opens need no server contact — the client trusts its cache until the callback breaks. Polling becomes interrupts.</li><li><b>FIDs</b> (volume id, file id, uniquifier) and client-side <b>directory caching</b>: the client walks the path itself, fetching directories (with callbacks) once.</li><li>Servers now handle ~<b>50 clients</b>; the common case — open a cached file, read it — needs no messages at all.</li></ul></div>
+<div class="fig"><h4>Consistency and failure</h4><ul><li>Updates become visible <b>on close</b>: the server breaks callbacks on every other client with a copy; their <em>next open</em> refetches. Between processes on <em>one</em> machine, standard UNIX semantics apply. Two clients writing simultaneously: <b>last writer (closer) wins</b> — the whole file, never a mix. (NFS can end up with a block-level mixture.)</li><li><b>Crash recovery</b> is harder than NFS: a rebooted client must treat its cache as suspect (it may have missed callbacks); a rebooted server has lost all callback state and must tell every client (or clients detect it via <b>heartbeats</b>) to revalidate.</li></ul></div></div>
+<p>Performance (the book's Figure 50.4, in units of L<sub>net</sub> &gt; L<sub>disk</sub> &gt; L<sub>mem</sub>): for most workloads the two are equal — small and medium files are cached in memory on both. AFS wins on the sequential <em>re-read</em> of a large file that fits on local disk but not in memory (L<sub>disk</sub> vs NFS's L<sub>net</sub>). AFS loses badly when you read a <em>single block</em> of a large file (it fetches all N<sub>L</sub> blocks: N<sub>L</sub>× slower), and pays roughly 2× on overwriting or partially writing a large file (fetch the whole file, then store it whole). AFS also added a <b>global namespace</b> (the same path on every machine), <b>security</b> with authenticated users, per-directory <b>ACLs</b>, and <b>volumes</b> for administration. The book's verdict: NFS became the open standard and won the market; NFSv4 has quietly grown server state and an <code>open</code> message — AFS's ideas live on.</p>
+
+<h2>Flash cards</h2><div id="cards"></div>
+<h2>Retrieval practice</h2><div id="quiz"></div>
+<p class="tip">Want to reason through a specific NFS or AFS interleaving, or compare their message counts for a workload? Ask me in the chat.</p>
+</div>
+<script>
+/* OSTEP course — shared components. Every page loads this file (inlined by build.py). */
+window.OS = (function () {
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+  /* ---------- persistent storage (localStorage on a real site; in-memory fallback in sandboxes) ---------- */
+  const mem = {};
+  const store = {
+    get(k) { try { const v = localStorage.getItem('ostep:' + k); return v === null ? (mem[k] ?? null) : JSON.parse(v); } catch (e) { return mem[k] ?? null; } },
+    set(k, v) { mem[k] = v; try { localStorage.setItem('ostep:' + k, JSON.stringify(v)); } catch (e) {} },
+    del(k) { delete mem[k]; try { localStorage.removeItem('ostep:' + k); } catch (e) {} },
+    keys(prefix) { const out = new Set(Object.keys(mem).filter(k => k.startsWith(prefix))); try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith('ostep:' + prefix)) out.add(k.slice(6)); } } catch (e) {} return [...out]; },
+    available() { try { localStorage.setItem('ostep:test', '1'); localStorage.removeItem('ostep:test'); return true; } catch (e) { return false; } }
+  };
+
+  /* ---------- course structure ---------- */
+  const PIECES = [
+    ['intro', 'Introduction', [['0001-three-easy-pieces', 'Three easy pieces', 'ch 1–2']]],
+    ['virt', 'Virtualization', [
+      ['0002-processes', 'Processes & the process API', 'ch 4–5'],
+      ['0003-limited-direct-execution', 'Limited direct execution', 'ch 6'],
+      ['0004-scheduling', 'Scheduling', 'ch 7–10'],
+      ['0005-address-spaces', 'Address spaces & segments', 'ch 13–16'],
+      ['0006-paging-and-tlbs', 'Paging & TLBs', 'ch 17–20'],
+      ['0007-swapping', 'Swapping & policies', 'ch 21–23']]],
+    ['conc', 'Concurrency', [
+      ['0008-threads-and-locks', 'Threads & locks', 'ch 26–28'],
+      ['0009-cvs-and-semaphores', 'CVs & semaphores', 'ch 29–31'],
+      ['0010-bugs-and-events', 'Bugs & events', 'ch 32–33']]],
+    ['pers', 'Persistence', [
+      ['0011-devices-disks-raid', 'Devices, disks, RAID', 'ch 36–38'],
+      ['0012-files-and-vsfs', 'Files & a simple FS', 'ch 39–40'],
+      ['0013-ffs-journaling-lfs', 'FFS, journaling, LFS', 'ch 41–43'],
+      ['0014-ssd-and-integrity', 'SSDs & integrity', 'ch 44–45'],
+      ['0015-distributed-nfs-afs', 'Distributed FS', 'ch 48–50']]],
+    ['sec', 'Security', [['0016-security-and-vmms', 'Security & VMMs', 'ch 53–57, App B']]]
+  ];
+  const LESSONS = PIECES.flatMap(p => p[2].map(l => [l[0], l[1], p[0], l[2]]));
+  const title = id => (LESSONS.find(l => l[0] === id) || [])[1] || id;
+  let pageId = null, root = '../';
+
+  /* ---------- chrome: sticky header, slide-out directory, notes drawer, prev/next ---------- */
+  function chrome(id, rootPath) {
+    pageId = id; root = rootPath === undefined ? '../' : rootPath;
+    const i = LESSONS.findIndex(l => l[0] === id);
+    const isLesson = i >= 0;
+    const top = document.createElement('header'); top.className = 'topbar';
+    top.innerHTML = `<button class="menu" aria-label="Open directory" aria-expanded="false">☰<span>Directory</span></button>
+      <a class="brand" href="${root}index.html"><span class="dot"></span>OSTEP course</a>
+      <nav class="links"><a href="${root}reference/glossary.html">Glossary</a><a href="${root}reference/cheatsheets.html">Cheat sheets</a><a href="${root}notes.html">My notes</a></nav>
+      ${isLesson ? `<span class="where">${i+1} / ${LESSONS.length}</span>` : ''}`;
+    document.body.prepend(top);
+    // directory drawer
+    const drawer = document.createElement('aside'); drawer.className = 'drawer'; drawer.setAttribute('aria-label', 'Course directory');
+    const scores = Object.fromEntries(LESSONS.map(l => [l[0], store.get('quiz:' + l[0])]));
+    const notes = new Set(store.keys('notes:').map(k => k.slice(6)).filter(k => (store.get('notes:' + k) || {}).text));
+    drawer.innerHTML = `<div class="dhead"><b>Directory</b><button class="close" aria-label="Close">×</button></div>
+      <a class="ditem ${id === 'index' ? 'cur' : ''}" href="${root}index.html">Course hub</a>
+      ${PIECES.map(([cls, name, ls]) => `<div class="dgroup piece-${cls}"><div class="dname">${name}</div>${ls.map(l => {
+        const n = LESSONS.findIndex(x => x[0] === l[0]) + 1, s = scores[l[0]];
+        return `<a class="ditem ${l[0] === id ? 'cur' : ''}" href="${root}lessons/${l[0]}.html"><span class="n">${n}</span><span class="t">${l[1]}<small>${l[3]}</small></span><span class="badges">${notes.has(l[0]) ? '<i title="you have notes">✎</i>' : ''}${s ? `<em title="best quiz score">${s.score}/${s.total}</em>` : ''}</span></a>`; }).join('')}</div>`).join('')}
+      <div class="dgroup piece-intro"><div class="dname">Reference</div>
+        <a class="ditem ${id === 'glossary' ? 'cur' : ''}" href="${root}reference/glossary.html"><span class="t">Glossary</span></a>
+        <a class="ditem ${id === 'cheatsheets' ? 'cur' : ''}" href="${root}reference/cheatsheets.html"><span class="t">Cheat sheets</span></a>
+        <a class="ditem ${id === 'notes' ? 'cur' : ''}" href="${root}notes.html"><span class="t">My notes &amp; progress</span></a></div>
+      <div class="dfoot">${store.available() ? 'Notes and scores are saved in this browser.' : 'Notes and scores are kept for this session only (storage unavailable here).'}</div>`;
+    document.body.append(drawer);
+    const scrim = document.createElement('div'); scrim.className = 'scrim'; document.body.append(scrim);
+    const open = o => { document.body.classList.toggle('drawer-open', o); top.querySelector('.menu').setAttribute('aria-expanded', o); if (o) drawer.querySelector('.cur, .ditem')?.focus(); };
+    top.querySelector('.menu').onclick = () => open(!document.body.classList.contains('drawer-open'));
+    drawer.querySelector('.close').onclick = () => open(false); scrim.onclick = () => open(false);
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') { open(false); notesOpen(false); } });
+    // prev/next for lessons
+    if (isLesson) {
+      const nav = document.createElement('div'); nav.className = 'nav-bottom';
+      const prev = LESSONS[i-1], next = LESSONS[i+1];
+      nav.innerHTML = (prev ? `<a href="${prev[0]}.html">← ${i}. ${prev[1]}</a>` : '<span></span>') +
+                      (next ? `<a href="${next[0]}.html">${i+2}. ${next[1]} →</a>` : `<a href="${root}index.html">Back to course hub →</a>`);
+      document.querySelector('.wrap').append(nav);
+    }
+    // wrap tables so they scroll sideways on phones
+    document.querySelectorAll('.wrap table').forEach(t => { if (t.parentElement.classList.contains('tw')) return; const w = document.createElement('div'); w.className = 'tw'; t.replaceWith(w); w.append(t); });
+    // notes drawer (every page except the notes page itself)
+    if (id !== 'notes') notesUI(id, isLesson ? `${i+1}. ${LESSONS[i][1]}` : (document.title.split(' — ')[0]));
+  }
+
+  /* ---------- notes: floating button + bottom sheet, autosaved ---------- */
+  let notesOpen = () => {};
+  function notesUI(id, label) {
+    const btn = document.createElement('button'); btn.className = 'notes-fab'; btn.innerHTML = '✎ <span>Notes</span>'; btn.setAttribute('aria-label', 'Open notes');
+    const sheet = document.createElement('section'); sheet.className = 'notes-sheet'; sheet.setAttribute('aria-label', 'Notes for this page');
+    const saved = store.get('notes:' + id) || {};
+    sheet.innerHTML = `<div class="nhead"><b>Notes · ${esc(label)}</b><span class="nstatus"></span><button class="close" aria-label="Close notes">×</button></div>
+      <textarea placeholder="Your notes for this page. Markdown is fine. Saved automatically.">${esc(saved.text || '')}</textarea>
+      <div class="nfoot"><span class="ncount"></span><a href="${root}notes.html">All notes &amp; export →</a></div>`;
+    document.body.append(btn, sheet);
+    const ta = sheet.querySelector('textarea'), status = sheet.querySelector('.nstatus'), count = sheet.querySelector('.ncount');
+    const upd = () => { count.textContent = ta.value.trim() ? ta.value.trim().split(/\s+/).length + ' words' : ''; };
+    let t; ta.addEventListener('input', () => { status.textContent = 'saving…'; clearTimeout(t); t = setTimeout(() => { store.set('notes:' + id, { text: ta.value, title: label, updated: new Date().toISOString() }); status.textContent = 'saved'; upd(); }, 400); });
+    upd();
+    notesOpen = o => { document.body.classList.toggle('notes-open', o); if (o) ta.focus(); };
+    btn.onclick = () => notesOpen(!document.body.classList.contains('notes-open'));
+    sheet.querySelector('.close').onclick = () => notesOpen(false);
+  }
+
+  /* ---------- quiz: immediate feedback; best score persisted ---------- */
+  function quiz(el, qs) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('quiz');
+    let score = 0, answered = 0;
+    const best = pageId ? store.get('quiz:' + pageId) : null;
+    el.innerHTML = qs.map((q, i) => `<div class="q" data-i="${i}"><p>${i+1}. ${q.q}</p>
+      <div class="opts">${q.o.map((o, j) => `<button class="opt" data-j="${j}">${esc(o)}</button>`).join('')}</div>
+      <div class="why">${q.why}</div></div>`).join('') + `<div class="score">${best ? `Best so far: ${best.score}/${best.total} (${new Date(best.date).toLocaleDateString()})` : ''}</div>`;
+    el.querySelectorAll('.q').forEach(qd => {
+      const q = qs[+qd.dataset.i];
+      qd.querySelectorAll('.opt').forEach(b => b.addEventListener('click', () => {
+        if (qd.classList.contains('done')) return;
+        qd.classList.add('done'); answered++;
+        const j = +b.dataset.j;
+        if (j === q.a) { b.classList.add('right'); score++; }
+        else { b.classList.add('wrong'); qd.querySelectorAll('.opt')[q.a].classList.add('right'); }
+        const s = el.querySelector('.score');
+        s.textContent = `${score} / ${answered} correct`;
+        if (answered === qs.length) {
+          s.textContent += score === qs.length ? ' — all of them. Retry from memory in two days.' : ' — reread the sections you missed, then retry.';
+          if (pageId && (!best || score >= best.score)) store.set('quiz:' + pageId, { score, total: qs.length, date: new Date().toISOString() });
+        }
+      }));
+    });
+  }
+
+  /* ---------- flip cards ---------- */
+  function cards(el, list) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('cards');
+    el.innerHTML = list.map(([f, b]) => `<div class="card" tabindex="0" role="button" aria-label="flip card"><div class="inner"><div class="face front">${f}</div><div class="face back">${b}</div></div></div>`).join('');
+    el.querySelectorAll('.card').forEach(c => {
+      const t = () => c.classList.toggle('flipped');
+      c.addEventListener('click', t);
+      c.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); t(); } });
+    });
+  }
+
+  /* ---------- stepper ---------- */
+  function stepper(el, steps, render) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('stepper');
+    let i = 0;
+    el.innerHTML = `<div class="controls"><button class="prev">← Back</button><button class="next primary">Next step →</button><span class="idx"></span></div><div class="stage"></div><div class="extra"></div>`;
+    const stage = el.querySelector('.stage'), idx = el.querySelector('.idx'), extra = el.querySelector('.extra');
+    const draw = () => { stage.innerHTML = steps[i]; idx.textContent = `step ${i+1} / ${steps.length}`; if (render) render(i, extra); };
+    el.querySelector('.prev').onclick = () => { i = Math.max(0, i-1); draw(); };
+    el.querySelector('.next').onclick = () => { i = Math.min(steps.length-1, i+1); draw(); };
+    draw();
+  }
+
+  /* ---------- gantt ---------- */
+  function gantt(el, rows, total, colors) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('gantt');
+    const pal = colors || ['#e8b84a','#5bc8f5','#6bcb77','#f47fa0','#c9a8ff','#ffb86b'];
+    el.innerHTML = rows.map((r, i) => `<div class="row"><span>${esc(r.name)}</span><div class="track">${r.segs.map(s =>
+      `<div class="seg" style="left:${100*s.start/total}%;width:${100*(s.end-s.start)/total}%;background:${pal[i%pal.length]}" title="${s.start}–${s.end}">${(s.end-s.start)/total > .06 ? (s.end-s.start) : ''}</div>`).join('')}</div></div>`).join('') +
+      `<div class="row"><span></span><div style="display:flex;justify-content:space-between;font-size:.75rem;color:var(--muted)"><span>0</span><span>${total}</span></div></div>`;
+  }
+
+  /* ---------- objectives checklist (persisted) ---------- */
+  function objectives(el, items) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('objectives');
+    const saved = (pageId && store.get('obj:' + pageId)) || [];
+    el.innerHTML = items.map((t, i) => `<li><label><input type="checkbox" data-i="${i}" ${saved.includes(i) ? 'checked' : ''}>${t}</label></li>`).join('');
+    el.querySelectorAll('input').forEach(c => c.onchange = () => { const s = [...el.querySelectorAll('input:checked')].map(x => +x.dataset.i); if (pageId) store.set('obj:' + pageId, s); });
+  }
+
+  return { chrome, quiz, cards, stepper, gantt, objectives, esc, store, LESSONS, PIECES, title };
+})();
+
+</script>
+<script>
+OS.chrome('0015-distributed-nfs-afs');
+OS.objectives('obj',['Explain acks, timeouts, retries and sequence numbers, and what an RPC stub does.','Describe NFS statelessness, the file handle, and why idempotency lets clients retry blindly.','Explain NFS\'s flush-on-close and attribute cache and the anomalies they allow.','Explain AFS whole-file caching, callbacks and last-closer-wins semantics.','Compare NFS and AFS on scalability, consistency and crash recovery.']);
+/* messaging */
+let seq=0,rlog=[],slog=[],rseen=new Set();
+function mdraw(){document.getElementById('snd').innerHTML=slog.slice(-6).map(s=>`<div>${s}</div>`).join('');document.getElementById('rcv').innerHTML=rlog.slice(-6).map(s=>`<div>${s}</div>`).join('');}
+function send(kind){seq++;slog.push(`send msg #${seq}`);if(kind==='lostreq'){slog.push(`… timeout, no ack → resend #${seq}`);}else{rlog.push(`got #${seq}${rseen.has(seq)?' (duplicate, dropped)':' → process'}`);rseen.add(seq);}
+if(kind==='lostreq'){rlog.push(`got #${seq} → process`);rseen.add(seq);rlog.push(`ack #${seq}`);slog.push(`ack #${seq} received ✓`);document.getElementById('mmsg').textContent='Request lost: the sender\'s timer fires and it retransmits; the receiver sees it for the first time and acks.';}
+else if(kind==='lostack'){rlog.push(`ack #${seq} (lost)`);slog.push(`… timeout → resend #${seq}`);rlog.push(`got #${seq} again → duplicate, drop; re-ack`);slog.push(`ack #${seq} received ✓`);document.getElementById('mmsg').textContent='Ack lost: the receiver already processed #'+seq+'. Thanks to the sequence number it drops the duplicate but still acks, so the sender can stop retrying. Without sequence numbers the message would be applied twice.';}
+else{rlog.push(`ack #${seq}`);slog.push(`ack #${seq} received ✓`);document.getElementById('mmsg').textContent='Normal case: one message, one ack.';}mdraw();}
+document.getElementById('m-ok').onclick=()=>send('ok');document.getElementById('m-lostreq').onclick=()=>send('lostreq');document.getElementById('m-lostack').onclick=()=>send('lostack');document.getElementById('m-rs').onclick=()=>{seq=0;rlog=[];slog=[];rseen=new Set();mdraw();};mdraw();
+/* NFS consistency */
+let N;const nrs=()=>{N={server:'v1',c1:'v1',c1dirty:false,c2:'v1',c2attr:0};ndraw('Both clients cached v1 of foo; the server holds v1.');};
+function ndraw(m){const s=document.getElementById('nfsstate');s.innerHTML=`server: <span>${N.server}</span> &nbsp; C1 cache: <span class="${N.c1dirty?'stale':''}">${N.c1}${N.c1dirty?' (dirty, not sent)':''}</span> &nbsp; C2 cache: <span class="${N.c2===N.server?'fresh':'stale'}">${N.c2}</span> &nbsp; C2 attribute cache: ${N.c2attr>0?N.c2attr+' s left':'expired'}`;document.getElementById('nmsg').textContent=m;}
+document.getElementById('n-w').onclick=()=>{N.c1='v2';N.c1dirty=true;ndraw('C1 wrote v2 into its client cache only (write buffering). The server still has v1 — update visibility problem #1.');};
+document.getElementById('n-c').onclick=()=>{if(!N.c1dirty){ndraw('Nothing dirty to flush.');return;}N.c1dirty=false;N.server=N.c1;ndraw('close(): flush-on-close sends the dirty blocks; the server now has v2. C2\'s cached copy is stale until it re-checks.');};
+document.getElementById('n-r').onclick=()=>{if(N.c2attr>0){ndraw(`C2 read(): attribute cache still valid (${N.c2attr} s left), so it trusts its cached ${N.c2} without asking the server — ${N.c2===N.server?'happens to be current.':'STALE read. This is the anomaly NFS accepts for performance.'}`);return;}N.c2attr=3;if(N.c2!==N.server){N.c2=N.server;ndraw('C2 read(): attribute cache expired → GETATTR to server → modification time changed → refetch. C2 now reads the current version; attributes cached for 3 s.');}else ndraw('C2 read(): GETATTR shows no change; cached copy used. Attributes cached for 3 s.');};
+document.getElementById('n-t').onclick=()=>{N.c2attr=Math.max(0,N.c2attr-3);ndraw('Time passes; C2\'s attribute cache expires, so its next access will check with the server.');};
+document.getElementById('n-rs').onclick=nrs;nrs();
+OS.cards('cards',[['End-to-end argument','Reliability the application needs must be checked at the endpoints; lower layers can only help, not replace it.'],['Idempotent','An operation whose repeated execution has the same effect as one execution (READ, WRITE with offset, LOOKUP) — safe to retry.'],['Stub generator','RPC tool that produces client and server stubs to marshal/unmarshal arguments and hide messaging.'],['Stateless server','NFS server keeps no per-client state; every request carries what is needed (a file handle and offset), so reboots need no recovery protocol.'],['File handle','NFS: volume id + inode number + generation number; the generation number invalidates handles to reused inodes.'],['Flush-on-close','NFS client sends all buffered writes to the server when the file is closed, so other clients can see them on their next open.'],['Attribute cache','NFS client caches file attributes (~3 s) to avoid a GETATTR per access; the source of short staleness windows.'],['Callback','AFS server\'s promise to notify a client when a cached file changes; lets clients open cached files without contacting the server.'],['Whole-file caching','AFS fetches an entire file to local disk on open; reads/writes are local; the file is stored back on close.'],['Last closer wins','AFS concurrent-writer semantics: the version stored by the last close() replaces the others, as a whole file.']]);
+OS.quiz('quiz',[
+{q:'A receiver processes a message but its ack is lost. What prevents the retransmission from being applied twice?',o:['a longer timeout','a sequence counter','TCP checksums','exponential back-off'],a:1,why:'The receiver recognizes the sequence number, discards the duplicate, and re-sends the ack so the sender stops retrying.'},
+{q:'Why can an NFS client simply retry any request after a timeout?',o:['the server logs every request','the operations are idempotent','requests carry a retry flag','the server never crashes'],a:1,why:'Repeating READ, WRITE-at-offset or LOOKUP has the same effect as doing it once, so lost request, lost reply and server reboot all get one uniform fix.'},
+{q:'What does the generation number in an NFS file handle protect against?',o:['replayed acknowledgments','a handle referring to a reused inode','clients spoofing user IDs','directory renames'],a:1,why:'If a file is deleted and its inode number reassigned, the old handle\'s generation number no longer matches, so the stale handle fails instead of accessing the new file.'},
+{q:'Client C1 writes to a file. When is the new data guaranteed to be on the NFS server?',o:['immediately after write()','after C1 closes the file','after C1\'s attribute cache expires','when C2 next reads'],a:1,why:'NFS clients buffer writes and flush on close (or fsync). Until then the server, and other clients, see the old contents.'},
+{q:'Why must an NFS server commit a WRITE to stable storage before replying?',o:['to keep the protocol stateless','a crash would silently lose acknowledged data','clients cannot buffer writes','to enforce last-writer-wins'],a:1,why:'The client stops retrying once acked; if the server buffered the write in memory and crashed, that block would vanish (the book\'s a/x/c example).'},
+{q:'In AFS, what makes opening an already-cached file free of server messages?',o:['whole-file caching alone','the callback promise from the server','the attribute cache timeout','the client\'s heartbeat'],a:1,why:'The server promised to notify the client of changes; absent a callback break, the cached copy is known to be valid, unlike NFS which must poll with GETATTR.'},
+{q:'Two AFS clients modify the same file concurrently and close. The server ends up with:',o:['a block-wise mix of both','the entire file from the last closer','a merge conflict error','the first closer\'s version'],a:1,why:'Whole files are stored on close, so the last close wins completely. NFS, which flushes blocks, can produce a mixture.'}]);
+</script></body></html>

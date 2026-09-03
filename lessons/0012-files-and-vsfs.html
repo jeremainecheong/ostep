@@ -1,0 +1,452 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>12 · Files & a simple FS — OSTEP course</title><style>
+/* OSTEP course — shared stylesheet. Three pieces, three hues. */
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+:root{
+  --ink:#151b2f; --ink-2:#1e2540; --ink-3:#28304f; --line:#3a4368;
+  --paper:#eef0f7; --muted:#a9b1cf; --faint:#6e779a;
+  --virt:#e8b84a; --conc:#5bc8f5; --pers:#6bcb77; --sec:#f47fa0; --intro:#c9a8ff;
+  --ok:#6bcb77; --bad:#ff6b6b;
+  --accent:var(--virt);
+  --radius:6px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--ink);color:var(--paper);font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:17px;line-height:1.6}
+a{color:var(--accent)}
+code,pre,kbd,.mono{font-family:'IBM Plex Mono',ui-monospace,monospace}
+code{background:var(--ink-3);padding:1px 5px;border-radius:4px;font-size:.9em}
+pre{background:#0f1424;border:1px solid var(--line);border-left:4px solid var(--accent);padding:14px 16px;overflow:auto;border-radius:var(--radius);font-size:.86em;line-height:1.5}
+pre code{background:none;padding:0;font-size:inherit}
+h1,h2,h3,h4{font-family:'Fraunces',Georgia,serif;font-weight:700;line-height:1.15;margin:0 0 .4em}
+h1{font-size:2.6rem;letter-spacing:-.01em}
+h2{font-size:1.9rem;margin-top:2.6rem;padding-top:1.2rem;border-top:1px solid var(--line)}
+h3{font-size:1.3rem;margin-top:1.8rem;color:var(--accent)}
+h4{font-size:1.05rem;margin-top:1.2rem}
+p,li{max-width:72ch}
+.wrap{max-width:1100px;margin:0 auto;padding:0 28px 96px}
+.hero{padding:44px 0 16px}
+.hero .chapters{color:var(--muted);font-size:.95rem;margin-bottom:6px}
+.lede{font-size:1.2rem;color:var(--muted);max-width:66ch}
+.piece-virt{--accent:var(--virt)} .piece-conc{--accent:var(--conc)} .piece-pers{--accent:var(--pers)} .piece-sec{--accent:var(--sec)} .piece-intro{--accent:var(--intro)}
+.fig{background:var(--ink-2);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;margin:22px 0}
+.fig figcaption,.cap{color:var(--muted);font-size:.9rem;margin-top:10px}
+.fig svg{max-width:100%;height:auto;display:block}
+svg text{font-family:'IBM Plex Sans',sans-serif}
+svg .mono{font-family:'IBM Plex Mono',monospace}
+.crux{border:1px solid var(--accent);border-radius:var(--radius);padding:14px 18px;margin:22px 0;background:color-mix(in srgb,var(--accent) 8%,transparent)}
+.crux b{color:var(--accent)}
+.tip{border-left:4px solid var(--muted);padding:6px 16px;margin:18px 0;color:var(--muted)}
+.tip b{color:var(--paper)}
+table{border-collapse:collapse;width:100%;margin:16px 0;font-size:.95rem}
+th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{color:var(--muted);font-weight:500}
+td.mono,th.mono{font-family:'IBM Plex Mono',monospace}
+button,.btn{font:inherit;font-size:.9rem;background:var(--ink-3);color:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:7px 13px;cursor:pointer}
+button:hover{border-color:var(--accent)}
+button.primary{background:var(--accent);color:#111;border-color:var(--accent);font-weight:600}
+button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+input[type=range]{accent-color:var(--accent)}
+input[type=text],input[type=number],select{font:inherit;background:#0f1424;color:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:6px 10px}
+.controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:10px 0}
+.controls label{font-size:.9rem;color:var(--muted)}
+details{border:1px solid var(--line);border-radius:var(--radius);margin:10px 0;background:var(--ink-2)}
+summary{cursor:pointer;padding:12px 16px;font-weight:600;list-style:none}
+summary::before{content:"+";display:inline-block;width:1.2em;color:var(--accent)}
+details[open] summary::before{content:"–"}
+details>div{padding:0 16px 14px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;margin:16px 0}
+.card{perspective:900px;min-height:140px;cursor:pointer}
+.card .inner{position:relative;width:100%;height:100%;min-height:140px;transition:transform .45s;transform-style:preserve-3d}
+.card.flipped .inner{transform:rotateY(180deg)}
+.card .face{position:absolute;inset:0;padding:14px;border-radius:var(--radius);border:1px solid var(--line);background:var(--ink-2);backface-visibility:hidden;display:flex;align-items:center;justify-content:center;text-align:center;font-size:.95rem}
+.card .back{transform:rotateY(180deg);background:var(--ink-3);border-color:var(--accent);font-size:.88rem;line-height:1.45}
+.card .front{font-weight:600}
+@media (prefers-reduced-motion:reduce){.card .inner{transition:none}}
+.quiz .q{border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin:12px 0;background:var(--ink-2)}
+.quiz .q p{margin:0 0 10px;font-weight:600}
+.quiz .opts{display:grid;gap:8px}
+.quiz .opt{text-align:left;background:var(--ink);width:100%}
+.quiz .opt.right{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 15%,var(--ink))}
+.quiz .opt.wrong{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 15%,var(--ink))}
+.quiz .why{margin-top:10px;color:var(--muted);font-size:.93rem;display:none}
+.quiz .q.done .why{display:block}
+.quiz .score{margin-top:12px;font-weight:600}
+.stepper .stage{min-height:60px;background:#0f1424;border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin:10px 0}
+.stepper .idx{color:var(--muted);font-size:.85rem}
+.gantt{display:grid;gap:6px;margin:10px 0}
+.gantt .row{display:grid;grid-template-columns:60px 1fr;align-items:center;gap:8px;font-size:.85rem}
+.gantt .track{position:relative;height:26px;background:#0f1424;border-radius:4px;overflow:hidden}
+.gantt .seg{position:absolute;top:0;bottom:0;display:flex;align-items:center;justify-content:center;font-size:.75rem;color:#111;font-weight:600;border-right:1px solid rgba(0,0,0,.3)}
+.cells{display:grid;gap:4px;margin:10px 0}
+.cell{background:#0f1424;border:1px solid var(--line);border-radius:4px;padding:6px;text-align:center;font-family:'IBM Plex Mono',monospace;font-size:.8rem;min-height:36px;display:flex;align-items:center;justify-content:center}
+.cell.hit{background:color-mix(in srgb,var(--ok) 35%,#0f1424);border-color:var(--ok)}
+.cell.miss{background:color-mix(in srgb,var(--bad) 35%,#0f1424);border-color:var(--bad)}
+.cell.active{outline:2px solid var(--accent)}
+.cell.free{opacity:.45}
+.hl{background:color-mix(in srgb,var(--accent) 30%,transparent);padding:1px 5px;border-radius:3px}
+.k{color:var(--accent);font-weight:600}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media (max-width:760px){.two{grid-template-columns:1fr}.topbar{gap:10px}h1{font-size:2rem}}
+.nav-bottom{display:flex;justify-content:space-between;gap:16px;margin-top:56px;padding-top:20px;border-top:1px solid var(--line)}
+.nav-bottom a{text-decoration:none;padding:12px 16px;border:1px solid var(--line);border-radius:var(--radius);color:var(--paper)}
+.source{background:var(--ink-2);border-radius:var(--radius);padding:14px 18px;margin:22px 0;font-size:.95rem}
+.source b{color:var(--accent)}
+.objectives li{list-style:none;margin:6px 0}
+.objectives input{margin-right:8px;accent-color:var(--accent)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.85rem;color:var(--muted)}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:5px;vertical-align:-2px}
+.tag{display:inline-block;font-size:.75rem;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted);margin-right:6px}
+.log{font-family:'IBM Plex Mono',monospace;font-size:.82rem;background:#0f1424;border:1px solid var(--line);border-radius:var(--radius);padding:10px 12px;max-height:220px;overflow:auto;white-space:pre-wrap}
+@media print{body{background:#fff;color:#111}.topbar,.nav-bottom,button{display:none}.fig,.crux,details,.source{border-color:#bbb;background:#fff}pre{background:#f5f5f5;color:#111}}
+
+/* ---------- site chrome: sticky header + directory drawer ---------- */
+.topbar{position:sticky;top:0;z-index:30;display:flex;gap:14px;align-items:center;padding:10px 16px;background:color-mix(in srgb,var(--ink) 92%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);font-size:.9rem}
+.topbar .menu{display:flex;align-items:center;gap:8px;padding:8px 12px;font-size:1rem}
+.topbar .menu span{font-size:.85rem}
+.topbar .brand{color:var(--paper);text-decoration:none;font-weight:600;display:flex;align-items:center;gap:8px}
+.topbar .dot{width:10px;height:10px;border-radius:50%;background:var(--accent);display:inline-block}
+.topbar .links{display:flex;gap:16px;margin-left:8px}
+.topbar .links a{color:var(--muted);text-decoration:none}
+.topbar .links a:hover{color:var(--paper)}
+.topbar .where{margin-left:auto;color:var(--faint);font-variant-numeric:tabular-nums}
+.drawer{position:fixed;top:0;left:0;bottom:0;width:min(340px,88vw);background:var(--ink-2);border-right:1px solid var(--line);z-index:50;transform:translateX(-102%);transition:transform .25s;overflow-y:auto;padding:0 0 24px;box-shadow:0 0 40px rgba(0,0,0,.5)}
+.drawer-open .drawer{transform:none}
+.scrim{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:40;opacity:0;pointer-events:none;transition:opacity .2s}
+.drawer-open .scrim{opacity:1;pointer-events:auto}
+.drawer .dhead{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--ink-2)}
+.drawer .close,.notes-sheet .close{font-size:1.3rem;line-height:1;padding:4px 10px}
+.drawer .dgroup{padding:8px 0 4px}
+.drawer .dname{padding:8px 16px 4px;color:var(--accent);font-family:'Fraunces',serif;font-weight:700}
+.drawer .ditem{display:flex;gap:10px;align-items:center;padding:9px 16px;color:var(--paper);text-decoration:none;border-left:3px solid transparent;font-size:.92rem}
+.drawer .ditem:hover{background:var(--ink-3)}
+.drawer .ditem.cur{border-left-color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
+.drawer .ditem .n{color:var(--faint);min-width:1.4em;font-variant-numeric:tabular-nums}
+.drawer .ditem .t{flex:1;line-height:1.25}
+.drawer .ditem .t small{display:block;color:var(--faint);font-size:.75rem}
+.drawer .badges{display:flex;gap:6px;align-items:center}
+.drawer .badges i{font-style:normal;color:var(--accent)}
+.drawer .badges em{font-style:normal;font-size:.75rem;padding:1px 6px;border-radius:999px;background:var(--ink-3);color:var(--muted);font-variant-numeric:tabular-nums}
+.drawer .dfoot{padding:16px;color:var(--faint);font-size:.8rem}
+/* ---------- notes: floating button + bottom sheet ---------- */
+.notes-fab{position:fixed;right:16px;bottom:16px;z-index:35;display:flex;gap:8px;align-items:center;padding:12px 16px;border-radius:999px;background:var(--accent);color:#111;border:none;font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,.4)}
+.notes-sheet{position:fixed;left:0;right:0;bottom:0;z-index:45;background:var(--ink-2);border-top:1px solid var(--line);border-radius:14px 14px 0 0;transform:translateY(105%);transition:transform .25s;box-shadow:0 -10px 40px rgba(0,0,0,.5);max-width:900px;margin:0 auto;padding-bottom:env(safe-area-inset-bottom)}
+.notes-open .notes-sheet{transform:none}
+.notes-open .notes-fab{display:none}
+.notes-sheet .nhead{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line)}
+.notes-sheet .nhead b{flex:1;font-size:.95rem}
+.notes-sheet .nstatus{color:var(--faint);font-size:.8rem}
+.notes-sheet textarea{display:block;width:100%;min-height:36vh;max-height:60vh;resize:vertical;border:none;background:#0f1424;color:var(--paper);font:inherit;font-size:1rem;line-height:1.5;padding:14px 16px;outline:none}
+.notes-sheet .nfoot{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;font-size:.85rem;color:var(--muted)}
+/* ---------- wide widgets scroll sideways instead of breaking the page ---------- */
+.tw{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:16px 0}
+.tw table{margin:0;min-width:520px}
+.fig{overflow-x:auto}
+@media (prefers-reduced-motion:reduce){.drawer,.notes-sheet,.scrim{transition:none}}
+/* ---------- phones ---------- */
+@media (max-width:760px){
+  body{font-size:16px}
+  .wrap{padding:0 16px 110px}
+  h1{font-size:1.85rem} h2{font-size:1.45rem;margin-top:2rem} h3{font-size:1.15rem}
+  .lede{font-size:1.05rem}
+  .topbar{padding:8px 12px;gap:10px}
+  .topbar .links{display:none}
+  .topbar .menu span{display:none}
+  .topbar .menu{padding:8px 11px}
+  .fig{padding:12px 12px;margin:16px -4px;border-radius:8px}
+  .crux,.source{padding:12px 14px}
+  pre{font-size:.8em;padding:12px 12px}
+  button,.btn{padding:10px 14px;font-size:.92rem}
+  .controls{gap:8px}
+  .controls label{display:flex;align-items:center;gap:6px}
+  input[type=number]{max-width:96px}
+  .cards{grid-template-columns:1fr 1fr;gap:8px}
+  .card,.card .inner{min-height:120px}
+  .card .face{font-size:.88rem;padding:10px}
+  .cells{min-width:420px}
+  .quiz .opt{padding:12px 12px;line-height:1.35}
+  .nav-bottom{flex-direction:column}
+  .nav-bottom a{text-align:center}
+  .notes-fab span{display:none}
+  .notes-fab{padding:14px;right:12px;bottom:12px}
+  .notes-sheet textarea{min-height:44vh}
+  .stepper .stage{padding:12px}
+  .gantt .row{grid-template-columns:44px 1fr;font-size:.75rem}
+  /* lesson-specific grids collapse */
+  .lde,.il,.two,.cry,.flash,.dl,.fdt,.how,.cards.wide,.vm{grid-template-columns:1fr}
+  .map{grid-template-columns:1fr}
+  .net{grid-template-columns:1fr}.net .arrow{padding:0;transform:rotate(90deg)}
+  .phil{grid-template-columns:repeat(2,1fr)}
+  .jobs{max-width:100%}
+  .trace{min-width:620px}.tl{min-width:720px}.disk{min-width:560px}
+}
+@media (max-width:420px){.cards{grid-template-columns:1fr}}
+
+</style>
+<style>.disk{display:grid;grid-template-columns:repeat(16,1fr);gap:3px;font-family:'IBM Plex Mono',monospace;font-size:.72rem}.disk div{padding:6px 0;text-align:center;border-radius:3px;border:1px solid var(--line);background:#0f1424;cursor:pointer}.disk .S{background:#f47fa0;color:#111}.disk .i,.disk .d{background:#c9a8ff;color:#111}.disk .I{background:#e8b84a;color:#111}.disk .D{background:#28304f}.disk .on{outline:2px solid #fff}.disk .touched{box-shadow:inset 0 0 0 2px #6bcb77}.fdt{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;font-size:.85rem}.fdt div{background:#0f1424;border:1px solid var(--line);border-radius:6px;padding:10px}.fdt h4{margin:0 0 6px;font-family:inherit;font-size:.85rem;color:var(--muted)}.tl{display:grid;grid-template-columns:auto repeat(11,1fr);gap:3px;font-size:.7rem;font-family:'IBM Plex Mono',monospace}.tl div{text-align:center;padding:3px;border-radius:3px;min-height:20px}.tl .lab{text-align:right;color:var(--muted)}.tl .r{background:#5bc8f5;color:#111}.tl .w{background:#e8b84a;color:#111}</style></head>
+<body class="piece-pers"><div class="wrap">
+<header class="hero"><div class="chapters">OSTEP chapters 39–40 · Interlude: Files and Directories · File System Implementation</div>
+<h1>Files, directories, and a file system simple enough to hold in your head</h1>
+<p class="lede">The third abstraction: a file is just bytes with a number; a directory maps names to numbers. Chapter 39 is the UNIX API you already use, seen precisely. Chapter 40 builds "vsfs" — a very simple file system — and the two questions that explain every file system: what's on the disk, and what happens on open, read and write?</p></header>
+<div class="source"><b>Primary sources:</b> <a href="https://pages.cs.wisc.edu/~remzi/OSTEP/file-intro.pdf">Ch 39</a> (the book's longest), <a href="https://pages.cs.wisc.edu/~remzi/OSTEP/file-implementation.pdf">Ch 40</a>. Homework: <code>vsfs.py</code>. Use <code>strace</code> on <code>cat</code>, <code>cp</code>, <code>mv</code> and watch the syscalls yourself.</div>
+<h2>What you'll be able to do</h2><ul id="obj"></ul>
+
+<h2>Files and directories (chapter 39)</h2>
+<div class="crux"><b>Crux: how to manage a persistent device.</b> What are the APIs? What matters in the implementation?</div>
+<p>A <b>file</b> is a linear array of bytes with a low-level name, its <b>inode number</b>. A <b>directory</b> is a list of (human name, inode number) pairs — itself a file with an inode number — always containing <code>.</code> and <code>..</code>. Together they form a tree from <code>/</code>; the <b>pathname</b> is the human-readable name. File extensions are convention, not law.</p>
+<div class="fig"><div class="controls"><button class="primary" data-a="open">open / create</button><button data-a="rw">read / write / lseek</button><button data-a="share">fork, dup: shared offsets</button><button data-a="fsync">fsync, rename</button><button data-a="meta">stat, unlink, links</button><button data-a="dir">directories, permissions, mount</button></div><div id="api"></div></div>
+
+<h3>Three tables behind a descriptor</h3>
+<p>A <b>file descriptor</b> is a per-process integer indexing a per-process array; each entry points to an entry in the system-wide <b>open file table</b> (the <em>current offset</em>, read/write mode, a reference count, the underlying inode). Most entries are private, but <code>fork()</code> and <code>dup()</code> share them:</p>
+<div class="fig"><div class="fdt"><div><h4>Per-process descriptor tables</h4>parent: fd 3 → <b>entry A</b><br>child (after fork): fd 3 → <b>entry A</b><br>parent: fd 4 = dup(3) → <b>entry A</b></div><div><h4>Open file table (system-wide)</h4><b>entry A</b>: offset = 10, mode = read, refcnt = 3, inode → #12</div><div><h4>Inode table</h4>inode #12: size, blocks, permissions…</div></div><div class="cap">Because parent and child share entry A, when the child reads and advances the offset the parent's next read continues from there. Shells use exactly this to redirect a pipeline's output.</div></div>
+
+<h2>File system implementation: vsfs (chapter 40)</h2>
+<div class="crux"><b>Crux: how to implement a simple file system.</b> What structures go on disk, what do they track, and how are they accessed?</div>
+<p>The book's two questions for any file system: its <b>data structures</b> (arrays of blocks? trees?) and its <b>access methods</b> (what does <code>open</code>/<code>read</code>/<code>write</code> do to those structures?). A <em>mental model</em> beats memorizing code.</p>
+<h3>On-disk layout: click any block</h3>
+<div class="fig"><div class="disk" id="disk"></div><div class="legend" style="margin-top:8px"><span><i style="background:#f47fa0"></i>S superblock</span><span><i style="background:#c9a8ff"></i>i / d bitmaps</span><span><i style="background:#e8b84a"></i>I inode table</span><span><i style="background:#28304f"></i>D data</span></div><div class="cap" id="dmsg">64 blocks of 4 KB. Block 0: superblock. 1–2: inode and data bitmaps. 3–7: inode table (5 blocks × 16 inodes of 256 bytes = 80 inodes). 8–63: 56 data blocks.</div></div>
+<h3>The inode: how a file's blocks are found</h3>
+<p>Inode <em>i</em> lives at <code>inodeStartAddr + i × sizeof(inode)</code>; the disk reads the sector containing it (inode 32 → byte 20 KB → sector 40 with 512-byte sectors). It holds type, size, block count, permissions, owner, times, and — the interesting part — <b>pointers</b> to data blocks. vsfs uses the ext2/ext3 scheme: <b>12 direct pointers</b>, one <b>indirect</b> (a block of pointers), one <b>double indirect</b>, one <b>triple indirect</b>. It's an imbalanced tree biased toward small files — because, as the measurements the book cites show, most files are small (~2 KB), most bytes are in big files, and directories are tiny.</p>
+<div class="fig"><div class="controls"><label>block size <select id="bs"><option value="4096">4 KB</option><option value="1024">1 KB</option><option value="512">512 B</option></select></label><label>pointer size <select id="ps"><option>4</option><option>8</option></select></label></div><div id="ino" class="res" style="font-family:'IBM Plex Mono',monospace;font-size:.88rem;line-height:1.7"></div><div class="cap">Alternatives: <b>extents</b> (pointer + length; compact but less flexible — ext4, XFS), <b>linked lists</b> with a table of next-pointers (the FAT file system), and <b>directories as hash tables or B-trees</b> (XFS) instead of the simple list vsfs uses.</div></div>
+<h3>Directories, free space</h3>
+<p>A directory's data block is a list of entries: <code>(inum, reclen, strlen, name)</code> — <code>reclen</code> lets a deleted entry (inum 0) be reused. <b>Free space</b>: the inode and data bitmaps (block 1 and 2); on create, scan for a free inode; on write, find free data blocks — ext2/3 tries to find a <em>run</em> of free blocks for contiguity (<b>pre-allocation</b>).</p>
+<h3>Access paths: what actually hits the disk</h3>
+<p>Reading <code>/foo/bar</code> (three blocks) with an empty cache: <b>traversal</b> starts at the root inode (well-known number 2) and alternates inode → directory data → inode… Each <code>read()</code> touches bar's inode (to find the block), the data block, and writes the inode (access time). Step through the book's Figure 40.3 and 40.4:</p>
+<div class="fig"><div class="controls"><button class="primary" data-t="read">open + read 3 blocks</button><button data-t="create">create + write 3 blocks</button></div><div id="tl" class="tl"></div><div class="cap" id="tlmsg"></div></div>
+<div class="crux"><b>Crux: how to reduce file system I/O costs.</b> Even <code>open</code> is dozens of I/Os on a deep path. Answer: <b>caching</b>. Early systems set aside a fixed 10% of memory (a <em>static</em> partition); modern ones use a <b>unified page cache</b> shared with virtual memory (<em>dynamic</em> partitioning). Writes are <b>buffered</b> in memory for 5–30 s so they can be batched, scheduled, or elided entirely (a file created and deleted before the flush never touches disk) — at the risk of losing data on a crash. Databases and careful apps use <code>fsync()</code>, direct I/O, or raw disk to opt out.</div>
+
+<h2>Flash cards</h2><div id="cards"></div>
+<h2>Retrieval practice</h2><div id="quiz"></div>
+<p class="tip">Want to trace an <code>open("/a/b/c/d")</code> I/O by I/O, or compute max file size for a different inode design? Ask me in the chat.</p>
+</div>
+<script>
+/* OSTEP course — shared components. Every page loads this file (inlined by build.py). */
+window.OS = (function () {
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+  /* ---------- persistent storage (localStorage on a real site; in-memory fallback in sandboxes) ---------- */
+  const mem = {};
+  const store = {
+    get(k) { try { const v = localStorage.getItem('ostep:' + k); return v === null ? (mem[k] ?? null) : JSON.parse(v); } catch (e) { return mem[k] ?? null; } },
+    set(k, v) { mem[k] = v; try { localStorage.setItem('ostep:' + k, JSON.stringify(v)); } catch (e) {} },
+    del(k) { delete mem[k]; try { localStorage.removeItem('ostep:' + k); } catch (e) {} },
+    keys(prefix) { const out = new Set(Object.keys(mem).filter(k => k.startsWith(prefix))); try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith('ostep:' + prefix)) out.add(k.slice(6)); } } catch (e) {} return [...out]; },
+    available() { try { localStorage.setItem('ostep:test', '1'); localStorage.removeItem('ostep:test'); return true; } catch (e) { return false; } }
+  };
+
+  /* ---------- course structure ---------- */
+  const PIECES = [
+    ['intro', 'Introduction', [['0001-three-easy-pieces', 'Three easy pieces', 'ch 1–2']]],
+    ['virt', 'Virtualization', [
+      ['0002-processes', 'Processes & the process API', 'ch 4–5'],
+      ['0003-limited-direct-execution', 'Limited direct execution', 'ch 6'],
+      ['0004-scheduling', 'Scheduling', 'ch 7–10'],
+      ['0005-address-spaces', 'Address spaces & segments', 'ch 13–16'],
+      ['0006-paging-and-tlbs', 'Paging & TLBs', 'ch 17–20'],
+      ['0007-swapping', 'Swapping & policies', 'ch 21–23']]],
+    ['conc', 'Concurrency', [
+      ['0008-threads-and-locks', 'Threads & locks', 'ch 26–28'],
+      ['0009-cvs-and-semaphores', 'CVs & semaphores', 'ch 29–31'],
+      ['0010-bugs-and-events', 'Bugs & events', 'ch 32–33']]],
+    ['pers', 'Persistence', [
+      ['0011-devices-disks-raid', 'Devices, disks, RAID', 'ch 36–38'],
+      ['0012-files-and-vsfs', 'Files & a simple FS', 'ch 39–40'],
+      ['0013-ffs-journaling-lfs', 'FFS, journaling, LFS', 'ch 41–43'],
+      ['0014-ssd-and-integrity', 'SSDs & integrity', 'ch 44–45'],
+      ['0015-distributed-nfs-afs', 'Distributed FS', 'ch 48–50']]],
+    ['sec', 'Security', [['0016-security-and-vmms', 'Security & VMMs', 'ch 53–57, App B']]]
+  ];
+  const LESSONS = PIECES.flatMap(p => p[2].map(l => [l[0], l[1], p[0], l[2]]));
+  const title = id => (LESSONS.find(l => l[0] === id) || [])[1] || id;
+  let pageId = null, root = '../';
+
+  /* ---------- chrome: sticky header, slide-out directory, notes drawer, prev/next ---------- */
+  function chrome(id, rootPath) {
+    pageId = id; root = rootPath === undefined ? '../' : rootPath;
+    const i = LESSONS.findIndex(l => l[0] === id);
+    const isLesson = i >= 0;
+    const top = document.createElement('header'); top.className = 'topbar';
+    top.innerHTML = `<button class="menu" aria-label="Open directory" aria-expanded="false">☰<span>Directory</span></button>
+      <a class="brand" href="${root}index.html"><span class="dot"></span>OSTEP course</a>
+      <nav class="links"><a href="${root}reference/glossary.html">Glossary</a><a href="${root}reference/cheatsheets.html">Cheat sheets</a><a href="${root}notes.html">My notes</a></nav>
+      ${isLesson ? `<span class="where">${i+1} / ${LESSONS.length}</span>` : ''}`;
+    document.body.prepend(top);
+    // directory drawer
+    const drawer = document.createElement('aside'); drawer.className = 'drawer'; drawer.setAttribute('aria-label', 'Course directory');
+    const scores = Object.fromEntries(LESSONS.map(l => [l[0], store.get('quiz:' + l[0])]));
+    const notes = new Set(store.keys('notes:').map(k => k.slice(6)).filter(k => (store.get('notes:' + k) || {}).text));
+    drawer.innerHTML = `<div class="dhead"><b>Directory</b><button class="close" aria-label="Close">×</button></div>
+      <a class="ditem ${id === 'index' ? 'cur' : ''}" href="${root}index.html">Course hub</a>
+      ${PIECES.map(([cls, name, ls]) => `<div class="dgroup piece-${cls}"><div class="dname">${name}</div>${ls.map(l => {
+        const n = LESSONS.findIndex(x => x[0] === l[0]) + 1, s = scores[l[0]];
+        return `<a class="ditem ${l[0] === id ? 'cur' : ''}" href="${root}lessons/${l[0]}.html"><span class="n">${n}</span><span class="t">${l[1]}<small>${l[3]}</small></span><span class="badges">${notes.has(l[0]) ? '<i title="you have notes">✎</i>' : ''}${s ? `<em title="best quiz score">${s.score}/${s.total}</em>` : ''}</span></a>`; }).join('')}</div>`).join('')}
+      <div class="dgroup piece-intro"><div class="dname">Reference</div>
+        <a class="ditem ${id === 'glossary' ? 'cur' : ''}" href="${root}reference/glossary.html"><span class="t">Glossary</span></a>
+        <a class="ditem ${id === 'cheatsheets' ? 'cur' : ''}" href="${root}reference/cheatsheets.html"><span class="t">Cheat sheets</span></a>
+        <a class="ditem ${id === 'notes' ? 'cur' : ''}" href="${root}notes.html"><span class="t">My notes &amp; progress</span></a></div>
+      <div class="dfoot">${store.available() ? 'Notes and scores are saved in this browser.' : 'Notes and scores are kept for this session only (storage unavailable here).'}</div>`;
+    document.body.append(drawer);
+    const scrim = document.createElement('div'); scrim.className = 'scrim'; document.body.append(scrim);
+    const open = o => { document.body.classList.toggle('drawer-open', o); top.querySelector('.menu').setAttribute('aria-expanded', o); if (o) drawer.querySelector('.cur, .ditem')?.focus(); };
+    top.querySelector('.menu').onclick = () => open(!document.body.classList.contains('drawer-open'));
+    drawer.querySelector('.close').onclick = () => open(false); scrim.onclick = () => open(false);
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') { open(false); notesOpen(false); } });
+    // prev/next for lessons
+    if (isLesson) {
+      const nav = document.createElement('div'); nav.className = 'nav-bottom';
+      const prev = LESSONS[i-1], next = LESSONS[i+1];
+      nav.innerHTML = (prev ? `<a href="${prev[0]}.html">← ${i}. ${prev[1]}</a>` : '<span></span>') +
+                      (next ? `<a href="${next[0]}.html">${i+2}. ${next[1]} →</a>` : `<a href="${root}index.html">Back to course hub →</a>`);
+      document.querySelector('.wrap').append(nav);
+    }
+    // wrap tables so they scroll sideways on phones
+    document.querySelectorAll('.wrap table').forEach(t => { if (t.parentElement.classList.contains('tw')) return; const w = document.createElement('div'); w.className = 'tw'; t.replaceWith(w); w.append(t); });
+    // notes drawer (every page except the notes page itself)
+    if (id !== 'notes') notesUI(id, isLesson ? `${i+1}. ${LESSONS[i][1]}` : (document.title.split(' — ')[0]));
+  }
+
+  /* ---------- notes: floating button + bottom sheet, autosaved ---------- */
+  let notesOpen = () => {};
+  function notesUI(id, label) {
+    const btn = document.createElement('button'); btn.className = 'notes-fab'; btn.innerHTML = '✎ <span>Notes</span>'; btn.setAttribute('aria-label', 'Open notes');
+    const sheet = document.createElement('section'); sheet.className = 'notes-sheet'; sheet.setAttribute('aria-label', 'Notes for this page');
+    const saved = store.get('notes:' + id) || {};
+    sheet.innerHTML = `<div class="nhead"><b>Notes · ${esc(label)}</b><span class="nstatus"></span><button class="close" aria-label="Close notes">×</button></div>
+      <textarea placeholder="Your notes for this page. Markdown is fine. Saved automatically.">${esc(saved.text || '')}</textarea>
+      <div class="nfoot"><span class="ncount"></span><a href="${root}notes.html">All notes &amp; export →</a></div>`;
+    document.body.append(btn, sheet);
+    const ta = sheet.querySelector('textarea'), status = sheet.querySelector('.nstatus'), count = sheet.querySelector('.ncount');
+    const upd = () => { count.textContent = ta.value.trim() ? ta.value.trim().split(/\s+/).length + ' words' : ''; };
+    let t; ta.addEventListener('input', () => { status.textContent = 'saving…'; clearTimeout(t); t = setTimeout(() => { store.set('notes:' + id, { text: ta.value, title: label, updated: new Date().toISOString() }); status.textContent = 'saved'; upd(); }, 400); });
+    upd();
+    notesOpen = o => { document.body.classList.toggle('notes-open', o); if (o) ta.focus(); };
+    btn.onclick = () => notesOpen(!document.body.classList.contains('notes-open'));
+    sheet.querySelector('.close').onclick = () => notesOpen(false);
+  }
+
+  /* ---------- quiz: immediate feedback; best score persisted ---------- */
+  function quiz(el, qs) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('quiz');
+    let score = 0, answered = 0;
+    const best = pageId ? store.get('quiz:' + pageId) : null;
+    el.innerHTML = qs.map((q, i) => `<div class="q" data-i="${i}"><p>${i+1}. ${q.q}</p>
+      <div class="opts">${q.o.map((o, j) => `<button class="opt" data-j="${j}">${esc(o)}</button>`).join('')}</div>
+      <div class="why">${q.why}</div></div>`).join('') + `<div class="score">${best ? `Best so far: ${best.score}/${best.total} (${new Date(best.date).toLocaleDateString()})` : ''}</div>`;
+    el.querySelectorAll('.q').forEach(qd => {
+      const q = qs[+qd.dataset.i];
+      qd.querySelectorAll('.opt').forEach(b => b.addEventListener('click', () => {
+        if (qd.classList.contains('done')) return;
+        qd.classList.add('done'); answered++;
+        const j = +b.dataset.j;
+        if (j === q.a) { b.classList.add('right'); score++; }
+        else { b.classList.add('wrong'); qd.querySelectorAll('.opt')[q.a].classList.add('right'); }
+        const s = el.querySelector('.score');
+        s.textContent = `${score} / ${answered} correct`;
+        if (answered === qs.length) {
+          s.textContent += score === qs.length ? ' — all of them. Retry from memory in two days.' : ' — reread the sections you missed, then retry.';
+          if (pageId && (!best || score >= best.score)) store.set('quiz:' + pageId, { score, total: qs.length, date: new Date().toISOString() });
+        }
+      }));
+    });
+  }
+
+  /* ---------- flip cards ---------- */
+  function cards(el, list) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('cards');
+    el.innerHTML = list.map(([f, b]) => `<div class="card" tabindex="0" role="button" aria-label="flip card"><div class="inner"><div class="face front">${f}</div><div class="face back">${b}</div></div></div>`).join('');
+    el.querySelectorAll('.card').forEach(c => {
+      const t = () => c.classList.toggle('flipped');
+      c.addEventListener('click', t);
+      c.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); t(); } });
+    });
+  }
+
+  /* ---------- stepper ---------- */
+  function stepper(el, steps, render) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('stepper');
+    let i = 0;
+    el.innerHTML = `<div class="controls"><button class="prev">← Back</button><button class="next primary">Next step →</button><span class="idx"></span></div><div class="stage"></div><div class="extra"></div>`;
+    const stage = el.querySelector('.stage'), idx = el.querySelector('.idx'), extra = el.querySelector('.extra');
+    const draw = () => { stage.innerHTML = steps[i]; idx.textContent = `step ${i+1} / ${steps.length}`; if (render) render(i, extra); };
+    el.querySelector('.prev').onclick = () => { i = Math.max(0, i-1); draw(); };
+    el.querySelector('.next').onclick = () => { i = Math.min(steps.length-1, i+1); draw(); };
+    draw();
+  }
+
+  /* ---------- gantt ---------- */
+  function gantt(el, rows, total, colors) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('gantt');
+    const pal = colors || ['#e8b84a','#5bc8f5','#6bcb77','#f47fa0','#c9a8ff','#ffb86b'];
+    el.innerHTML = rows.map((r, i) => `<div class="row"><span>${esc(r.name)}</span><div class="track">${r.segs.map(s =>
+      `<div class="seg" style="left:${100*s.start/total}%;width:${100*(s.end-s.start)/total}%;background:${pal[i%pal.length]}" title="${s.start}–${s.end}">${(s.end-s.start)/total > .06 ? (s.end-s.start) : ''}</div>`).join('')}</div></div>`).join('') +
+      `<div class="row"><span></span><div style="display:flex;justify-content:space-between;font-size:.75rem;color:var(--muted)"><span>0</span><span>${total}</span></div></div>`;
+  }
+
+  /* ---------- objectives checklist (persisted) ---------- */
+  function objectives(el, items) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('objectives');
+    const saved = (pageId && store.get('obj:' + pageId)) || [];
+    el.innerHTML = items.map((t, i) => `<li><label><input type="checkbox" data-i="${i}" ${saved.includes(i) ? 'checked' : ''}>${t}</label></li>`).join('');
+    el.querySelectorAll('input').forEach(c => c.onchange = () => { const s = [...el.querySelectorAll('input:checked')].map(x => +x.dataset.i); if (pageId) store.set('obj:' + pageId, s); });
+  }
+
+  return { chrome, quiz, cards, stepper, gantt, objectives, esc, store, LESSONS, PIECES, title };
+})();
+
+</script>
+<script>
+OS.chrome('0012-files-and-vsfs');
+OS.objectives('obj',['Distinguish file, directory, inode number, pathname, file descriptor, and the open file table.','Explain what fork() and dup() share, and why fsync() (sometimes of the directory too) is needed for durability.','Contrast hard links and symbolic links and explain how unlink() relates to the link count.','Draw vsfs\'s on-disk layout and compute maximum file size from the inode\'s pointer scheme.','List the I/Os for opening, reading, and creating a file, and explain how caching and write buffering cut them.']);
+const API={
+open:`<pre><code>int fd = open("foo", O_CREAT | O_WRONLY | O_TRUNC, S_IRUSR | S_IWUSR);   // create if needed, write-only, truncate; owner rw
+// creat("foo", ...) is the older shorthand — the missing 'e' Ken Thompson said he would fix</code></pre><p><code>open()</code> returns a <b>file descriptor</b>: a small per-process integer, a capability to read or write the file. Every process starts with 0 (stdin), 1 (stdout), 2 (stderr), so your first open usually returns 3. <code>strace cat foo</code> shows exactly this: <code>open("foo", O_RDONLY|O_LARGEFILE) = 3</code>, then <code>read(3, "hello\\n", 4096) = 6</code>, <code>write(1, "hello\\n", 6)</code>, <code>read(3, "", 4096) = 0</code>, <code>close(3)</code>.</p>`,
+rw:`<pre><code>ssize_t read(int fd, void *buf, size_t count);    // returns bytes read; 0 at end of file
+ssize_t write(int fd, const void *buf, size_t count);
+off_t  lseek(int fd, off_t offset, int whence);   // SEEK_SET: offset; SEEK_CUR: current+offset; SEEK_END: size+offset</code></pre><p>Each open file has a <b>current offset</b>, advanced implicitly by read/write or set explicitly by <code>lseek()</code>. <code>lseek</code> only changes a variable; it does <em>not</em> move the disk arm (a disk "seek" is a different thing entirely). Reading a 300-byte file after <code>lseek(fd, 200, SEEK_SET)</code> returns 100 bytes and leaves the offset at 300.</p>`,
+share:`<pre><code>int fd = open("file.txt", O_RDONLY);
+int rc = fork();
+if (rc == 0) { rc = lseek(fd, 10, SEEK_SET); printf("child: offset %d\\n", rc); }
+else { wait(NULL); printf("parent: offset %d\\n", (int) lseek(fd, 0, SEEK_CUR)); }
+// output: child: offset 10 / parent: offset 10 — they share the open-file-table entry (refcount 2)</code></pre><p><code>dup()</code> (and <code>dup2</code>/<code>dup3</code>) makes a second descriptor referring to the <em>same</em> entry — the shell's redirection tool (<code>ls &gt; out</code>). Otherwise entries are independent: two processes opening the same file get separate offsets.</p>`,
+fsync:`<pre><code>int fd = open("foo", O_CREAT|O_WRONLY|O_TRUNC, S_IRUSR|S_IWUSR);
+int rc = write(fd, buffer, size);  assert(rc == size);
+rc = fsync(fd);  assert(rc == 0);   // force all dirty data of this file to disk before returning
+// sometimes you must also fsync() the directory containing foo, or the new file's entry may be lost</code></pre><p>The FS buffers writes in memory for seconds (see caching below); <code>fsync()</code> is the escape hatch for databases and anything that needs durability now. <code>rename(old, new)</code> is <b>atomic</b> with respect to crashes — the file has either the old or the new name — which is how editors save safely: write <code>foo.txt.tmp</code>, <code>fsync</code>, then <code>rename</code> it over <code>foo.txt</code>.</p>`,
+meta:`<pre><code>struct stat { dev_t st_dev; ino_t st_ino; mode_t st_mode; nlink_t st_nlink; uid_t st_uid; gid_t st_gid;
+              off_t st_size; blksize_t st_blksize; blkcnt_t st_blocks; time_t st_atime, st_mtime, st_ctime; };</code></pre><p><code>stat()</code>/<code>fstat()</code> return the <b>inode's</b> metadata. <code>link(old, new)</code> makes a second <em>name</em> for the same inode (<code>ls -i</code> shows both names with one number; the link count becomes 2). That's why removal is <code>unlink()</code>: it removes a name and decrements the count; the inode and data are freed only when it hits zero. Hard links can't cross file systems or point at directories (cycles). A <b>symbolic link</b> (<code>ln -s</code>) is a separate file of type <code>l</code> whose contents are the pathname of the target — it can <b>dangle</b> if the target is removed.</p>`,
+dir:`<pre><code>mkdir("foo", 0777);                          // new dir contains only "." and ".."
+DIR *dp = opendir("."); struct dirent *d;
+while ((d = readdir(dp)) != NULL) printf("%lu %s\\n", (unsigned long) d->d_ino, d->d_name);
+rmdir("foo");                                // only if empty
+chmod("foo.txt", 0600);                      // -rw------- : owner, group, other × read/write/execute
+mount -t ext3 /dev/sda1 /home/users          // glue a file system's tree onto a directory of the existing tree</code></pre><p>You can never write a directory's bytes directly; its format belongs to the FS. Execute permission on a directory means you may <code>cd</code> into it. Beyond the 9 permission bits, AFS uses per-directory <b>access control lists</b> (e.g. <code>system:anyuser rl</code>). <code>mkfs</code> writes an empty file system onto a partition; <code>mount</code> makes many file systems appear as one tree (<code>/proc</code>, <code>/dev</code>, <code>/tmp</code> are typically different file systems).</p>`};
+const ad=document.getElementById('api');document.querySelectorAll('[data-a]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-a]').forEach(x=>x.classList.remove('primary'));b.classList.add('primary');ad.innerHTML=API[b.dataset.a];});ad.innerHTML=API.open;
+/* disk */
+const layout=[];for(let i=0;i<64;i++)layout.push(i===0?'S':i===1?'i':i===2?'d':i<8?'I':'D');
+const D=document.getElementById('disk');D.innerHTML=layout.map((c,i)=>`<div class="${c}" data-i="${i}">${c}${i}</div>`).join('');
+const info={S:'Superblock: how many inodes and data blocks, where the inode table starts (block 3), a magic number identifying the FS type. Read first at mount.',i:'Inode bitmap: one bit per inode (only 80 used of the 32K bits a 4 KB block could track). 0 = free, 1 = in use.',d:'Data bitmap: one bit per data block (56 used). Consulted when a write needs a new block.',I:'Inode table: this block holds 16 inodes (256 B each). Inode i is at 12 KB + i×256; e.g. inode 32 → 20 KB → sector 40. Each inode: type, size, blocks, permissions, uid/gid, times, and 15 block pointers.',D:'Data block: 4 KB of user data, or a directory\'s entries, or an indirect block of pointers.'};
+D.querySelectorAll('div').forEach(x=>x.onclick=()=>{D.querySelectorAll('.on').forEach(y=>y.classList.remove('on'));x.classList.add('on');document.getElementById('dmsg').textContent=`Block ${x.dataset.i}: `+info[layout[+x.dataset.i]];});
+/* inode calc */
+function ino(){const bs=+document.getElementById('bs').value,ps=+document.getElementById('ps').value,n=bs/ps;const direct=12*bs,ind=n*bs,dbl=n*n*bs,tri=n*n*n*bs;const fmt=b=>b>=2**40?(b/2**40).toFixed(1)+' TB':b>=2**30?(b/2**30).toFixed(2)+' GB':b>=2**20?(b/2**20).toFixed(1)+' MB':(b/1024)+' KB';document.getElementById('ino').innerHTML=`pointers per block: ${bs} / ${ps} = <b>${n}</b><br>12 direct pointers → ${fmt(direct)}<br>+ indirect (${n} pointers) → ${fmt(ind)} more (cumulative ${fmt(direct+ind)}${bs===4096&&ps===4?' — the book\'s "just over 4 MB"':''})<br>+ double indirect (${n}²) → ${fmt(dbl)} more (cumulative ${fmt(direct+ind+dbl)}${bs===4096&&ps===4?' — "just over 4 GB"':''})<br>+ triple indirect (${n}³) → ${fmt(tri)} more (max ≈ <b>${fmt(direct+ind+dbl+tri)}</b>)<br>a 20 KB file needs only direct pointers; anything under ${fmt(direct)} costs one inode read to locate any block.`;}
+document.getElementById('bs').onchange=ino;document.getElementById('ps').onchange=ino;ino();
+/* timelines */
+const cols=['data bitmap','inode bitmap','root inode','foo inode','bar inode','root data','foo data','bar data[0]','bar data[1]','bar data[2]'];
+const READ=[['open(bar)',[[2,'r'],[5,'r'],[3,'r'],[6,'r'],[4,'r']]],['read()',[[4,'r'],[7,'r'],[4,'w']]],['read()',[[4,'r'],[8,'r'],[4,'w']]],['read()',[[4,'r'],[9,'r'],[4,'w']]]];
+const CREATE=[['create(/foo/bar)',[[2,'r'],[5,'r'],[3,'r'],[6,'r'],[1,'r'],[1,'w'],[6,'w'],[4,'r'],[4,'w'],[3,'w']]],['write()',[[4,'r'],[0,'r'],[0,'w'],[7,'w'],[4,'w']]],['write()',[[4,'r'],[0,'r'],[0,'w'],[8,'w'],[4,'w']]],['write()',[[4,'r'],[0,'r'],[0,'w'],[9,'w'],[4,'w']]]];
+function tl(kind){const data=kind==='read'?READ:CREATE;const steps=[];data.forEach(([op,ios])=>ios.forEach((io,k)=>steps.push({op:k===0?op:'',col:io[0],t:io[1]})));const el=document.getElementById('tl');el.style.gridTemplateColumns=`auto repeat(${steps.length},1fr)`;let h=`<div class="lab"></div>`+steps.map(s=>`<div class="lab" style="text-align:center;font-size:.6rem;color:var(--muted)">${s.op.replace('(',' (')}</div>`).join('');cols.forEach((c,ci)=>{h+=`<div class="lab">${c}</div>`+steps.map(s=>`<div class="${s.col===ci?s.t:''}">${s.col===ci?(s.t==='r'?'read':'write'):''}</div>`).join('');});el.innerHTML=h;document.getElementById('tlmsg').innerHTML=kind==='read'?'Figure 40.3. Open walks root inode → root data (find foo) → foo inode → foo data (find bar) → bar inode, checking permissions along the way. Each read: read bar\'s inode for the block address, read the block, write the inode (last-access time). The bitmaps are never touched on a read.':'Figure 40.4. Creating bar: the traversal, then read+write the inode bitmap (allocate), write foo\'s directory data (new entry), read+write bar\'s new inode (initialize), write foo\'s inode (mtime). <b>10 I/Os</b> before a byte is written. Each write of a new block: read the inode, read+write the data bitmap (allocate), write the data block, write the inode — 5 I/Os per block.';}
+document.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-t]').forEach(x=>x.classList.remove('primary'));b.classList.add('primary');tl(b.dataset.t);});tl('read');
+OS.cards('cards',[['Inode number','The low-level name of a file: an index into the inode table. Shown by ls -i.'],['File descriptor','Per-process integer naming an entry in the open file table (offset, mode, inode). 0/1/2 are stdin/out/err.'],['Open file table','System-wide table of open-file entries; shared between processes via fork() and within a process via dup().'],['Hard link','A second directory entry for the same inode; unlink() removes names and frees the inode at link count 0.'],['Symbolic link','A file whose content is a pathname; can cross file systems and dangle when its target disappears.'],['fsync()','Forces a file\'s buffered writes to persistent storage before returning; may need to be applied to the directory too.'],['Superblock','First block: file-system parameters (counts, inode-table start, magic number), read at mount.'],['Multi-level index','Inode with 12 direct pointers plus indirect, double- and triple-indirect blocks; biased toward small files.'],['reclen','Directory entry record length; lets a deleted entry\'s space be reused by a later, longer name.'],['Write buffering','Delaying writes 5–30 s in memory to batch, schedule, or avoid them; traded against durability.']]);
+OS.quiz('quiz',[
+{q:'A file is opened, then the process forks. The child lseeks to 10. Where is the parent\'s offset?',o:['still at 0','also at 10','undefined','at end of file'],a:1,why:'fork() shares the open-file-table entry (refcount 2), and the offset lives in that entry. The book\'s example prints "child: offset 10 / parent: offset 10".'},
+{q:'Why is the removal syscall named unlink() rather than delete()?',o:['it only marks the inode as deleted','it removes one name and drops the link count','it unlinks the file from the page cache','it detaches the file from its directory inode'],a:1,why:'A file can have several hard links (names). unlink() removes one name; the inode and blocks are freed only when the link count reaches zero.'},
+{q:'In vsfs (4 KB blocks, 4-byte pointers, 12 direct + 1 indirect), the largest file using only direct and indirect pointers is about:',o:['48 KB','just over 4 MB','just over 4 GB','1 MB'],a:1,why:'12 × 4 KB = 48 KB direct, plus 1024 pointers × 4 KB = 4 MB via the indirect block. The double indirect extends it to just over 4 GB.'},
+{q:'Which structure does a read() of an existing file never touch?',o:['the file\'s inode','the data bitmap','the data block','the directory data'],a:1,why:'Reads only need the inode (to find blocks) and the blocks; allocation bitmaps are consulted on writes that need new blocks.'},
+{q:'How many I/Os does the book count for creating /foo/bar (before any data is written)?',o:['four','ten','two','sixteen'],a:1,why:'Traversal (5 reads), inode bitmap read+write, foo data write, bar inode read+write, foo inode write = 10.'},
+{q:'What does rename() guarantee that makes it useful for safe saves?',o:['it always flushes the page cache','it is atomic with respect to crashes','it copies the file to a backup name','it preserves the original inode number'],a:1,why:'After a crash the file has either the old or the new name, never neither. Editors write a temp file, fsync it, then rename over the original.'},
+{q:'A "unified page cache" means:',o:['each file gets one cached page','VM and file pages share the same memory pool','the cache is fixed at 10% of RAM','all writes bypass the cache'],a:1,why:'Modern systems dynamically partition memory between virtual-memory pages and file-system pages rather than reserving a static fraction for the file cache.'}]);
+</script></body></html>

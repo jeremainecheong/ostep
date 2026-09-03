@@ -1,0 +1,468 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>6 · Paging & TLBs — OSTEP course</title><style>
+/* OSTEP course — shared stylesheet. Three pieces, three hues. */
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+:root{
+  --ink:#151b2f; --ink-2:#1e2540; --ink-3:#28304f; --line:#3a4368;
+  --paper:#eef0f7; --muted:#a9b1cf; --faint:#6e779a;
+  --virt:#e8b84a; --conc:#5bc8f5; --pers:#6bcb77; --sec:#f47fa0; --intro:#c9a8ff;
+  --ok:#6bcb77; --bad:#ff6b6b;
+  --accent:var(--virt);
+  --radius:6px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--ink);color:var(--paper);font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:17px;line-height:1.6}
+a{color:var(--accent)}
+code,pre,kbd,.mono{font-family:'IBM Plex Mono',ui-monospace,monospace}
+code{background:var(--ink-3);padding:1px 5px;border-radius:4px;font-size:.9em}
+pre{background:#0f1424;border:1px solid var(--line);border-left:4px solid var(--accent);padding:14px 16px;overflow:auto;border-radius:var(--radius);font-size:.86em;line-height:1.5}
+pre code{background:none;padding:0;font-size:inherit}
+h1,h2,h3,h4{font-family:'Fraunces',Georgia,serif;font-weight:700;line-height:1.15;margin:0 0 .4em}
+h1{font-size:2.6rem;letter-spacing:-.01em}
+h2{font-size:1.9rem;margin-top:2.6rem;padding-top:1.2rem;border-top:1px solid var(--line)}
+h3{font-size:1.3rem;margin-top:1.8rem;color:var(--accent)}
+h4{font-size:1.05rem;margin-top:1.2rem}
+p,li{max-width:72ch}
+.wrap{max-width:1100px;margin:0 auto;padding:0 28px 96px}
+.hero{padding:44px 0 16px}
+.hero .chapters{color:var(--muted);font-size:.95rem;margin-bottom:6px}
+.lede{font-size:1.2rem;color:var(--muted);max-width:66ch}
+.piece-virt{--accent:var(--virt)} .piece-conc{--accent:var(--conc)} .piece-pers{--accent:var(--pers)} .piece-sec{--accent:var(--sec)} .piece-intro{--accent:var(--intro)}
+.fig{background:var(--ink-2);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;margin:22px 0}
+.fig figcaption,.cap{color:var(--muted);font-size:.9rem;margin-top:10px}
+.fig svg{max-width:100%;height:auto;display:block}
+svg text{font-family:'IBM Plex Sans',sans-serif}
+svg .mono{font-family:'IBM Plex Mono',monospace}
+.crux{border:1px solid var(--accent);border-radius:var(--radius);padding:14px 18px;margin:22px 0;background:color-mix(in srgb,var(--accent) 8%,transparent)}
+.crux b{color:var(--accent)}
+.tip{border-left:4px solid var(--muted);padding:6px 16px;margin:18px 0;color:var(--muted)}
+.tip b{color:var(--paper)}
+table{border-collapse:collapse;width:100%;margin:16px 0;font-size:.95rem}
+th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{color:var(--muted);font-weight:500}
+td.mono,th.mono{font-family:'IBM Plex Mono',monospace}
+button,.btn{font:inherit;font-size:.9rem;background:var(--ink-3);color:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:7px 13px;cursor:pointer}
+button:hover{border-color:var(--accent)}
+button.primary{background:var(--accent);color:#111;border-color:var(--accent);font-weight:600}
+button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+input[type=range]{accent-color:var(--accent)}
+input[type=text],input[type=number],select{font:inherit;background:#0f1424;color:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:6px 10px}
+.controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:10px 0}
+.controls label{font-size:.9rem;color:var(--muted)}
+details{border:1px solid var(--line);border-radius:var(--radius);margin:10px 0;background:var(--ink-2)}
+summary{cursor:pointer;padding:12px 16px;font-weight:600;list-style:none}
+summary::before{content:"+";display:inline-block;width:1.2em;color:var(--accent)}
+details[open] summary::before{content:"–"}
+details>div{padding:0 16px 14px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;margin:16px 0}
+.card{perspective:900px;min-height:140px;cursor:pointer}
+.card .inner{position:relative;width:100%;height:100%;min-height:140px;transition:transform .45s;transform-style:preserve-3d}
+.card.flipped .inner{transform:rotateY(180deg)}
+.card .face{position:absolute;inset:0;padding:14px;border-radius:var(--radius);border:1px solid var(--line);background:var(--ink-2);backface-visibility:hidden;display:flex;align-items:center;justify-content:center;text-align:center;font-size:.95rem}
+.card .back{transform:rotateY(180deg);background:var(--ink-3);border-color:var(--accent);font-size:.88rem;line-height:1.45}
+.card .front{font-weight:600}
+@media (prefers-reduced-motion:reduce){.card .inner{transition:none}}
+.quiz .q{border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin:12px 0;background:var(--ink-2)}
+.quiz .q p{margin:0 0 10px;font-weight:600}
+.quiz .opts{display:grid;gap:8px}
+.quiz .opt{text-align:left;background:var(--ink);width:100%}
+.quiz .opt.right{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 15%,var(--ink))}
+.quiz .opt.wrong{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 15%,var(--ink))}
+.quiz .why{margin-top:10px;color:var(--muted);font-size:.93rem;display:none}
+.quiz .q.done .why{display:block}
+.quiz .score{margin-top:12px;font-weight:600}
+.stepper .stage{min-height:60px;background:#0f1424;border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin:10px 0}
+.stepper .idx{color:var(--muted);font-size:.85rem}
+.gantt{display:grid;gap:6px;margin:10px 0}
+.gantt .row{display:grid;grid-template-columns:60px 1fr;align-items:center;gap:8px;font-size:.85rem}
+.gantt .track{position:relative;height:26px;background:#0f1424;border-radius:4px;overflow:hidden}
+.gantt .seg{position:absolute;top:0;bottom:0;display:flex;align-items:center;justify-content:center;font-size:.75rem;color:#111;font-weight:600;border-right:1px solid rgba(0,0,0,.3)}
+.cells{display:grid;gap:4px;margin:10px 0}
+.cell{background:#0f1424;border:1px solid var(--line);border-radius:4px;padding:6px;text-align:center;font-family:'IBM Plex Mono',monospace;font-size:.8rem;min-height:36px;display:flex;align-items:center;justify-content:center}
+.cell.hit{background:color-mix(in srgb,var(--ok) 35%,#0f1424);border-color:var(--ok)}
+.cell.miss{background:color-mix(in srgb,var(--bad) 35%,#0f1424);border-color:var(--bad)}
+.cell.active{outline:2px solid var(--accent)}
+.cell.free{opacity:.45}
+.hl{background:color-mix(in srgb,var(--accent) 30%,transparent);padding:1px 5px;border-radius:3px}
+.k{color:var(--accent);font-weight:600}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media (max-width:760px){.two{grid-template-columns:1fr}.topbar{gap:10px}h1{font-size:2rem}}
+.nav-bottom{display:flex;justify-content:space-between;gap:16px;margin-top:56px;padding-top:20px;border-top:1px solid var(--line)}
+.nav-bottom a{text-decoration:none;padding:12px 16px;border:1px solid var(--line);border-radius:var(--radius);color:var(--paper)}
+.source{background:var(--ink-2);border-radius:var(--radius);padding:14px 18px;margin:22px 0;font-size:.95rem}
+.source b{color:var(--accent)}
+.objectives li{list-style:none;margin:6px 0}
+.objectives input{margin-right:8px;accent-color:var(--accent)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.85rem;color:var(--muted)}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:5px;vertical-align:-2px}
+.tag{display:inline-block;font-size:.75rem;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted);margin-right:6px}
+.log{font-family:'IBM Plex Mono',monospace;font-size:.82rem;background:#0f1424;border:1px solid var(--line);border-radius:var(--radius);padding:10px 12px;max-height:220px;overflow:auto;white-space:pre-wrap}
+@media print{body{background:#fff;color:#111}.topbar,.nav-bottom,button{display:none}.fig,.crux,details,.source{border-color:#bbb;background:#fff}pre{background:#f5f5f5;color:#111}}
+
+/* ---------- site chrome: sticky header + directory drawer ---------- */
+.topbar{position:sticky;top:0;z-index:30;display:flex;gap:14px;align-items:center;padding:10px 16px;background:color-mix(in srgb,var(--ink) 92%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);font-size:.9rem}
+.topbar .menu{display:flex;align-items:center;gap:8px;padding:8px 12px;font-size:1rem}
+.topbar .menu span{font-size:.85rem}
+.topbar .brand{color:var(--paper);text-decoration:none;font-weight:600;display:flex;align-items:center;gap:8px}
+.topbar .dot{width:10px;height:10px;border-radius:50%;background:var(--accent);display:inline-block}
+.topbar .links{display:flex;gap:16px;margin-left:8px}
+.topbar .links a{color:var(--muted);text-decoration:none}
+.topbar .links a:hover{color:var(--paper)}
+.topbar .where{margin-left:auto;color:var(--faint);font-variant-numeric:tabular-nums}
+.drawer{position:fixed;top:0;left:0;bottom:0;width:min(340px,88vw);background:var(--ink-2);border-right:1px solid var(--line);z-index:50;transform:translateX(-102%);transition:transform .25s;overflow-y:auto;padding:0 0 24px;box-shadow:0 0 40px rgba(0,0,0,.5)}
+.drawer-open .drawer{transform:none}
+.scrim{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:40;opacity:0;pointer-events:none;transition:opacity .2s}
+.drawer-open .scrim{opacity:1;pointer-events:auto}
+.drawer .dhead{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--ink-2)}
+.drawer .close,.notes-sheet .close{font-size:1.3rem;line-height:1;padding:4px 10px}
+.drawer .dgroup{padding:8px 0 4px}
+.drawer .dname{padding:8px 16px 4px;color:var(--accent);font-family:'Fraunces',serif;font-weight:700}
+.drawer .ditem{display:flex;gap:10px;align-items:center;padding:9px 16px;color:var(--paper);text-decoration:none;border-left:3px solid transparent;font-size:.92rem}
+.drawer .ditem:hover{background:var(--ink-3)}
+.drawer .ditem.cur{border-left-color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
+.drawer .ditem .n{color:var(--faint);min-width:1.4em;font-variant-numeric:tabular-nums}
+.drawer .ditem .t{flex:1;line-height:1.25}
+.drawer .ditem .t small{display:block;color:var(--faint);font-size:.75rem}
+.drawer .badges{display:flex;gap:6px;align-items:center}
+.drawer .badges i{font-style:normal;color:var(--accent)}
+.drawer .badges em{font-style:normal;font-size:.75rem;padding:1px 6px;border-radius:999px;background:var(--ink-3);color:var(--muted);font-variant-numeric:tabular-nums}
+.drawer .dfoot{padding:16px;color:var(--faint);font-size:.8rem}
+/* ---------- notes: floating button + bottom sheet ---------- */
+.notes-fab{position:fixed;right:16px;bottom:16px;z-index:35;display:flex;gap:8px;align-items:center;padding:12px 16px;border-radius:999px;background:var(--accent);color:#111;border:none;font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,.4)}
+.notes-sheet{position:fixed;left:0;right:0;bottom:0;z-index:45;background:var(--ink-2);border-top:1px solid var(--line);border-radius:14px 14px 0 0;transform:translateY(105%);transition:transform .25s;box-shadow:0 -10px 40px rgba(0,0,0,.5);max-width:900px;margin:0 auto;padding-bottom:env(safe-area-inset-bottom)}
+.notes-open .notes-sheet{transform:none}
+.notes-open .notes-fab{display:none}
+.notes-sheet .nhead{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line)}
+.notes-sheet .nhead b{flex:1;font-size:.95rem}
+.notes-sheet .nstatus{color:var(--faint);font-size:.8rem}
+.notes-sheet textarea{display:block;width:100%;min-height:36vh;max-height:60vh;resize:vertical;border:none;background:#0f1424;color:var(--paper);font:inherit;font-size:1rem;line-height:1.5;padding:14px 16px;outline:none}
+.notes-sheet .nfoot{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;font-size:.85rem;color:var(--muted)}
+/* ---------- wide widgets scroll sideways instead of breaking the page ---------- */
+.tw{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:16px 0}
+.tw table{margin:0;min-width:520px}
+.fig{overflow-x:auto}
+@media (prefers-reduced-motion:reduce){.drawer,.notes-sheet,.scrim{transition:none}}
+/* ---------- phones ---------- */
+@media (max-width:760px){
+  body{font-size:16px}
+  .wrap{padding:0 16px 110px}
+  h1{font-size:1.85rem} h2{font-size:1.45rem;margin-top:2rem} h3{font-size:1.15rem}
+  .lede{font-size:1.05rem}
+  .topbar{padding:8px 12px;gap:10px}
+  .topbar .links{display:none}
+  .topbar .menu span{display:none}
+  .topbar .menu{padding:8px 11px}
+  .fig{padding:12px 12px;margin:16px -4px;border-radius:8px}
+  .crux,.source{padding:12px 14px}
+  pre{font-size:.8em;padding:12px 12px}
+  button,.btn{padding:10px 14px;font-size:.92rem}
+  .controls{gap:8px}
+  .controls label{display:flex;align-items:center;gap:6px}
+  input[type=number]{max-width:96px}
+  .cards{grid-template-columns:1fr 1fr;gap:8px}
+  .card,.card .inner{min-height:120px}
+  .card .face{font-size:.88rem;padding:10px}
+  .cells{min-width:420px}
+  .quiz .opt{padding:12px 12px;line-height:1.35}
+  .nav-bottom{flex-direction:column}
+  .nav-bottom a{text-align:center}
+  .notes-fab span{display:none}
+  .notes-fab{padding:14px;right:12px;bottom:12px}
+  .notes-sheet textarea{min-height:44vh}
+  .stepper .stage{padding:12px}
+  .gantt .row{grid-template-columns:44px 1fr;font-size:.75rem}
+  /* lesson-specific grids collapse */
+  .lde,.il,.two,.cry,.flash,.dl,.fdt,.how,.cards.wide,.vm{grid-template-columns:1fr}
+  .map{grid-template-columns:1fr}
+  .net{grid-template-columns:1fr}.net .arrow{padding:0;transform:rotate(90deg)}
+  .phil{grid-template-columns:repeat(2,1fr)}
+  .jobs{max-width:100%}
+  .trace{min-width:620px}.tl{min-width:720px}.disk{min-width:560px}
+}
+@media (max-width:420px){.cards{grid-template-columns:1fr}}
+
+</style>
+<style>.heap{display:flex;height:44px;border:1px solid var(--line);border-radius:4px;overflow:hidden;font-size:.75rem;font-family:'IBM Plex Mono',monospace}.heap div{display:flex;align-items:center;justify-content:center;border-right:1px solid #0f1424;color:#111}.heap .f{background:#28304f;color:#a9b1cf}.heap .u{background:#e8b84a}.bits{display:flex;gap:2px;font-family:'IBM Plex Mono',monospace;font-size:.85rem}.bits span{padding:6px 0;text-align:center;flex:1;border:1px solid var(--line);border-radius:3px;background:#0f1424}.bits .vpn{background:#e8b84a;color:#111;font-weight:600}.bits .pdi{background:#c9a8ff;color:#111;font-weight:600}.bits .pti{background:#5bc8f5;color:#111;font-weight:600}.bits .off{background:#28304f}.out{margin-top:10px}.out b{color:var(--accent)}.err{color:var(--bad)}.pt td{font-family:'IBM Plex Mono',monospace}</style></head>
+<body class="piece-virt"><div class="wrap">
+<header class="hero"><div class="chapters">OSTEP chapters 17–20 · Free-Space Management · Paging: Introduction · TLBs · Smaller Tables</div>
+<h1>Paging: fixed-size pieces, a table to map them, and a cache to make it fast</h1>
+<p class="lede">Variable-sized allocation fragments memory; the allocator chapter shows how hard that is to manage. Paging sidesteps it by chopping everything into fixed-size pages, at the price of a translation table for every process — big and slow unless the hardware caches it (the TLB) and the OS structures it cleverly (multi-level tables).</p></header>
+<div class="source"><b>Primary sources:</b> <a href="https://pages.cs.wisc.edu/~remzi/OSTEP/vm-freespace.pdf">Ch 17</a>, <a href="https://pages.cs.wisc.edu/~remzi/OSTEP/vm-paging.pdf">Ch 18</a>, <a href="https://pages.cs.wisc.edu/~remzi/OSTEP/vm-tlbs.pdf">Ch 19</a>, <a href="https://pages.cs.wisc.edu/~remzi/OSTEP/vm-smalltables.pdf">Ch 20</a>. Homework: <code>malloc.py</code>, <code>paging-linear-translate.py</code>, <code>tlb.c</code> (measure your own TLB), <code>paging-multilevel-translate.py</code>. Chapter 17 draws on Wilson et al.'s allocator survey.</div>
+<h2>What you'll be able to do</h2><ul id="obj"></ul>
+
+<h2>Free-space management (chapter 17)</h2>
+<div class="crux"><b>Crux: how to manage free space</b> when requests are variable-sized (user-level <code>malloc</code>, or the OS with segments)? Which strategies minimize fragmentation, at what time/space cost?</div>
+<p>Mechanisms every allocator has: <b>splitting</b> a free chunk to satisfy a smaller request, <b>coalescing</b> adjacent free chunks on <code>free()</code>, and a <b>header</b> just before each allocated block that records its size (that's how <code>free(ptr)</code> knows how much to release) plus a magic number for sanity checks. The free list itself is embedded <em>inside</em> the free space. Try the classic fit policies:</p>
+<div class="fig"><div class="controls"><label>Policy <select id="fit"><option>first fit</option><option>best fit</option><option>worst fit</option><option>next fit</option></select></label><label>request size <input type="number" id="req" value="15" min="1" style="width:80px"></label><button class="primary" id="alloc">malloc</button><button id="reset">reset heap</button><span class="cap" id="fitmsg"></span></div><div class="heap" id="heap"></div><div class="cap">Heap of 100 units. Initially: free 10 · used 5 · free 30 · used 5 · free 20 · used 5 · free 25. Click a used block to free it (adjacent free chunks coalesce).</div></div>
+<pre><code>typedef struct { int size; int magic; } header_t;   // lives just before the pointer malloc returns
+void free(void *ptr) {
+    header_t *hptr = (header_t *) ptr - 1;
+    assert(hptr->magic == 1234567);
+    // total freed = hptr->size + sizeof(header_t)
+}</code></pre>
+<ul><li><b>Best fit</b>: smallest chunk that fits (exhaustive search, leaves tiny slivers). <b>Worst fit</b>: largest chunk (also exhaustive; performs badly). <b>First fit</b>: first that fits (fast; junk at the head of the list unless address-ordered). <b>Next fit</b>: first fit resuming where the last search ended.</li>
+<li><b>Segregated lists</b> for popular sizes — the <b>slab allocator</b> (Bonwick, Solaris) keeps pre-initialized kernel objects in per-type caches. <b>Binary buddy</b>: split power-of-two blocks recursively; coalescing is trivial (a buddy's address differs in one bit) but internal fragmentation results. Real allocators (glibc) also use trees and balanced structures for speed and scale.</li></ul>
+
+<h2>Paging (chapter 18)</h2>
+<div class="crux"><b>Crux: how to virtualize memory with pages</b> so as to avoid segmentation's problems, with minimal space and time overhead?</div>
+<p>Split the address space into fixed-size <b>pages</b> and physical memory into <b>page frames</b>. Any page can go in any frame, so there's no external fragmentation and sparse address spaces are cheap. A per-process <b>page table</b> maps virtual page number (VPN) → physical frame number (PFN). The book's tiny example: a 64-byte address space with four 16-byte pages in a 128-byte physical memory with eight frames.</p>
+<div class="fig"><h4>Translate a 6-bit address (2-bit VPN, 4-bit offset)</h4><table class="pt" style="max-width:320px"><tr><th>VPN</th><th>→ PFN</th></tr><tr><td>0</td><td>3</td></tr><tr><td>1</td><td>7</td></tr><tr><td>2</td><td>5</td></tr><tr><td>3</td><td>2</td></tr></table><div class="controls"><label>virtual address (0–63) <input type="number" id="pva" value="21" style="width:90px"></label><button class="primary" id="ptr">Translate</button></div><div class="bits" id="pbits"></div><div class="out" id="pout"></div></div>
+<pre><code>VPN     = (VirtualAddress & VPN_MASK) >> SHIFT      // top bits
+PTEAddr = PTBR + (VPN * sizeof(PTE))                // page-table base register + index
+PTE     = AccessMemory(PTEAddr)                     // <b>an extra memory reference</b>
+if (PTE.Valid == False)            RaiseException(SEGMENTATION_FAULT)
+else if (CanAccess(PTE.ProtectBits) == False) RaiseException(PROTECTION_FAULT)
+else { offset = VirtualAddress & OFFSET_MASK;
+       PhysAddr = (PTE.PFN << SHIFT) | offset;  Register = AccessMemory(PhysAddr) }</code></pre>
+<h3>Two problems paging creates</h3>
+<div class="two"><div class="fig"><h4>Too big</h4><p>32-bit address space, 4 KB pages → 20-bit VPN → 2<sup>20</sup> ≈ 1 M entries × 4 bytes = <b>4 MB per process</b>, for a <em>linear</em> table. With 100 processes that is 400 MB of page tables. So they live in OS memory, not in the MMU — and later, can even be swapped.</p></div><div class="fig"><h4>Too slow</h4><p>Every load/store now needs a <em>second</em> memory access to fetch the PTE. Trace the book's array-init loop: each iteration has 4 instruction fetches, 1 explicit store, and 5 page-table lookups — 10 memory accesses instead of 5.</p></div></div>
+<h3>What's in a PTE</h3>
+<p>A <b>valid</b> bit (unmapped pages of the sparse space are invalid — touching them traps, probably killing the process); <b>protection</b> bits (read/write/execute); a <b>present</b> bit (in memory or on disk); a <b>dirty</b> bit (modified since brought in); a <b>reference/accessed</b> bit (used recently — key for replacement). The x86 PTE packs P, R/W, U/S (user or supervisor), PWT/PCD/PAT (caching), A, D and the 20-bit PFN into 32 bits; x86 has no separate valid bit, it uses P for both.</p>
+
+<h2>TLBs: faster translations (chapter 19)</h2>
+<div class="crux"><b>Crux: how to speed up address translation</b> and avoid the extra memory reference? Add a <b>translation-lookaside buffer</b> to the MMU: a small, fully-associative hardware cache of recent VPN→PFN mappings. (A better name: address-translation cache.)</div>
+<pre><code>VPN = (VirtualAddress & VPN_MASK) >> SHIFT
+(Success, TlbEntry) = TLB_Lookup(VPN)
+if (Success == True)                                // <b>TLB hit</b>
+    if (CanAccess(TlbEntry.ProtectBits)) { PhysAddr = (TlbEntry.PFN << SHIFT) | Offset; AccessMemory(PhysAddr) }
+    else RaiseException(PROTECTION_FAULT)
+else                                                // <b>TLB miss</b>: walk the page table, install, retry
+    PTE = AccessMemory(PTBR + VPN * sizeof(PTE))
+    if (!PTE.Valid) RaiseException(SEGMENTATION_FAULT)
+    else { TLB_Insert(VPN, PTE.PFN, PTE.ProtectBits); RetryInstruction() }</code></pre>
+<div class="fig"><h4>Simulate the book's array walk</h4><p>Ten 4-byte ints starting at virtual address 100, 16-byte pages (so <code>a[0]</code> sits at offset 4 of VPN 6). Step through <code>sum += a[i]</code>.</p><div class="controls"><button class="primary" id="tstep">Access next element</button><button id="treset">Reset</button><span class="cap" id="tmsg"></span></div><div class="cells" id="tcells" style="grid-template-columns:repeat(10,1fr)"></div><div class="cap" id="trate"></div></div>
+<p>The 70% here comes from <b>spatial locality</b> (neighbouring elements share a page). Running the loop again immediately would hit 100% — <b>temporal locality</b>. Bigger pages raise TLB coverage; that's why databases use large pages. Programs whose working set exceeds <b>TLB coverage</b> slow down sharply.</p>
+<div class="two"><div class="fig"><h4>Who handles the miss?</h4><p><b>Hardware-managed</b> (CISC, x86): the hardware knows the page-table format, walks it via the PTBR, fills the TLB, retries. <b>Software-managed</b> (RISC: MIPS, SPARC): the hardware raises an exception; a trap handler in the OS looks up the translation, installs it with a privileged instruction, and returns — to the <em>same</em> instruction, not the next one. The OS handler itself must never TLB-miss (keep it in unmapped or permanently-mapped memory). Flexibility: the OS can use any table structure it likes.</p></div><div class="fig"><h4>Context switches</h4><p>Translations are per-process; after a switch they are wrong. Options: <b>flush</b> the TLB on every switch (set all valid bits to 0; cost: misses after every switch), or add an <b>address space identifier (ASID)</b> to each entry so entries of different processes coexist; the OS sets a privileged ASID register on switch. Two processes sharing a code page can have entries with different VPNs, same PFN.</p></div></div>
+<p><b>Replacement</b> on a full TLB: LRU or random (random avoids pathological loops of n+1 pages in an n-entry TLB). A real MIPS R4000 entry: 19-bit VPN, 24-bit PFN, 8-bit ASID, plus global (ignore ASID), coherence, dirty and valid bits — 64 bits total. TLBs typically hold 32–128 entries; a few are <em>wired</em> for the OS.</p>
+
+<h2>Smaller tables (chapter 20)</h2>
+<div class="crux"><b>Crux: how to make page tables smaller?</b> Linear arrays waste memory (4 MB per process, mostly for invalid entries). What structures fix that, and what inefficiencies do they add?</div>
+<ul><li><b>Bigger pages</b> (16 KB → 1 MB table) — but internal fragmentation inside each page. Modern systems offer <em>multiple</em> page sizes for special cases.</li>
+<li><b>Hybrid paging+segments</b>: one page table per segment, bounded by the segment size. Still fragments; and a sparse heap needs a big table.</li>
+<li><b>Multi-level page tables</b>: chop the page table into page-sized pieces; don't allocate pieces that are entirely invalid; a <b>page directory</b> says where each piece is (or that it's invalid). Space-efficient for sparse spaces, page-sized pieces are easy to place, but a TLB miss now costs two (or more) memory loads: a <b>time-space trade-off</b>, and more complexity.</li>
+<li><b>Inverted page table</b>: one entry per physical frame; a hash table makes lookup practical (PowerPC).</li>
+<li>And tables themselves can be swapped to disk (VAX/VMS) — next lesson.</li></ul>
+<div class="fig"><h4>Two-level translation: the book's 16 KB space with 64-byte pages</h4><p>14-bit address: 8-bit VPN + 6-bit offset. Each PTE is 4 bytes, so a 64-byte page holds 16 PTEs → the VPN splits into a 4-bit <b>page-directory index</b> and a 4-bit <b>page-table index</b>. Code lives in VPNs 0–1, heap in 4–5, stack in 254–255; everything else is unmapped, so only <b>two</b> of sixteen page-table pages exist.</p><div class="controls"><label>virtual address (0–16383) <input type="number" id="mva" value="16383" style="width:110px"></label><button class="primary" id="mtr">Translate</button><button data-m="0">code 0</button><button data-m="300">heap 300</button><button data-m="8192">middle (invalid)</button><button data-m="16383">stack top</button></div><div class="bits" id="mbits"></div><div class="out" id="mout"></div></div>
+<pre><code>PDEAddr = PageDirBase + (PDIndex * sizeof(PDE))        // load 1
+PDE = AccessMemory(PDEAddr); if (!PDE.Valid) fault
+PTEAddr = (PDE.PFN << SHIFT) + (PTIndex * sizeof(PTE))  // load 2
+PTE = AccessMemory(PTEAddr); if (!PTE.Valid) fault
+PhysAddr = (PTE.PFN << SHIFT) | Offset                  // load 3: the actual data</code></pre>
+
+<h2>Flash cards</h2><div id="cards"></div>
+<h2>Retrieval practice</h2><div id="quiz"></div>
+<p class="tip">Want to derive page-table sizes for x86-64's four levels, or measure your own machine's TLB with the book's <code>tlb.c</code>? Ask me in the chat.</p>
+</div>
+<script>
+/* OSTEP course — shared components. Every page loads this file (inlined by build.py). */
+window.OS = (function () {
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+  /* ---------- persistent storage (localStorage on a real site; in-memory fallback in sandboxes) ---------- */
+  const mem = {};
+  const store = {
+    get(k) { try { const v = localStorage.getItem('ostep:' + k); return v === null ? (mem[k] ?? null) : JSON.parse(v); } catch (e) { return mem[k] ?? null; } },
+    set(k, v) { mem[k] = v; try { localStorage.setItem('ostep:' + k, JSON.stringify(v)); } catch (e) {} },
+    del(k) { delete mem[k]; try { localStorage.removeItem('ostep:' + k); } catch (e) {} },
+    keys(prefix) { const out = new Set(Object.keys(mem).filter(k => k.startsWith(prefix))); try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith('ostep:' + prefix)) out.add(k.slice(6)); } } catch (e) {} return [...out]; },
+    available() { try { localStorage.setItem('ostep:test', '1'); localStorage.removeItem('ostep:test'); return true; } catch (e) { return false; } }
+  };
+
+  /* ---------- course structure ---------- */
+  const PIECES = [
+    ['intro', 'Introduction', [['0001-three-easy-pieces', 'Three easy pieces', 'ch 1–2']]],
+    ['virt', 'Virtualization', [
+      ['0002-processes', 'Processes & the process API', 'ch 4–5'],
+      ['0003-limited-direct-execution', 'Limited direct execution', 'ch 6'],
+      ['0004-scheduling', 'Scheduling', 'ch 7–10'],
+      ['0005-address-spaces', 'Address spaces & segments', 'ch 13–16'],
+      ['0006-paging-and-tlbs', 'Paging & TLBs', 'ch 17–20'],
+      ['0007-swapping', 'Swapping & policies', 'ch 21–23']]],
+    ['conc', 'Concurrency', [
+      ['0008-threads-and-locks', 'Threads & locks', 'ch 26–28'],
+      ['0009-cvs-and-semaphores', 'CVs & semaphores', 'ch 29–31'],
+      ['0010-bugs-and-events', 'Bugs & events', 'ch 32–33']]],
+    ['pers', 'Persistence', [
+      ['0011-devices-disks-raid', 'Devices, disks, RAID', 'ch 36–38'],
+      ['0012-files-and-vsfs', 'Files & a simple FS', 'ch 39–40'],
+      ['0013-ffs-journaling-lfs', 'FFS, journaling, LFS', 'ch 41–43'],
+      ['0014-ssd-and-integrity', 'SSDs & integrity', 'ch 44–45'],
+      ['0015-distributed-nfs-afs', 'Distributed FS', 'ch 48–50']]],
+    ['sec', 'Security', [['0016-security-and-vmms', 'Security & VMMs', 'ch 53–57, App B']]]
+  ];
+  const LESSONS = PIECES.flatMap(p => p[2].map(l => [l[0], l[1], p[0], l[2]]));
+  const title = id => (LESSONS.find(l => l[0] === id) || [])[1] || id;
+  let pageId = null, root = '../';
+
+  /* ---------- chrome: sticky header, slide-out directory, notes drawer, prev/next ---------- */
+  function chrome(id, rootPath) {
+    pageId = id; root = rootPath === undefined ? '../' : rootPath;
+    const i = LESSONS.findIndex(l => l[0] === id);
+    const isLesson = i >= 0;
+    const top = document.createElement('header'); top.className = 'topbar';
+    top.innerHTML = `<button class="menu" aria-label="Open directory" aria-expanded="false">☰<span>Directory</span></button>
+      <a class="brand" href="${root}index.html"><span class="dot"></span>OSTEP course</a>
+      <nav class="links"><a href="${root}reference/glossary.html">Glossary</a><a href="${root}reference/cheatsheets.html">Cheat sheets</a><a href="${root}notes.html">My notes</a></nav>
+      ${isLesson ? `<span class="where">${i+1} / ${LESSONS.length}</span>` : ''}`;
+    document.body.prepend(top);
+    // directory drawer
+    const drawer = document.createElement('aside'); drawer.className = 'drawer'; drawer.setAttribute('aria-label', 'Course directory');
+    const scores = Object.fromEntries(LESSONS.map(l => [l[0], store.get('quiz:' + l[0])]));
+    const notes = new Set(store.keys('notes:').map(k => k.slice(6)).filter(k => (store.get('notes:' + k) || {}).text));
+    drawer.innerHTML = `<div class="dhead"><b>Directory</b><button class="close" aria-label="Close">×</button></div>
+      <a class="ditem ${id === 'index' ? 'cur' : ''}" href="${root}index.html">Course hub</a>
+      ${PIECES.map(([cls, name, ls]) => `<div class="dgroup piece-${cls}"><div class="dname">${name}</div>${ls.map(l => {
+        const n = LESSONS.findIndex(x => x[0] === l[0]) + 1, s = scores[l[0]];
+        return `<a class="ditem ${l[0] === id ? 'cur' : ''}" href="${root}lessons/${l[0]}.html"><span class="n">${n}</span><span class="t">${l[1]}<small>${l[3]}</small></span><span class="badges">${notes.has(l[0]) ? '<i title="you have notes">✎</i>' : ''}${s ? `<em title="best quiz score">${s.score}/${s.total}</em>` : ''}</span></a>`; }).join('')}</div>`).join('')}
+      <div class="dgroup piece-intro"><div class="dname">Reference</div>
+        <a class="ditem ${id === 'glossary' ? 'cur' : ''}" href="${root}reference/glossary.html"><span class="t">Glossary</span></a>
+        <a class="ditem ${id === 'cheatsheets' ? 'cur' : ''}" href="${root}reference/cheatsheets.html"><span class="t">Cheat sheets</span></a>
+        <a class="ditem ${id === 'notes' ? 'cur' : ''}" href="${root}notes.html"><span class="t">My notes &amp; progress</span></a></div>
+      <div class="dfoot">${store.available() ? 'Notes and scores are saved in this browser.' : 'Notes and scores are kept for this session only (storage unavailable here).'}</div>`;
+    document.body.append(drawer);
+    const scrim = document.createElement('div'); scrim.className = 'scrim'; document.body.append(scrim);
+    const open = o => { document.body.classList.toggle('drawer-open', o); top.querySelector('.menu').setAttribute('aria-expanded', o); if (o) drawer.querySelector('.cur, .ditem')?.focus(); };
+    top.querySelector('.menu').onclick = () => open(!document.body.classList.contains('drawer-open'));
+    drawer.querySelector('.close').onclick = () => open(false); scrim.onclick = () => open(false);
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') { open(false); notesOpen(false); } });
+    // prev/next for lessons
+    if (isLesson) {
+      const nav = document.createElement('div'); nav.className = 'nav-bottom';
+      const prev = LESSONS[i-1], next = LESSONS[i+1];
+      nav.innerHTML = (prev ? `<a href="${prev[0]}.html">← ${i}. ${prev[1]}</a>` : '<span></span>') +
+                      (next ? `<a href="${next[0]}.html">${i+2}. ${next[1]} →</a>` : `<a href="${root}index.html">Back to course hub →</a>`);
+      document.querySelector('.wrap').append(nav);
+    }
+    // wrap tables so they scroll sideways on phones
+    document.querySelectorAll('.wrap table').forEach(t => { if (t.parentElement.classList.contains('tw')) return; const w = document.createElement('div'); w.className = 'tw'; t.replaceWith(w); w.append(t); });
+    // notes drawer (every page except the notes page itself)
+    if (id !== 'notes') notesUI(id, isLesson ? `${i+1}. ${LESSONS[i][1]}` : (document.title.split(' — ')[0]));
+  }
+
+  /* ---------- notes: floating button + bottom sheet, autosaved ---------- */
+  let notesOpen = () => {};
+  function notesUI(id, label) {
+    const btn = document.createElement('button'); btn.className = 'notes-fab'; btn.innerHTML = '✎ <span>Notes</span>'; btn.setAttribute('aria-label', 'Open notes');
+    const sheet = document.createElement('section'); sheet.className = 'notes-sheet'; sheet.setAttribute('aria-label', 'Notes for this page');
+    const saved = store.get('notes:' + id) || {};
+    sheet.innerHTML = `<div class="nhead"><b>Notes · ${esc(label)}</b><span class="nstatus"></span><button class="close" aria-label="Close notes">×</button></div>
+      <textarea placeholder="Your notes for this page. Markdown is fine. Saved automatically.">${esc(saved.text || '')}</textarea>
+      <div class="nfoot"><span class="ncount"></span><a href="${root}notes.html">All notes &amp; export →</a></div>`;
+    document.body.append(btn, sheet);
+    const ta = sheet.querySelector('textarea'), status = sheet.querySelector('.nstatus'), count = sheet.querySelector('.ncount');
+    const upd = () => { count.textContent = ta.value.trim() ? ta.value.trim().split(/\s+/).length + ' words' : ''; };
+    let t; ta.addEventListener('input', () => { status.textContent = 'saving…'; clearTimeout(t); t = setTimeout(() => { store.set('notes:' + id, { text: ta.value, title: label, updated: new Date().toISOString() }); status.textContent = 'saved'; upd(); }, 400); });
+    upd();
+    notesOpen = o => { document.body.classList.toggle('notes-open', o); if (o) ta.focus(); };
+    btn.onclick = () => notesOpen(!document.body.classList.contains('notes-open'));
+    sheet.querySelector('.close').onclick = () => notesOpen(false);
+  }
+
+  /* ---------- quiz: immediate feedback; best score persisted ---------- */
+  function quiz(el, qs) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('quiz');
+    let score = 0, answered = 0;
+    const best = pageId ? store.get('quiz:' + pageId) : null;
+    el.innerHTML = qs.map((q, i) => `<div class="q" data-i="${i}"><p>${i+1}. ${q.q}</p>
+      <div class="opts">${q.o.map((o, j) => `<button class="opt" data-j="${j}">${esc(o)}</button>`).join('')}</div>
+      <div class="why">${q.why}</div></div>`).join('') + `<div class="score">${best ? `Best so far: ${best.score}/${best.total} (${new Date(best.date).toLocaleDateString()})` : ''}</div>`;
+    el.querySelectorAll('.q').forEach(qd => {
+      const q = qs[+qd.dataset.i];
+      qd.querySelectorAll('.opt').forEach(b => b.addEventListener('click', () => {
+        if (qd.classList.contains('done')) return;
+        qd.classList.add('done'); answered++;
+        const j = +b.dataset.j;
+        if (j === q.a) { b.classList.add('right'); score++; }
+        else { b.classList.add('wrong'); qd.querySelectorAll('.opt')[q.a].classList.add('right'); }
+        const s = el.querySelector('.score');
+        s.textContent = `${score} / ${answered} correct`;
+        if (answered === qs.length) {
+          s.textContent += score === qs.length ? ' — all of them. Retry from memory in two days.' : ' — reread the sections you missed, then retry.';
+          if (pageId && (!best || score >= best.score)) store.set('quiz:' + pageId, { score, total: qs.length, date: new Date().toISOString() });
+        }
+      }));
+    });
+  }
+
+  /* ---------- flip cards ---------- */
+  function cards(el, list) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('cards');
+    el.innerHTML = list.map(([f, b]) => `<div class="card" tabindex="0" role="button" aria-label="flip card"><div class="inner"><div class="face front">${f}</div><div class="face back">${b}</div></div></div>`).join('');
+    el.querySelectorAll('.card').forEach(c => {
+      const t = () => c.classList.toggle('flipped');
+      c.addEventListener('click', t);
+      c.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); t(); } });
+    });
+  }
+
+  /* ---------- stepper ---------- */
+  function stepper(el, steps, render) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('stepper');
+    let i = 0;
+    el.innerHTML = `<div class="controls"><button class="prev">← Back</button><button class="next primary">Next step →</button><span class="idx"></span></div><div class="stage"></div><div class="extra"></div>`;
+    const stage = el.querySelector('.stage'), idx = el.querySelector('.idx'), extra = el.querySelector('.extra');
+    const draw = () => { stage.innerHTML = steps[i]; idx.textContent = `step ${i+1} / ${steps.length}`; if (render) render(i, extra); };
+    el.querySelector('.prev').onclick = () => { i = Math.max(0, i-1); draw(); };
+    el.querySelector('.next').onclick = () => { i = Math.min(steps.length-1, i+1); draw(); };
+    draw();
+  }
+
+  /* ---------- gantt ---------- */
+  function gantt(el, rows, total, colors) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('gantt');
+    const pal = colors || ['#e8b84a','#5bc8f5','#6bcb77','#f47fa0','#c9a8ff','#ffb86b'];
+    el.innerHTML = rows.map((r, i) => `<div class="row"><span>${esc(r.name)}</span><div class="track">${r.segs.map(s =>
+      `<div class="seg" style="left:${100*s.start/total}%;width:${100*(s.end-s.start)/total}%;background:${pal[i%pal.length]}" title="${s.start}–${s.end}">${(s.end-s.start)/total > .06 ? (s.end-s.start) : ''}</div>`).join('')}</div></div>`).join('') +
+      `<div class="row"><span></span><div style="display:flex;justify-content:space-between;font-size:.75rem;color:var(--muted)"><span>0</span><span>${total}</span></div></div>`;
+  }
+
+  /* ---------- objectives checklist (persisted) ---------- */
+  function objectives(el, items) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('objectives');
+    const saved = (pageId && store.get('obj:' + pageId)) || [];
+    el.innerHTML = items.map((t, i) => `<li><label><input type="checkbox" data-i="${i}" ${saved.includes(i) ? 'checked' : ''}>${t}</label></li>`).join('');
+    el.querySelectorAll('input').forEach(c => c.onchange = () => { const s = [...el.querySelectorAll('input:checked')].map(x => +x.dataset.i); if (pageId) store.set('obj:' + pageId, s); });
+  }
+
+  return { chrome, quiz, cards, stepper, gantt, objectives, esc, store, LESSONS, PIECES, title };
+})();
+
+</script>
+<script>
+OS.chrome('0006-paging-and-tlbs');
+OS.objectives('obj',['Explain splitting, coalescing, headers, and compare first/best/worst/next fit and segregated/buddy allocators.','Translate a virtual address through a linear page table and compute page-table size for given parameters.','Trace TLB hits and misses on a memory access pattern and explain spatial vs temporal locality.','Contrast hardware- and software-managed TLBs and the flush vs ASID approaches on context switch.','Split a virtual address for a two-level page table and count the memory accesses on a TLB miss.']);
+/* allocator */
+let heap;const init=()=>heap=[{f:1,s:10},{f:0,s:5},{f:1,s:30},{f:0,s:5},{f:1,s:20},{f:0,s:5},{f:1,s:25}];let nextPos=0;
+function drawHeap(){const h=document.getElementById('heap');h.innerHTML=heap.map((c,i)=>`<div class="${c.f?'f':'u'}" style="width:${c.s}%" data-i="${i}" title="${c.f?'free':'used'} ${c.s}">${c.s}</div>`).join('');h.querySelectorAll('.u').forEach(d=>d.onclick=()=>{heap[+d.dataset.i].f=1;for(let i=0;i<heap.length-1;){if(heap[i].f&&heap[i+1].f){heap[i].s+=heap[i+1].s;heap.splice(i+1,1);}else i++;}document.getElementById('fitmsg').textContent='freed and coalesced';drawHeap();});}
+document.getElementById('alloc').onclick=()=>{const n=+document.getElementById('req').value,p=document.getElementById('fit').value;const cand=heap.map((c,i)=>({...c,i})).filter(c=>c.f&&c.s>=n);let pick;if(!cand.length){document.getElementById('fitmsg').textContent=`no free chunk of ${n} — external fragmentation (total free ${heap.filter(c=>c.f).reduce((s,c)=>s+c.s,0)})`;return;}if(p==='first fit')pick=cand[0];else if(p==='best fit')pick=cand.reduce((m,c)=>c.s<m.s?c:m);else if(p==='worst fit')pick=cand.reduce((m,c)=>c.s>m.s?c:m);else{pick=cand.find(c=>c.i>=nextPos)||cand[0];}const c=heap[pick.i];if(c.s===n){c.f=0;}else{heap.splice(pick.i,1,{f:0,s:n},{f:1,s:c.s-n});}nextPos=pick.i+1;document.getElementById('fitmsg').textContent=`${p}: took chunk of ${pick.s}${pick.s>n?', split off '+(pick.s-n):''}`;drawHeap();};
+document.getElementById('reset').onclick=()=>{init();nextPos=0;drawHeap();};init();drawHeap();
+/* paging */
+const PT={0:3,1:7,2:5,3:2};
+function ptr(v){const o=document.getElementById('pout');if(v<0||v>63){o.innerHTML='<span class="err">Address space is 64 bytes (0–63).</span>';return;}const bin=v.toString(2).padStart(6,'0');document.getElementById('pbits').innerHTML=bin.split('').map((c,i)=>`<span class="${i<2?'vpn':'off'}">${c}</span>`).join('');const vpn=v>>4,off=v&15,pfn=PT[vpn];const pa=(pfn<<4)|off;o.innerHTML=`VPN ${bin.slice(0,2)} = ${vpn} → PFN ${pfn} (${pfn.toString(2).padStart(3,'0')}). Offset ${bin.slice(2)} = ${off}. Physical = <b>${pa.toString(2).padStart(7,'0')}</b> = <b>${pa}</b>${v===21?' — the book\'s "movl 21, %eax" example: 010101 → 1110101 = 117':''}.`;}
+document.getElementById('ptr').onclick=()=>ptr(+document.getElementById('pva').value);ptr(21);
+/* TLB */
+let ti=0,tlb=new Set(),hits=0;const TC=document.getElementById('tcells');
+function tdraw(){TC.innerHTML=[...Array(10)].map((_,i)=>`<div class="cell ${i<ti?(cls[i]):''}">a[${i}]<br><small>VPN ${6+Math.floor((100+4*i)/16)-6}</small></div>`).join('');}
+const cls=[];function tstep(){if(ti>=10){document.getElementById('tmsg').textContent='done — reset to run again (a second pass would be all hits: temporal locality)';return;}const va=100+4*ti,vpn=Math.floor(va/16);const hit=tlb.has(vpn);tlb.add(vpn);if(hit)hits++;cls[ti]=hit?'hit':'miss';document.getElementById('tmsg').textContent=`a[${ti}] at VA ${va}, VPN ${vpn}: ${hit?'TLB hit':'TLB miss → walk page table, insert, retry'}`;ti++;tdraw();document.getElementById('trate').textContent=`hit rate so far: ${hits}/${ti} = ${(100*hits/ti).toFixed(0)}%` + (ti===10?' — the book\'s miss, hit, hit, miss, hit, hit, hit, miss, hit, hit = 70%':'');}
+document.getElementById('tstep').onclick=tstep;document.getElementById('treset').onclick=()=>{ti=0;tlb=new Set();hits=0;cls.length=0;tdraw();document.getElementById('tmsg').textContent='';document.getElementById('trate').textContent='';};tdraw();
+/* multilevel */
+const PD={0:{pfn:100,valid:1},15:{pfn:101,valid:1}};const PTs={100:{0:10,1:23,4:80,5:59},101:{14:55,15:45}};
+function mtr(v){const o=document.getElementById('mout');if(v<0||v>16383){o.innerHTML='<span class="err">14-bit space: 0–16383.</span>';return;}const bin=v.toString(2).padStart(14,'0');document.getElementById('mbits').innerHTML=bin.split('').map((c,i)=>`<span class="${i<4?'pdi':i<8?'pti':'off'}">${c}</span>`).join('');const pdi=v>>10,pti=(v>>6)&15,off=v&63;const pde=PD[pdi];if(!pde){o.innerHTML=`PD index ${pdi} → PDE invalid. <span class="err">Fault after one memory load; no page-table page was ever allocated for VPNs ${pdi*16}–${pdi*16+15}.</span>`;return;}const pt=PTs[pde.pfn];const pfn=pt[pti];if(pfn===undefined){o.innerHTML=`PD index ${pdi} → PDE valid, page-table page in PFN ${pde.pfn}. PT index ${pti} → <span class="err">PTE invalid: fault after two loads.</span>`;return;}o.innerHTML=`PD index ${pdi} → PDE valid, page-table page at PFN ${pde.pfn} (load 1). PT index ${pti} → PTE valid, PFN <b>${pfn}</b> (load 2). Physical = ${pfn}×64 + ${off} = <b>${pfn*64+off}</b> (load 3 fetches the data). VPN ${v>>6}.`;}
+document.getElementById('mtr').onclick=()=>mtr(+document.getElementById('mva').value);document.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{document.getElementById('mva').value=b.dataset.m;mtr(+b.dataset.m);});mtr(16383);
+OS.cards('cards',[['Coalescing','When a chunk is freed, merge it with neighbouring free chunks so large requests can still be satisfied.'],['Header','Small struct just before each allocated block: size (and a magic number). free(ptr) reads it to learn the size.'],['Slab allocator','Segregated per-object-type caches of pre-initialized kernel objects; avoids repeated init/destroy cost (Bonwick).'],['Page frame','A fixed-size slot of physical memory that holds one virtual page.'],['PTBR','Page-table base register: physical address of the current process\'s page table; changed on context switch.'],['Linear page table size','2^(VPN bits) × PTE size, e.g. 2^20 × 4 B = 4 MB for 32-bit addresses with 4 KB pages.'],['TLB coverage','Total memory mapped by the TLB (entries × page size). Working sets larger than this thrash the TLB.'],['ASID','Address-space identifier tag in each TLB entry, letting entries from several processes coexist without a flush.'],['Page directory','Top level of a multi-level table: one entry per page-sized piece of the page table, with a valid bit and PFN.'],['Inverted page table','One entry per physical frame recording which process/VPN uses it; looked up via a hash.']]);
+OS.quiz('quiz',[
+{q:'Why does free(ptr) need no size argument?',o:['the OS tracks every allocation','a header before ptr stores it','the compiler inserts the size','sizes are always page-multiples'],a:1,why:'malloc writes a small header (size, magic) immediately before the returned pointer; free() subtracts the header size to find it.'},
+{q:'32-bit virtual addresses, 4 KB pages, 4-byte PTEs. Size of one linear page table?',o:['1 MB','4 MB','16 MB','4 KB'],a:1,why:'12 offset bits → 20 VPN bits → 2^20 entries × 4 bytes = 4 MB, per process.'},
+{q:'In the 64-byte/16-byte-page example (VPN 1 → PFN 7), virtual address 21 (010101) becomes physical:',o:['0110101 = 53','1110101 = 117','0010101 = 21','1010101 = 85'],a:1,why:'VPN 01 → PFN 111; keep offset 0101 → 1110101 = 117. Only the VPN bits change.'},
+{q:'The array-walk TLB example yields miss,hit,hit,miss,... = 70%. Which property explains the hits?',o:['temporal locality','spatial locality','write buffering','cache coherence'],a:1,why:'Adjacent array elements share a page, so after one miss per page the next accesses hit. A second pass over the same array would be temporal locality.'},
+{q:'After a software-managed TLB miss handler installs the translation, where does the OS return to?',o:['the next instruction','the same instruction','the trap handler','the scheduler loop'],a:1,why:'Unlike a system call, the faulting instruction has not executed; the handler returns to it so it retries and now hits in the TLB.'},
+{q:'What does an ASID field in TLB entries make unnecessary?',o:['the page-table base register','flushing the TLB on every switch','the valid bit in each entry','protection bits in each entry'],a:1,why:'With per-process ASIDs, entries for several processes can coexist; the OS just sets the current ASID register at a context switch.'},
+{q:'In a two-level page table, what does an invalid page-directory entry mean?',o:['that one page is swapped out','that whole page of PTEs is absent','the process has been killed','the TLB needs to be flushed'],a:1,why:'A PDE is invalid when no PTE in that page-sized chunk of the table is valid — so the chunk is never allocated. That is where the space saving comes from.'},
+{q:'The main cost of multi-level page tables compared with a linear table is:',o:['larger tables for sparse spaces','extra memory loads on a TLB miss','no support for protection bits','inability to swap pages to disk'],a:1,why:'A TLB miss must load a PDE and then a PTE (two loads, more with more levels) before the data access — the time half of the time-space trade-off.'}]);
+</script></body></html>

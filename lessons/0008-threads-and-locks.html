@@ -1,0 +1,488 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>8 · Threads & locks — OSTEP course</title><style>
+/* OSTEP course — shared stylesheet. Three pieces, three hues. */
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+:root{
+  --ink:#151b2f; --ink-2:#1e2540; --ink-3:#28304f; --line:#3a4368;
+  --paper:#eef0f7; --muted:#a9b1cf; --faint:#6e779a;
+  --virt:#e8b84a; --conc:#5bc8f5; --pers:#6bcb77; --sec:#f47fa0; --intro:#c9a8ff;
+  --ok:#6bcb77; --bad:#ff6b6b;
+  --accent:var(--virt);
+  --radius:6px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--ink);color:var(--paper);font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:17px;line-height:1.6}
+a{color:var(--accent)}
+code,pre,kbd,.mono{font-family:'IBM Plex Mono',ui-monospace,monospace}
+code{background:var(--ink-3);padding:1px 5px;border-radius:4px;font-size:.9em}
+pre{background:#0f1424;border:1px solid var(--line);border-left:4px solid var(--accent);padding:14px 16px;overflow:auto;border-radius:var(--radius);font-size:.86em;line-height:1.5}
+pre code{background:none;padding:0;font-size:inherit}
+h1,h2,h3,h4{font-family:'Fraunces',Georgia,serif;font-weight:700;line-height:1.15;margin:0 0 .4em}
+h1{font-size:2.6rem;letter-spacing:-.01em}
+h2{font-size:1.9rem;margin-top:2.6rem;padding-top:1.2rem;border-top:1px solid var(--line)}
+h3{font-size:1.3rem;margin-top:1.8rem;color:var(--accent)}
+h4{font-size:1.05rem;margin-top:1.2rem}
+p,li{max-width:72ch}
+.wrap{max-width:1100px;margin:0 auto;padding:0 28px 96px}
+.hero{padding:44px 0 16px}
+.hero .chapters{color:var(--muted);font-size:.95rem;margin-bottom:6px}
+.lede{font-size:1.2rem;color:var(--muted);max-width:66ch}
+.piece-virt{--accent:var(--virt)} .piece-conc{--accent:var(--conc)} .piece-pers{--accent:var(--pers)} .piece-sec{--accent:var(--sec)} .piece-intro{--accent:var(--intro)}
+.fig{background:var(--ink-2);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;margin:22px 0}
+.fig figcaption,.cap{color:var(--muted);font-size:.9rem;margin-top:10px}
+.fig svg{max-width:100%;height:auto;display:block}
+svg text{font-family:'IBM Plex Sans',sans-serif}
+svg .mono{font-family:'IBM Plex Mono',monospace}
+.crux{border:1px solid var(--accent);border-radius:var(--radius);padding:14px 18px;margin:22px 0;background:color-mix(in srgb,var(--accent) 8%,transparent)}
+.crux b{color:var(--accent)}
+.tip{border-left:4px solid var(--muted);padding:6px 16px;margin:18px 0;color:var(--muted)}
+.tip b{color:var(--paper)}
+table{border-collapse:collapse;width:100%;margin:16px 0;font-size:.95rem}
+th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{color:var(--muted);font-weight:500}
+td.mono,th.mono{font-family:'IBM Plex Mono',monospace}
+button,.btn{font:inherit;font-size:.9rem;background:var(--ink-3);color:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:7px 13px;cursor:pointer}
+button:hover{border-color:var(--accent)}
+button.primary{background:var(--accent);color:#111;border-color:var(--accent);font-weight:600}
+button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+input[type=range]{accent-color:var(--accent)}
+input[type=text],input[type=number],select{font:inherit;background:#0f1424;color:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:6px 10px}
+.controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:10px 0}
+.controls label{font-size:.9rem;color:var(--muted)}
+details{border:1px solid var(--line);border-radius:var(--radius);margin:10px 0;background:var(--ink-2)}
+summary{cursor:pointer;padding:12px 16px;font-weight:600;list-style:none}
+summary::before{content:"+";display:inline-block;width:1.2em;color:var(--accent)}
+details[open] summary::before{content:"–"}
+details>div{padding:0 16px 14px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;margin:16px 0}
+.card{perspective:900px;min-height:140px;cursor:pointer}
+.card .inner{position:relative;width:100%;height:100%;min-height:140px;transition:transform .45s;transform-style:preserve-3d}
+.card.flipped .inner{transform:rotateY(180deg)}
+.card .face{position:absolute;inset:0;padding:14px;border-radius:var(--radius);border:1px solid var(--line);background:var(--ink-2);backface-visibility:hidden;display:flex;align-items:center;justify-content:center;text-align:center;font-size:.95rem}
+.card .back{transform:rotateY(180deg);background:var(--ink-3);border-color:var(--accent);font-size:.88rem;line-height:1.45}
+.card .front{font-weight:600}
+@media (prefers-reduced-motion:reduce){.card .inner{transition:none}}
+.quiz .q{border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin:12px 0;background:var(--ink-2)}
+.quiz .q p{margin:0 0 10px;font-weight:600}
+.quiz .opts{display:grid;gap:8px}
+.quiz .opt{text-align:left;background:var(--ink);width:100%}
+.quiz .opt.right{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 15%,var(--ink))}
+.quiz .opt.wrong{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 15%,var(--ink))}
+.quiz .why{margin-top:10px;color:var(--muted);font-size:.93rem;display:none}
+.quiz .q.done .why{display:block}
+.quiz .score{margin-top:12px;font-weight:600}
+.stepper .stage{min-height:60px;background:#0f1424;border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin:10px 0}
+.stepper .idx{color:var(--muted);font-size:.85rem}
+.gantt{display:grid;gap:6px;margin:10px 0}
+.gantt .row{display:grid;grid-template-columns:60px 1fr;align-items:center;gap:8px;font-size:.85rem}
+.gantt .track{position:relative;height:26px;background:#0f1424;border-radius:4px;overflow:hidden}
+.gantt .seg{position:absolute;top:0;bottom:0;display:flex;align-items:center;justify-content:center;font-size:.75rem;color:#111;font-weight:600;border-right:1px solid rgba(0,0,0,.3)}
+.cells{display:grid;gap:4px;margin:10px 0}
+.cell{background:#0f1424;border:1px solid var(--line);border-radius:4px;padding:6px;text-align:center;font-family:'IBM Plex Mono',monospace;font-size:.8rem;min-height:36px;display:flex;align-items:center;justify-content:center}
+.cell.hit{background:color-mix(in srgb,var(--ok) 35%,#0f1424);border-color:var(--ok)}
+.cell.miss{background:color-mix(in srgb,var(--bad) 35%,#0f1424);border-color:var(--bad)}
+.cell.active{outline:2px solid var(--accent)}
+.cell.free{opacity:.45}
+.hl{background:color-mix(in srgb,var(--accent) 30%,transparent);padding:1px 5px;border-radius:3px}
+.k{color:var(--accent);font-weight:600}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media (max-width:760px){.two{grid-template-columns:1fr}.topbar{gap:10px}h1{font-size:2rem}}
+.nav-bottom{display:flex;justify-content:space-between;gap:16px;margin-top:56px;padding-top:20px;border-top:1px solid var(--line)}
+.nav-bottom a{text-decoration:none;padding:12px 16px;border:1px solid var(--line);border-radius:var(--radius);color:var(--paper)}
+.source{background:var(--ink-2);border-radius:var(--radius);padding:14px 18px;margin:22px 0;font-size:.95rem}
+.source b{color:var(--accent)}
+.objectives li{list-style:none;margin:6px 0}
+.objectives input{margin-right:8px;accent-color:var(--accent)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.85rem;color:var(--muted)}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:5px;vertical-align:-2px}
+.tag{display:inline-block;font-size:.75rem;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted);margin-right:6px}
+.log{font-family:'IBM Plex Mono',monospace;font-size:.82rem;background:#0f1424;border:1px solid var(--line);border-radius:var(--radius);padding:10px 12px;max-height:220px;overflow:auto;white-space:pre-wrap}
+@media print{body{background:#fff;color:#111}.topbar,.nav-bottom,button{display:none}.fig,.crux,details,.source{border-color:#bbb;background:#fff}pre{background:#f5f5f5;color:#111}}
+
+/* ---------- site chrome: sticky header + directory drawer ---------- */
+.topbar{position:sticky;top:0;z-index:30;display:flex;gap:14px;align-items:center;padding:10px 16px;background:color-mix(in srgb,var(--ink) 92%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);font-size:.9rem}
+.topbar .menu{display:flex;align-items:center;gap:8px;padding:8px 12px;font-size:1rem}
+.topbar .menu span{font-size:.85rem}
+.topbar .brand{color:var(--paper);text-decoration:none;font-weight:600;display:flex;align-items:center;gap:8px}
+.topbar .dot{width:10px;height:10px;border-radius:50%;background:var(--accent);display:inline-block}
+.topbar .links{display:flex;gap:16px;margin-left:8px}
+.topbar .links a{color:var(--muted);text-decoration:none}
+.topbar .links a:hover{color:var(--paper)}
+.topbar .where{margin-left:auto;color:var(--faint);font-variant-numeric:tabular-nums}
+.drawer{position:fixed;top:0;left:0;bottom:0;width:min(340px,88vw);background:var(--ink-2);border-right:1px solid var(--line);z-index:50;transform:translateX(-102%);transition:transform .25s;overflow-y:auto;padding:0 0 24px;box-shadow:0 0 40px rgba(0,0,0,.5)}
+.drawer-open .drawer{transform:none}
+.scrim{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:40;opacity:0;pointer-events:none;transition:opacity .2s}
+.drawer-open .scrim{opacity:1;pointer-events:auto}
+.drawer .dhead{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--ink-2)}
+.drawer .close,.notes-sheet .close{font-size:1.3rem;line-height:1;padding:4px 10px}
+.drawer .dgroup{padding:8px 0 4px}
+.drawer .dname{padding:8px 16px 4px;color:var(--accent);font-family:'Fraunces',serif;font-weight:700}
+.drawer .ditem{display:flex;gap:10px;align-items:center;padding:9px 16px;color:var(--paper);text-decoration:none;border-left:3px solid transparent;font-size:.92rem}
+.drawer .ditem:hover{background:var(--ink-3)}
+.drawer .ditem.cur{border-left-color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
+.drawer .ditem .n{color:var(--faint);min-width:1.4em;font-variant-numeric:tabular-nums}
+.drawer .ditem .t{flex:1;line-height:1.25}
+.drawer .ditem .t small{display:block;color:var(--faint);font-size:.75rem}
+.drawer .badges{display:flex;gap:6px;align-items:center}
+.drawer .badges i{font-style:normal;color:var(--accent)}
+.drawer .badges em{font-style:normal;font-size:.75rem;padding:1px 6px;border-radius:999px;background:var(--ink-3);color:var(--muted);font-variant-numeric:tabular-nums}
+.drawer .dfoot{padding:16px;color:var(--faint);font-size:.8rem}
+/* ---------- notes: floating button + bottom sheet ---------- */
+.notes-fab{position:fixed;right:16px;bottom:16px;z-index:35;display:flex;gap:8px;align-items:center;padding:12px 16px;border-radius:999px;background:var(--accent);color:#111;border:none;font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,.4)}
+.notes-sheet{position:fixed;left:0;right:0;bottom:0;z-index:45;background:var(--ink-2);border-top:1px solid var(--line);border-radius:14px 14px 0 0;transform:translateY(105%);transition:transform .25s;box-shadow:0 -10px 40px rgba(0,0,0,.5);max-width:900px;margin:0 auto;padding-bottom:env(safe-area-inset-bottom)}
+.notes-open .notes-sheet{transform:none}
+.notes-open .notes-fab{display:none}
+.notes-sheet .nhead{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line)}
+.notes-sheet .nhead b{flex:1;font-size:.95rem}
+.notes-sheet .nstatus{color:var(--faint);font-size:.8rem}
+.notes-sheet textarea{display:block;width:100%;min-height:36vh;max-height:60vh;resize:vertical;border:none;background:#0f1424;color:var(--paper);font:inherit;font-size:1rem;line-height:1.5;padding:14px 16px;outline:none}
+.notes-sheet .nfoot{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;font-size:.85rem;color:var(--muted)}
+/* ---------- wide widgets scroll sideways instead of breaking the page ---------- */
+.tw{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:16px 0}
+.tw table{margin:0;min-width:520px}
+.fig{overflow-x:auto}
+@media (prefers-reduced-motion:reduce){.drawer,.notes-sheet,.scrim{transition:none}}
+/* ---------- phones ---------- */
+@media (max-width:760px){
+  body{font-size:16px}
+  .wrap{padding:0 16px 110px}
+  h1{font-size:1.85rem} h2{font-size:1.45rem;margin-top:2rem} h3{font-size:1.15rem}
+  .lede{font-size:1.05rem}
+  .topbar{padding:8px 12px;gap:10px}
+  .topbar .links{display:none}
+  .topbar .menu span{display:none}
+  .topbar .menu{padding:8px 11px}
+  .fig{padding:12px 12px;margin:16px -4px;border-radius:8px}
+  .crux,.source{padding:12px 14px}
+  pre{font-size:.8em;padding:12px 12px}
+  button,.btn{padding:10px 14px;font-size:.92rem}
+  .controls{gap:8px}
+  .controls label{display:flex;align-items:center;gap:6px}
+  input[type=number]{max-width:96px}
+  .cards{grid-template-columns:1fr 1fr;gap:8px}
+  .card,.card .inner{min-height:120px}
+  .card .face{font-size:.88rem;padding:10px}
+  .cells{min-width:420px}
+  .quiz .opt{padding:12px 12px;line-height:1.35}
+  .nav-bottom{flex-direction:column}
+  .nav-bottom a{text-align:center}
+  .notes-fab span{display:none}
+  .notes-fab{padding:14px;right:12px;bottom:12px}
+  .notes-sheet textarea{min-height:44vh}
+  .stepper .stage{padding:12px}
+  .gantt .row{grid-template-columns:44px 1fr;font-size:.75rem}
+  /* lesson-specific grids collapse */
+  .lde,.il,.two,.cry,.flash,.dl,.fdt,.how,.cards.wide,.vm{grid-template-columns:1fr}
+  .map{grid-template-columns:1fr}
+  .net{grid-template-columns:1fr}.net .arrow{padding:0;transform:rotate(90deg)}
+  .phil{grid-template-columns:repeat(2,1fr)}
+  .jobs{max-width:100%}
+  .trace{min-width:620px}.tl{min-width:720px}.disk{min-width:560px}
+}
+@media (max-width:420px){.cards{grid-template-columns:1fr}}
+
+</style>
+<style>.il{display:grid;grid-template-columns:1fr 1fr;gap:10px}.il .t{background:#0f1424;border:1px solid var(--line);border-radius:6px;padding:10px}.il .t h4{margin:0 0 6px;font-family:inherit;font-size:.85rem;color:var(--muted)}.il .ins{font-family:'IBM Plex Mono',monospace;font-size:.85rem;padding:4px 8px;border-radius:4px;margin:3px 0}.il .ins.done{opacity:.4}.il .ins.cur{background:color-mix(in srgb,var(--accent) 30%,transparent)}.regs{font-family:'IBM Plex Mono',monospace;font-size:.9rem;display:flex;gap:24px;margin:10px 0}.regs b{color:var(--accent)}.ev td:first-child{white-space:nowrap}</style></head>
+<body class="piece-conc"><div class="wrap">
+<header class="hero"><div class="chapters">OSTEP chapters 26–28 · Concurrency: An Introduction · Thread API · Locks</div>
+<h1>Threads, the race they create, and the lock that tames it</h1>
+<p class="lede">Concurrency starts here. A thread shares its address space with other threads, so a single <code>counter++</code> becomes a three-instruction race the scheduler can lose for you. The fix is a lock — but building a correct, fair, fast one needs help from the hardware <em>and</em> the OS.</p></header>
+<div class="source"><b>Primary sources:</b> <a href="https://pages.cs.wisc.edu/~remzi/OSTEP/threads-intro.pdf">Ch 26</a>, <a href="https://pages.cs.wisc.edu/~remzi/OSTEP/threads-api.pdf">Ch 27</a>, <a href="https://pages.cs.wisc.edu/~remzi/OSTEP/threads-locks.pdf">Ch 28</a>. Code: <a href="https://github.com/remzi-arpacidusseau/ostep-code/tree/master/threads-intro">threads-intro</a>, <a href="https://github.com/remzi-arpacidusseau/ostep-code/tree/master/threads-locks">threads-locks</a>. Homework: <code>x86.py</code> lets you step interleavings by hand. Read <code>man -k pthread</code> for the full API.</div>
+<h2>What you'll be able to do</h2><ul id="obj"></ul>
+
+<h2>Threads (chapter 26)</h2>
+<p>A thread is like a process but <b>shares the address space</b> with its siblings. Each has its own PC, registers, and <b>stack</b> (thread-local storage), so a context switch between threads saves registers into a <em>thread control block</em> but leaves the page table alone. Why threads? <b>Parallelism</b> on multiple CPUs, and <b>avoiding blocking</b> — while one thread waits on I/O another runs, sharing data more naturally than separate processes would.</p>
+<figure class="fig"><svg viewBox="0 0 900 230" role="img" aria-label="single vs multi-threaded address space">
+<rect x="40" y="20" width="240" height="190" fill="#1e2540" stroke="#3a4368"/><text x="160" y="12" text-anchor="middle" fill="#a9b1cf" font-size="12">single-threaded</text><rect x="60" y="30" width="200" height="30" fill="#28304f"/><text x="160" y="50" text-anchor="middle" fill="#eef0f7" font-size="12">Program code</text><rect x="60" y="65" width="200" height="30" fill="#28304f"/><text x="160" y="85" text-anchor="middle" fill="#eef0f7" font-size="12">Heap</text><rect x="60" y="165" width="200" height="35" fill="#5bc8f5"/><text x="160" y="187" text-anchor="middle" fill="#111" font-size="12">Stack (1)</text>
+<rect x="480" y="20" width="380" height="190" fill="#1e2540" stroke="#3a4368"/><text x="670" y="12" text-anchor="middle" fill="#a9b1cf" font-size="12">two threads</text><rect x="500" y="30" width="340" height="30" fill="#28304f"/><text x="670" y="50" text-anchor="middle" fill="#eef0f7" font-size="12">Program code (shared)</text><rect x="500" y="65" width="340" height="30" fill="#28304f"/><text x="670" y="85" text-anchor="middle" fill="#eef0f7" font-size="12">Heap (shared)</text><rect x="500" y="110" width="340" height="30" fill="#5bc8f5"/><text x="670" y="130" text-anchor="middle" fill="#111" font-size="12">Stack (2)</text><rect x="500" y="165" width="340" height="35" fill="#5bc8f5"/><text x="670" y="187" text-anchor="middle" fill="#111" font-size="12">Stack (1)</text>
+<text x="380" y="120" text-anchor="middle" fill="#a9b1cf" font-size="13">shared code + heap</text><text x="380" y="140" text-anchor="middle" fill="#a9b1cf" font-size="13">private PC, regs, stack</text></svg><figcaption>Each thread needs its own stack for its locals and return addresses; the heap and code are common ground — and that is where the trouble starts.</figcaption></figure>
+<div class="crux"><b>Crux: how to support synchronization.</b> Instructions execute one at a time but the scheduler interleaves threads arbitrarily. What hardware primitives and OS support let us build correct concurrent programs?</div>
+
+<h3>Simulator: the lost update</h3>
+<p><code>counter++</code> on x86 is three instructions. Two threads start with <code>counter = 50</code>. Choose which thread executes the next instruction and watch the shared memory. Find an interleaving that ends at 51 — and one that ends at 52.</p>
+<div class="fig"><div class="il"><div class="t" id="t1"><h4>Thread 1</h4></div><div class="t" id="t2"><h4>Thread 2</h4></div></div><div class="regs"><span>memory counter = <b id="mem">50</b></span><span>T1 eax = <b id="e1">–</b></span><span>T2 eax = <b id="e2">–</b></span></div><div class="controls"><button class="primary" id="s1">Run T1's next instruction</button><button class="primary" id="s2">Run T2's next instruction</button><button id="rs">Reset</button><span class="cap" id="rmsg"></span></div></div>
+<pre><code>mov 0x8049a1c, %eax    ; load counter into a register
+add $0x1, %eax         ; increment the register
+mov %eax, 0x8049a1c    ; store it back</code></pre>
+<p>Vocabulary you'll use for the rest of the book: a <b>race condition</b> (data race) is when the result depends on timing; the outcome is <b>indeterminate</b>; the code touching shared state is a <b>critical section</b>; what we want is <b>mutual exclusion</b> — one thread inside at a time — so the section runs <b>atomically</b>, "all or nothing". The book's point about <em>why OS class</em>: the kernel was the first concurrent program; interrupts can arrive between any two instructions, so every kernel structure (page tables, process lists, file-system bitmaps) is a critical section.</p>
+
+<h2>The thread API (chapter 27)</h2>
+<pre><code>#include &lt;pthread.h&gt;
+int pthread_create(pthread_t *thread, const pthread_attr_t *attr, void *(*start_routine)(void*), void *arg);
+int pthread_join(pthread_t thread, void **value_ptr);      // wait for completion; retrieve return value
+
+pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;         // or pthread_mutex_init(&amp;lock, NULL)
+int rc = pthread_mutex_lock(&amp;lock);   assert(rc == 0);    // the book wraps calls to check return codes
+x = x + 1;                                                // critical section
+pthread_mutex_unlock(&amp;lock);
+// also pthread_mutex_trylock() (fail instead of wait), pthread_mutex_timedlock()
+
+pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
+pthread_mutex_lock(&amp;lock);
+while (ready == 0) pthread_cond_wait(&amp;cond, &amp;lock);       // releases lock while sleeping, re-acquires on wake
+pthread_mutex_unlock(&amp;lock);
+// signaler: lock; ready = 1; pthread_cond_signal(&amp;cond); unlock.   Compile with: gcc -o main main.c -Wall -pthread</code></pre>
+<div class="tip"><b>The chapter's guidelines.</b> Keep it simple. Minimize thread interactions. Initialize locks and CVs. Check return codes. Be careful passing pointers to stack variables into a thread — the stack frame may be gone (never return a pointer to a thread's stack). Each thread has its own stack. Always signal with condition variables, not flags. Use the man pages.</div>
+
+<h2>Locks (chapter 28)</h2>
+<div class="crux"><b>Crux: how to build a lock.</b> Efficient mutual exclusion at low cost. What hardware support? What OS support?</div>
+<p>A lock is a variable holding <em>free</em> or <em>held</em> (plus, perhaps, the owner and a queue). <code>lock()</code> acquires it or waits; <code>unlock()</code> frees it and lets a waiter in. The programmer chooses granularity: one <b>coarse</b> lock or many <b>fine</b> ones. Evaluate every design on three axes:</p>
+<table class="ev"><tr><th>Approach</th><th>Correct (mutual exclusion)?</th><th>Fair (no starvation)?</th><th>Performance</th></tr>
+<tr><td>Disable interrupts</td><td>yes, on one CPU</td><td>–</td><td>Trusts apps (they could loop forever); useless on multiprocessors; loses interrupts; slow instructions. Only for the OS itself.</td></tr>
+<tr><td>Loads/stores on a flag</td><td><span style="color:var(--bad)">no</span> — both threads can read 0 before either writes 1</td><td>–</td><td>spin-waits</td></tr>
+<tr><td>Test-and-set spin lock</td><td>yes</td><td><span style="color:var(--bad)">no</span></td><td>Terrible on one CPU (a preempted holder makes everyone spin a whole slice); fine on multiple CPUs if critical sections are short.</td></tr>
+<tr><td>Ticket lock (fetch-and-add)</td><td>yes</td><td>yes (FIFO)</td><td>still spins</td></tr>
+<tr><td>Yield instead of spin</td><td>yes</td><td>no</td><td>Saves the wasted slice but wastes context switches; with 100 threads, 99 yield in turn.</td></tr>
+<tr><td>Queue + park/unpark (Solaris) / futex (Linux)</td><td>yes</td><td>yes</td><td>Sleep instead of spin; the real thing.</td></tr></table>
+
+<h3>Hardware primitives — click to see the lock built from each</h3>
+<div class="fig"><div class="controls"><button class="primary" data-h="tas">test-and-set</button><button data-h="cas">compare-and-swap</button><button data-h="llsc">load-linked / store-conditional</button><button data-h="faa">fetch-and-add (ticket)</button></div><div id="hw"></div></div>
+
+<h3>Ticket lock, animated</h3>
+<div class="fig"><div class="controls"><button class="primary" id="tk-acq">A thread calls lock()</button><button id="tk-rel">Holder calls unlock()</button><button id="tk-rs">Reset</button></div><div class="regs"><span>ticket = <b id="tkt">0</b></span><span>turn = <b id="ttn">0</b></span></div><div id="tkq" class="cells" style="grid-template-columns:repeat(8,1fr)"></div><div class="cap">Each arriving thread grabs a ticket atomically and spins until <code>turn == myturn</code>. Unlock increments turn. Every thread is served in order — fairness the plain spin lock lacks.</div></div>
+
+<h3>Too much spinning: bring in the OS</h3>
+<div class="crux"><b>Crux: how to avoid spinning</b> without wasting CPU? Hardware alone can't; we need OS support.</div>
+<ul><li><b>Just yield</b>: <code>while (TestAndSet(&amp;flag,1)==1) yield();</code> gives up the CPU instead of a slice. Better, but with many threads it's still a lot of switching and starvation is possible.</li>
+<li><b>Queues + park()/unpark()</b> (Solaris): a small <em>guard</em> spin lock protects the lock's flag and queue; a would-be acquirer enqueues itself and calls <code>park()</code> to sleep; unlock hands the lock <em>directly</em> to the next queued thread via <code>unpark()</code>. The <b>wakeup/waiting race</b> (unpark arrives just before park) is closed by <code>setpark()</code>: "I'm about to park; if someone unparks me first, return immediately."</li>
+<li><b>Linux futex</b>: per-address kernel queue; <code>futex_wait(addr, expected)</code> sleeps only if <code>*addr == expected</code>, <code>futex_wake(addr)</code> wakes one. The high bit of the lock word encodes held/free, the rest counts waiters, so the uncontended path is a single atomic op in user space.</li>
+<li><b>Two-phase locks</b>: spin briefly (the lock may be about to free up), then sleep. A hybrid — the book's recurring pattern.</li></ul>
+<div class="tip"><b>Priority inversion</b> (the Mars Pathfinder story): a low-priority thread holding a spin lock, a high-priority thread spinning for it, and a medium-priority thread starving the low one. Fixes: priority inheritance, or don't mix spin locks with priorities.</div>
+
+<h2>Flash cards</h2><div id="cards"></div>
+<h2>Retrieval practice</h2><div id="quiz"></div>
+<p class="tip">Want to step through the park/unpark code line by line, or design a lock for a scenario? Ask me in the chat.</p>
+</div>
+<script>
+/* OSTEP course — shared components. Every page loads this file (inlined by build.py). */
+window.OS = (function () {
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+  /* ---------- persistent storage (localStorage on a real site; in-memory fallback in sandboxes) ---------- */
+  const mem = {};
+  const store = {
+    get(k) { try { const v = localStorage.getItem('ostep:' + k); return v === null ? (mem[k] ?? null) : JSON.parse(v); } catch (e) { return mem[k] ?? null; } },
+    set(k, v) { mem[k] = v; try { localStorage.setItem('ostep:' + k, JSON.stringify(v)); } catch (e) {} },
+    del(k) { delete mem[k]; try { localStorage.removeItem('ostep:' + k); } catch (e) {} },
+    keys(prefix) { const out = new Set(Object.keys(mem).filter(k => k.startsWith(prefix))); try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith('ostep:' + prefix)) out.add(k.slice(6)); } } catch (e) {} return [...out]; },
+    available() { try { localStorage.setItem('ostep:test', '1'); localStorage.removeItem('ostep:test'); return true; } catch (e) { return false; } }
+  };
+
+  /* ---------- course structure ---------- */
+  const PIECES = [
+    ['intro', 'Introduction', [['0001-three-easy-pieces', 'Three easy pieces', 'ch 1–2']]],
+    ['virt', 'Virtualization', [
+      ['0002-processes', 'Processes & the process API', 'ch 4–5'],
+      ['0003-limited-direct-execution', 'Limited direct execution', 'ch 6'],
+      ['0004-scheduling', 'Scheduling', 'ch 7–10'],
+      ['0005-address-spaces', 'Address spaces & segments', 'ch 13–16'],
+      ['0006-paging-and-tlbs', 'Paging & TLBs', 'ch 17–20'],
+      ['0007-swapping', 'Swapping & policies', 'ch 21–23']]],
+    ['conc', 'Concurrency', [
+      ['0008-threads-and-locks', 'Threads & locks', 'ch 26–28'],
+      ['0009-cvs-and-semaphores', 'CVs & semaphores', 'ch 29–31'],
+      ['0010-bugs-and-events', 'Bugs & events', 'ch 32–33']]],
+    ['pers', 'Persistence', [
+      ['0011-devices-disks-raid', 'Devices, disks, RAID', 'ch 36–38'],
+      ['0012-files-and-vsfs', 'Files & a simple FS', 'ch 39–40'],
+      ['0013-ffs-journaling-lfs', 'FFS, journaling, LFS', 'ch 41–43'],
+      ['0014-ssd-and-integrity', 'SSDs & integrity', 'ch 44–45'],
+      ['0015-distributed-nfs-afs', 'Distributed FS', 'ch 48–50']]],
+    ['sec', 'Security', [['0016-security-and-vmms', 'Security & VMMs', 'ch 53–57, App B']]]
+  ];
+  const LESSONS = PIECES.flatMap(p => p[2].map(l => [l[0], l[1], p[0], l[2]]));
+  const title = id => (LESSONS.find(l => l[0] === id) || [])[1] || id;
+  let pageId = null, root = '../';
+
+  /* ---------- chrome: sticky header, slide-out directory, notes drawer, prev/next ---------- */
+  function chrome(id, rootPath) {
+    pageId = id; root = rootPath === undefined ? '../' : rootPath;
+    const i = LESSONS.findIndex(l => l[0] === id);
+    const isLesson = i >= 0;
+    const top = document.createElement('header'); top.className = 'topbar';
+    top.innerHTML = `<button class="menu" aria-label="Open directory" aria-expanded="false">☰<span>Directory</span></button>
+      <a class="brand" href="${root}index.html"><span class="dot"></span>OSTEP course</a>
+      <nav class="links"><a href="${root}reference/glossary.html">Glossary</a><a href="${root}reference/cheatsheets.html">Cheat sheets</a><a href="${root}notes.html">My notes</a></nav>
+      ${isLesson ? `<span class="where">${i+1} / ${LESSONS.length}</span>` : ''}`;
+    document.body.prepend(top);
+    // directory drawer
+    const drawer = document.createElement('aside'); drawer.className = 'drawer'; drawer.setAttribute('aria-label', 'Course directory');
+    const scores = Object.fromEntries(LESSONS.map(l => [l[0], store.get('quiz:' + l[0])]));
+    const notes = new Set(store.keys('notes:').map(k => k.slice(6)).filter(k => (store.get('notes:' + k) || {}).text));
+    drawer.innerHTML = `<div class="dhead"><b>Directory</b><button class="close" aria-label="Close">×</button></div>
+      <a class="ditem ${id === 'index' ? 'cur' : ''}" href="${root}index.html">Course hub</a>
+      ${PIECES.map(([cls, name, ls]) => `<div class="dgroup piece-${cls}"><div class="dname">${name}</div>${ls.map(l => {
+        const n = LESSONS.findIndex(x => x[0] === l[0]) + 1, s = scores[l[0]];
+        return `<a class="ditem ${l[0] === id ? 'cur' : ''}" href="${root}lessons/${l[0]}.html"><span class="n">${n}</span><span class="t">${l[1]}<small>${l[3]}</small></span><span class="badges">${notes.has(l[0]) ? '<i title="you have notes">✎</i>' : ''}${s ? `<em title="best quiz score">${s.score}/${s.total}</em>` : ''}</span></a>`; }).join('')}</div>`).join('')}
+      <div class="dgroup piece-intro"><div class="dname">Reference</div>
+        <a class="ditem ${id === 'glossary' ? 'cur' : ''}" href="${root}reference/glossary.html"><span class="t">Glossary</span></a>
+        <a class="ditem ${id === 'cheatsheets' ? 'cur' : ''}" href="${root}reference/cheatsheets.html"><span class="t">Cheat sheets</span></a>
+        <a class="ditem ${id === 'notes' ? 'cur' : ''}" href="${root}notes.html"><span class="t">My notes &amp; progress</span></a></div>
+      <div class="dfoot">${store.available() ? 'Notes and scores are saved in this browser.' : 'Notes and scores are kept for this session only (storage unavailable here).'}</div>`;
+    document.body.append(drawer);
+    const scrim = document.createElement('div'); scrim.className = 'scrim'; document.body.append(scrim);
+    const open = o => { document.body.classList.toggle('drawer-open', o); top.querySelector('.menu').setAttribute('aria-expanded', o); if (o) drawer.querySelector('.cur, .ditem')?.focus(); };
+    top.querySelector('.menu').onclick = () => open(!document.body.classList.contains('drawer-open'));
+    drawer.querySelector('.close').onclick = () => open(false); scrim.onclick = () => open(false);
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') { open(false); notesOpen(false); } });
+    // prev/next for lessons
+    if (isLesson) {
+      const nav = document.createElement('div'); nav.className = 'nav-bottom';
+      const prev = LESSONS[i-1], next = LESSONS[i+1];
+      nav.innerHTML = (prev ? `<a href="${prev[0]}.html">← ${i}. ${prev[1]}</a>` : '<span></span>') +
+                      (next ? `<a href="${next[0]}.html">${i+2}. ${next[1]} →</a>` : `<a href="${root}index.html">Back to course hub →</a>`);
+      document.querySelector('.wrap').append(nav);
+    }
+    // wrap tables so they scroll sideways on phones
+    document.querySelectorAll('.wrap table').forEach(t => { if (t.parentElement.classList.contains('tw')) return; const w = document.createElement('div'); w.className = 'tw'; t.replaceWith(w); w.append(t); });
+    // notes drawer (every page except the notes page itself)
+    if (id !== 'notes') notesUI(id, isLesson ? `${i+1}. ${LESSONS[i][1]}` : (document.title.split(' — ')[0]));
+  }
+
+  /* ---------- notes: floating button + bottom sheet, autosaved ---------- */
+  let notesOpen = () => {};
+  function notesUI(id, label) {
+    const btn = document.createElement('button'); btn.className = 'notes-fab'; btn.innerHTML = '✎ <span>Notes</span>'; btn.setAttribute('aria-label', 'Open notes');
+    const sheet = document.createElement('section'); sheet.className = 'notes-sheet'; sheet.setAttribute('aria-label', 'Notes for this page');
+    const saved = store.get('notes:' + id) || {};
+    sheet.innerHTML = `<div class="nhead"><b>Notes · ${esc(label)}</b><span class="nstatus"></span><button class="close" aria-label="Close notes">×</button></div>
+      <textarea placeholder="Your notes for this page. Markdown is fine. Saved automatically.">${esc(saved.text || '')}</textarea>
+      <div class="nfoot"><span class="ncount"></span><a href="${root}notes.html">All notes &amp; export →</a></div>`;
+    document.body.append(btn, sheet);
+    const ta = sheet.querySelector('textarea'), status = sheet.querySelector('.nstatus'), count = sheet.querySelector('.ncount');
+    const upd = () => { count.textContent = ta.value.trim() ? ta.value.trim().split(/\s+/).length + ' words' : ''; };
+    let t; ta.addEventListener('input', () => { status.textContent = 'saving…'; clearTimeout(t); t = setTimeout(() => { store.set('notes:' + id, { text: ta.value, title: label, updated: new Date().toISOString() }); status.textContent = 'saved'; upd(); }, 400); });
+    upd();
+    notesOpen = o => { document.body.classList.toggle('notes-open', o); if (o) ta.focus(); };
+    btn.onclick = () => notesOpen(!document.body.classList.contains('notes-open'));
+    sheet.querySelector('.close').onclick = () => notesOpen(false);
+  }
+
+  /* ---------- quiz: immediate feedback; best score persisted ---------- */
+  function quiz(el, qs) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('quiz');
+    let score = 0, answered = 0;
+    const best = pageId ? store.get('quiz:' + pageId) : null;
+    el.innerHTML = qs.map((q, i) => `<div class="q" data-i="${i}"><p>${i+1}. ${q.q}</p>
+      <div class="opts">${q.o.map((o, j) => `<button class="opt" data-j="${j}">${esc(o)}</button>`).join('')}</div>
+      <div class="why">${q.why}</div></div>`).join('') + `<div class="score">${best ? `Best so far: ${best.score}/${best.total} (${new Date(best.date).toLocaleDateString()})` : ''}</div>`;
+    el.querySelectorAll('.q').forEach(qd => {
+      const q = qs[+qd.dataset.i];
+      qd.querySelectorAll('.opt').forEach(b => b.addEventListener('click', () => {
+        if (qd.classList.contains('done')) return;
+        qd.classList.add('done'); answered++;
+        const j = +b.dataset.j;
+        if (j === q.a) { b.classList.add('right'); score++; }
+        else { b.classList.add('wrong'); qd.querySelectorAll('.opt')[q.a].classList.add('right'); }
+        const s = el.querySelector('.score');
+        s.textContent = `${score} / ${answered} correct`;
+        if (answered === qs.length) {
+          s.textContent += score === qs.length ? ' — all of them. Retry from memory in two days.' : ' — reread the sections you missed, then retry.';
+          if (pageId && (!best || score >= best.score)) store.set('quiz:' + pageId, { score, total: qs.length, date: new Date().toISOString() });
+        }
+      }));
+    });
+  }
+
+  /* ---------- flip cards ---------- */
+  function cards(el, list) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('cards');
+    el.innerHTML = list.map(([f, b]) => `<div class="card" tabindex="0" role="button" aria-label="flip card"><div class="inner"><div class="face front">${f}</div><div class="face back">${b}</div></div></div>`).join('');
+    el.querySelectorAll('.card').forEach(c => {
+      const t = () => c.classList.toggle('flipped');
+      c.addEventListener('click', t);
+      c.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); t(); } });
+    });
+  }
+
+  /* ---------- stepper ---------- */
+  function stepper(el, steps, render) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('stepper');
+    let i = 0;
+    el.innerHTML = `<div class="controls"><button class="prev">← Back</button><button class="next primary">Next step →</button><span class="idx"></span></div><div class="stage"></div><div class="extra"></div>`;
+    const stage = el.querySelector('.stage'), idx = el.querySelector('.idx'), extra = el.querySelector('.extra');
+    const draw = () => { stage.innerHTML = steps[i]; idx.textContent = `step ${i+1} / ${steps.length}`; if (render) render(i, extra); };
+    el.querySelector('.prev').onclick = () => { i = Math.max(0, i-1); draw(); };
+    el.querySelector('.next').onclick = () => { i = Math.min(steps.length-1, i+1); draw(); };
+    draw();
+  }
+
+  /* ---------- gantt ---------- */
+  function gantt(el, rows, total, colors) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('gantt');
+    const pal = colors || ['#e8b84a','#5bc8f5','#6bcb77','#f47fa0','#c9a8ff','#ffb86b'];
+    el.innerHTML = rows.map((r, i) => `<div class="row"><span>${esc(r.name)}</span><div class="track">${r.segs.map(s =>
+      `<div class="seg" style="left:${100*s.start/total}%;width:${100*(s.end-s.start)/total}%;background:${pal[i%pal.length]}" title="${s.start}–${s.end}">${(s.end-s.start)/total > .06 ? (s.end-s.start) : ''}</div>`).join('')}</div></div>`).join('') +
+      `<div class="row"><span></span><div style="display:flex;justify-content:space-between;font-size:.75rem;color:var(--muted)"><span>0</span><span>${total}</span></div></div>`;
+  }
+
+  /* ---------- objectives checklist (persisted) ---------- */
+  function objectives(el, items) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('objectives');
+    const saved = (pageId && store.get('obj:' + pageId)) || [];
+    el.innerHTML = items.map((t, i) => `<li><label><input type="checkbox" data-i="${i}" ${saved.includes(i) ? 'checked' : ''}>${t}</label></li>`).join('');
+    el.querySelectorAll('input').forEach(c => c.onchange = () => { const s = [...el.querySelectorAll('input:checked')].map(x => +x.dataset.i); if (pageId) store.set('obj:' + pageId, s); });
+  }
+
+  return { chrome, quiz, cards, stepper, gantt, objectives, esc, store, LESSONS, PIECES, title };
+})();
+
+</script>
+<script>
+OS.chrome('0008-threads-and-locks');
+OS.objectives('obj',['Say exactly what a thread shares and what it owns, and why each thread needs a stack.','Construct an interleaving of load/add/store that loses an update, and define race, critical section, mutual exclusion, atomicity.','Use pthread_create/join, mutexes and condition variables correctly from memory.','Build a spin lock from test-and-set, CAS, LL/SC and a fair ticket lock from fetch-and-add, and evaluate each.','Explain why spin locks need OS help (yield, park/unpark, futex) and what setpark prevents.']);
+/* interleaving */
+const INS=['mov counter, %eax','add $1, %eax','mov %eax, counter'];let st;
+function rs(){st={mem:50,pc:[0,0],eax:[null,null]};draw();document.getElementById('rmsg').textContent='';}
+function draw(){[0,1].forEach(t=>{const el=document.getElementById('t'+(t+1));el.innerHTML=`<h4>Thread ${t+1}</h4>`+INS.map((s,i)=>`<div class="ins ${i<st.pc[t]?'done':i===st.pc[t]?'cur':''}">${s}</div>`).join('');});document.getElementById('mem').textContent=st.mem;document.getElementById('e1').textContent=st.eax[0]??'–';document.getElementById('e2').textContent=st.eax[1]??'–';}
+function step(t){const i=st.pc[t];if(i>2)return;if(i===0)st.eax[t]=st.mem;else if(i===1)st.eax[t]++;else st.mem=st.eax[t];st.pc[t]++;draw();if(st.pc[0]===3&&st.pc[1]===3)document.getElementById('rmsg').textContent=st.mem===52?'52: correct — the critical sections did not overlap.':'51: one increment was lost. A timer interrupt between load and store is all it takes.';}
+document.getElementById('s1').onclick=()=>step(0);document.getElementById('s2').onclick=()=>step(1);document.getElementById('rs').onclick=rs;rs();
+const HW={tas:`<pre><code>int TestAndSet(int *old_ptr, int new) {   // executed <b>atomically</b> by the hardware (x86: xchg)
+    int old = *old_ptr; *old_ptr = new; return old;
+}
+void lock(lock_t *lock)   { while (TestAndSet(&amp;lock->flag, 1) == 1) ; /* spin */ }
+void unlock(lock_t *lock) { lock->flag = 0; }</code></pre><p>The <em>test</em> (read old) and <em>set</em> (write 1) happen as one step, so two threads can't both see 0. Correct; needs a preemptive scheduler on a single CPU (otherwise a spinner never yields); no fairness; performance depends on how long the holder holds it.</p>`,
+cas:`<pre><code>int CompareAndSwap(int *ptr, int expected, int new) {   // atomic
+    int original = *ptr;
+    if (original == expected) *ptr = new;
+    return original;
+}
+void lock(lock_t *lock) { while (CompareAndSwap(&amp;lock->flag, 0, 1) == 1) ; }</code></pre><p>Same spin lock as test-and-set when used this way, but CAS is more powerful: it's the basis of <b>lock-free</b> data structures (e.g. a wait-free list insert that retries until its CAS succeeds — chapter 32).</p>`,
+llsc:`<pre><code>int LoadLinked(int *ptr) { return *ptr; }
+int StoreConditional(int *ptr, int value) {
+    if (no update to *ptr since the LoadLinked to this address) { *ptr = value; return 1; } // success
+    else return 0;                                                                          // failed
+}
+void lock(lock_t *lock) {
+    while (1) {
+        while (LoadLinked(&amp;lock->flag) == 1) ;            // spin until flag is zero
+        if (StoreConditional(&amp;lock->flag, 1) == 1) return; // if set-to-1 was atomic, we're done
+    }
+}   // or, as one line: while (LoadLinked(&amp;lock->flag) || !StoreConditional(&amp;lock->flag, 1));</code></pre><p>MIPS, Alpha, PowerPC, ARM. If two threads both see 0, only one store-conditional succeeds; the other retries.</p>`,
+faa:`<pre><code>int FetchAndAdd(int *ptr) { int old = *ptr; *ptr = old + 1; return old; }   // atomic
+typedef struct { int ticket; int turn; } lock_t;
+void lock(lock_t *lock)   { int myturn = FetchAndAdd(&amp;lock->ticket); while (lock->turn != myturn) ; }
+void unlock(lock_t *lock) { lock->turn = lock->turn + 1; }</code></pre><p>Mellor-Crummey &amp; Scott's <b>ticket lock</b>: once you hold a ticket you <em>will</em> be scheduled — progress for all, unlike test-and-set where a thread can spin forever.</p>`};
+document.querySelectorAll('[data-h]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-h]').forEach(x=>x.classList.remove('primary'));b.classList.add('primary');document.getElementById('hw').innerHTML=HW[b.dataset.h];});document.getElementById('hw').innerHTML=HW.tas;
+/* ticket */
+let tk={ticket:0,turn:0,q:[]},nid=0;const names='ABCDEFGH';
+function tdraw(){document.getElementById('tkt').textContent=tk.ticket;document.getElementById('ttn').textContent=tk.turn;document.getElementById('tkq').innerHTML=tk.q.map(t=>`<div class="cell ${t.n===tk.turn?'hit':''}">${t.name}<br>ticket ${t.n}<br>${t.n===tk.turn?'holds lock':'spins'}</div>`).join('')||'<div class="cell free">no threads</div>';}
+document.getElementById('tk-acq').onclick=()=>{if(tk.q.length>=8)return;tk.q.push({name:names[nid++%8],n:tk.ticket});tk.ticket++;tdraw();};
+document.getElementById('tk-rel').onclick=()=>{if(!tk.q.length||tk.q[0].n!==tk.turn)return;tk.q.shift();tk.turn++;tdraw();};
+document.getElementById('tk-rs').onclick=()=>{tk={ticket:0,turn:0,q:[]};nid=0;tdraw();};tdraw();
+OS.cards('cards',[['Thread','An execution context (PC, registers, stack) sharing an address space with other threads of the same process.'],['Critical section','Code that accesses a shared resource and must not be executed by more than one thread at a time.'],['Mutual exclusion','Guarantee that only one thread is in a critical section at any moment; what a lock provides.'],['Atomic','All-or-nothing: an operation that cannot be observed half-done. Hardware supplies a few atomic instructions; we build the rest.'],['Test-and-set','Atomic instruction that returns the old value of a word and writes a new one; enough to build a spin lock.'],['Ticket lock','Fetch-and-add on a ticket counter; spin until turn equals your ticket. Fair (FIFO) spin lock.'],['park()/unpark()','Solaris calls to put the caller to sleep and to wake a named thread; used with a queue to avoid spinning.'],['setpark()','Declares intent to park so an unpark arriving in between makes the later park return at once — closes the wakeup/waiting race.'],['futex','Linux kernel queue keyed by a user address; wait only if the word still holds an expected value; wake one waiter.'],['Two-phase lock','Spin briefly hoping the lock frees, then sleep. Hybrid of spinning and blocking.']]);
+OS.quiz('quiz',[
+{q:'Two threads each run counter++ once from 50. Which final value proves an update was lost?',o:['52','51','50','53'],a:1,why:'If both load 50 before either stores, both store 51. The correct, serialized result is 52.'},
+{q:'What does a thread NOT share with other threads in the same process?',o:['the heap','its stack','the code','the page table'],a:1,why:'Threads share the address space (code, heap, globals) but each has its own stack for locals and return addresses, plus its own PC and registers.'},
+{q:'Why does a spin lock built from a flag with plain loads and stores fail?',o:['the flag may be cached in a register','both threads can read 0 before writing 1','stores are not visible across CPUs','the loop never gets interrupted'],a:1,why:'The test (read 0) and set (write 1) are separate instructions; an interrupt between them lets both threads enter. Test-and-set fuses them atomically.'},
+{q:'Disabling interrupts as a locking method fails on which class of machine?',o:['single-CPU systems','multiprocessor systems','systems with a timer','systems running UNIX'],a:1,why:'Disabling interrupts only affects the local CPU; threads on other CPUs can still enter the critical section. It also trusts applications too much.'},
+{q:'Which property does a ticket lock add over a test-and-set spin lock?',o:['lower single-CPU cost','fairness via FIFO order','no busy waiting at all','protection from interrupts'],a:1,why:'Each thread gets a ticket and is served in order, so no thread starves. It still spins, so the CPU-waste problem remains.'},
+{q:'What race does setpark() close in the queue-based lock?',o:['two threads getting one ticket','unpark before the caller parks','the guard lock being reused','a thread unlocking twice'],a:1,why:'Without it, a thread could be unparked between releasing the guard and calling park(), then sleep forever. setpark makes the subsequent park return immediately.'},
+{q:'In the futex-based Linux mutex, what makes the uncontended acquire cheap?',o:['it disables interrupts briefly','one atomic op in user space','the kernel spins on its behalf','it uses a per-thread ticket'],a:1,why:'The lock word\'s high bit says held/free; if free, a single atomic operation acquires it with no system call. Only contention enters the kernel via futex_wait.'}]);
+</script></body></html>

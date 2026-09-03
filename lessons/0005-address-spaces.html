@@ -1,0 +1,441 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>5 · Address spaces & segments — OSTEP course</title><style>
+/* OSTEP course — shared stylesheet. Three pieces, three hues. */
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+:root{
+  --ink:#151b2f; --ink-2:#1e2540; --ink-3:#28304f; --line:#3a4368;
+  --paper:#eef0f7; --muted:#a9b1cf; --faint:#6e779a;
+  --virt:#e8b84a; --conc:#5bc8f5; --pers:#6bcb77; --sec:#f47fa0; --intro:#c9a8ff;
+  --ok:#6bcb77; --bad:#ff6b6b;
+  --accent:var(--virt);
+  --radius:6px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--ink);color:var(--paper);font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:17px;line-height:1.6}
+a{color:var(--accent)}
+code,pre,kbd,.mono{font-family:'IBM Plex Mono',ui-monospace,monospace}
+code{background:var(--ink-3);padding:1px 5px;border-radius:4px;font-size:.9em}
+pre{background:#0f1424;border:1px solid var(--line);border-left:4px solid var(--accent);padding:14px 16px;overflow:auto;border-radius:var(--radius);font-size:.86em;line-height:1.5}
+pre code{background:none;padding:0;font-size:inherit}
+h1,h2,h3,h4{font-family:'Fraunces',Georgia,serif;font-weight:700;line-height:1.15;margin:0 0 .4em}
+h1{font-size:2.6rem;letter-spacing:-.01em}
+h2{font-size:1.9rem;margin-top:2.6rem;padding-top:1.2rem;border-top:1px solid var(--line)}
+h3{font-size:1.3rem;margin-top:1.8rem;color:var(--accent)}
+h4{font-size:1.05rem;margin-top:1.2rem}
+p,li{max-width:72ch}
+.wrap{max-width:1100px;margin:0 auto;padding:0 28px 96px}
+.hero{padding:44px 0 16px}
+.hero .chapters{color:var(--muted);font-size:.95rem;margin-bottom:6px}
+.lede{font-size:1.2rem;color:var(--muted);max-width:66ch}
+.piece-virt{--accent:var(--virt)} .piece-conc{--accent:var(--conc)} .piece-pers{--accent:var(--pers)} .piece-sec{--accent:var(--sec)} .piece-intro{--accent:var(--intro)}
+.fig{background:var(--ink-2);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;margin:22px 0}
+.fig figcaption,.cap{color:var(--muted);font-size:.9rem;margin-top:10px}
+.fig svg{max-width:100%;height:auto;display:block}
+svg text{font-family:'IBM Plex Sans',sans-serif}
+svg .mono{font-family:'IBM Plex Mono',monospace}
+.crux{border:1px solid var(--accent);border-radius:var(--radius);padding:14px 18px;margin:22px 0;background:color-mix(in srgb,var(--accent) 8%,transparent)}
+.crux b{color:var(--accent)}
+.tip{border-left:4px solid var(--muted);padding:6px 16px;margin:18px 0;color:var(--muted)}
+.tip b{color:var(--paper)}
+table{border-collapse:collapse;width:100%;margin:16px 0;font-size:.95rem}
+th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{color:var(--muted);font-weight:500}
+td.mono,th.mono{font-family:'IBM Plex Mono',monospace}
+button,.btn{font:inherit;font-size:.9rem;background:var(--ink-3);color:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:7px 13px;cursor:pointer}
+button:hover{border-color:var(--accent)}
+button.primary{background:var(--accent);color:#111;border-color:var(--accent);font-weight:600}
+button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+input[type=range]{accent-color:var(--accent)}
+input[type=text],input[type=number],select{font:inherit;background:#0f1424;color:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:6px 10px}
+.controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:10px 0}
+.controls label{font-size:.9rem;color:var(--muted)}
+details{border:1px solid var(--line);border-radius:var(--radius);margin:10px 0;background:var(--ink-2)}
+summary{cursor:pointer;padding:12px 16px;font-weight:600;list-style:none}
+summary::before{content:"+";display:inline-block;width:1.2em;color:var(--accent)}
+details[open] summary::before{content:"–"}
+details>div{padding:0 16px 14px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;margin:16px 0}
+.card{perspective:900px;min-height:140px;cursor:pointer}
+.card .inner{position:relative;width:100%;height:100%;min-height:140px;transition:transform .45s;transform-style:preserve-3d}
+.card.flipped .inner{transform:rotateY(180deg)}
+.card .face{position:absolute;inset:0;padding:14px;border-radius:var(--radius);border:1px solid var(--line);background:var(--ink-2);backface-visibility:hidden;display:flex;align-items:center;justify-content:center;text-align:center;font-size:.95rem}
+.card .back{transform:rotateY(180deg);background:var(--ink-3);border-color:var(--accent);font-size:.88rem;line-height:1.45}
+.card .front{font-weight:600}
+@media (prefers-reduced-motion:reduce){.card .inner{transition:none}}
+.quiz .q{border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin:12px 0;background:var(--ink-2)}
+.quiz .q p{margin:0 0 10px;font-weight:600}
+.quiz .opts{display:grid;gap:8px}
+.quiz .opt{text-align:left;background:var(--ink);width:100%}
+.quiz .opt.right{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 15%,var(--ink))}
+.quiz .opt.wrong{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 15%,var(--ink))}
+.quiz .why{margin-top:10px;color:var(--muted);font-size:.93rem;display:none}
+.quiz .q.done .why{display:block}
+.quiz .score{margin-top:12px;font-weight:600}
+.stepper .stage{min-height:60px;background:#0f1424;border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin:10px 0}
+.stepper .idx{color:var(--muted);font-size:.85rem}
+.gantt{display:grid;gap:6px;margin:10px 0}
+.gantt .row{display:grid;grid-template-columns:60px 1fr;align-items:center;gap:8px;font-size:.85rem}
+.gantt .track{position:relative;height:26px;background:#0f1424;border-radius:4px;overflow:hidden}
+.gantt .seg{position:absolute;top:0;bottom:0;display:flex;align-items:center;justify-content:center;font-size:.75rem;color:#111;font-weight:600;border-right:1px solid rgba(0,0,0,.3)}
+.cells{display:grid;gap:4px;margin:10px 0}
+.cell{background:#0f1424;border:1px solid var(--line);border-radius:4px;padding:6px;text-align:center;font-family:'IBM Plex Mono',monospace;font-size:.8rem;min-height:36px;display:flex;align-items:center;justify-content:center}
+.cell.hit{background:color-mix(in srgb,var(--ok) 35%,#0f1424);border-color:var(--ok)}
+.cell.miss{background:color-mix(in srgb,var(--bad) 35%,#0f1424);border-color:var(--bad)}
+.cell.active{outline:2px solid var(--accent)}
+.cell.free{opacity:.45}
+.hl{background:color-mix(in srgb,var(--accent) 30%,transparent);padding:1px 5px;border-radius:3px}
+.k{color:var(--accent);font-weight:600}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media (max-width:760px){.two{grid-template-columns:1fr}.topbar{gap:10px}h1{font-size:2rem}}
+.nav-bottom{display:flex;justify-content:space-between;gap:16px;margin-top:56px;padding-top:20px;border-top:1px solid var(--line)}
+.nav-bottom a{text-decoration:none;padding:12px 16px;border:1px solid var(--line);border-radius:var(--radius);color:var(--paper)}
+.source{background:var(--ink-2);border-radius:var(--radius);padding:14px 18px;margin:22px 0;font-size:.95rem}
+.source b{color:var(--accent)}
+.objectives li{list-style:none;margin:6px 0}
+.objectives input{margin-right:8px;accent-color:var(--accent)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.85rem;color:var(--muted)}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:5px;vertical-align:-2px}
+.tag{display:inline-block;font-size:.75rem;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted);margin-right:6px}
+.log{font-family:'IBM Plex Mono',monospace;font-size:.82rem;background:#0f1424;border:1px solid var(--line);border-radius:var(--radius);padding:10px 12px;max-height:220px;overflow:auto;white-space:pre-wrap}
+@media print{body{background:#fff;color:#111}.topbar,.nav-bottom,button{display:none}.fig,.crux,details,.source{border-color:#bbb;background:#fff}pre{background:#f5f5f5;color:#111}}
+
+/* ---------- site chrome: sticky header + directory drawer ---------- */
+.topbar{position:sticky;top:0;z-index:30;display:flex;gap:14px;align-items:center;padding:10px 16px;background:color-mix(in srgb,var(--ink) 92%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);font-size:.9rem}
+.topbar .menu{display:flex;align-items:center;gap:8px;padding:8px 12px;font-size:1rem}
+.topbar .menu span{font-size:.85rem}
+.topbar .brand{color:var(--paper);text-decoration:none;font-weight:600;display:flex;align-items:center;gap:8px}
+.topbar .dot{width:10px;height:10px;border-radius:50%;background:var(--accent);display:inline-block}
+.topbar .links{display:flex;gap:16px;margin-left:8px}
+.topbar .links a{color:var(--muted);text-decoration:none}
+.topbar .links a:hover{color:var(--paper)}
+.topbar .where{margin-left:auto;color:var(--faint);font-variant-numeric:tabular-nums}
+.drawer{position:fixed;top:0;left:0;bottom:0;width:min(340px,88vw);background:var(--ink-2);border-right:1px solid var(--line);z-index:50;transform:translateX(-102%);transition:transform .25s;overflow-y:auto;padding:0 0 24px;box-shadow:0 0 40px rgba(0,0,0,.5)}
+.drawer-open .drawer{transform:none}
+.scrim{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:40;opacity:0;pointer-events:none;transition:opacity .2s}
+.drawer-open .scrim{opacity:1;pointer-events:auto}
+.drawer .dhead{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--ink-2)}
+.drawer .close,.notes-sheet .close{font-size:1.3rem;line-height:1;padding:4px 10px}
+.drawer .dgroup{padding:8px 0 4px}
+.drawer .dname{padding:8px 16px 4px;color:var(--accent);font-family:'Fraunces',serif;font-weight:700}
+.drawer .ditem{display:flex;gap:10px;align-items:center;padding:9px 16px;color:var(--paper);text-decoration:none;border-left:3px solid transparent;font-size:.92rem}
+.drawer .ditem:hover{background:var(--ink-3)}
+.drawer .ditem.cur{border-left-color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
+.drawer .ditem .n{color:var(--faint);min-width:1.4em;font-variant-numeric:tabular-nums}
+.drawer .ditem .t{flex:1;line-height:1.25}
+.drawer .ditem .t small{display:block;color:var(--faint);font-size:.75rem}
+.drawer .badges{display:flex;gap:6px;align-items:center}
+.drawer .badges i{font-style:normal;color:var(--accent)}
+.drawer .badges em{font-style:normal;font-size:.75rem;padding:1px 6px;border-radius:999px;background:var(--ink-3);color:var(--muted);font-variant-numeric:tabular-nums}
+.drawer .dfoot{padding:16px;color:var(--faint);font-size:.8rem}
+/* ---------- notes: floating button + bottom sheet ---------- */
+.notes-fab{position:fixed;right:16px;bottom:16px;z-index:35;display:flex;gap:8px;align-items:center;padding:12px 16px;border-radius:999px;background:var(--accent);color:#111;border:none;font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,.4)}
+.notes-sheet{position:fixed;left:0;right:0;bottom:0;z-index:45;background:var(--ink-2);border-top:1px solid var(--line);border-radius:14px 14px 0 0;transform:translateY(105%);transition:transform .25s;box-shadow:0 -10px 40px rgba(0,0,0,.5);max-width:900px;margin:0 auto;padding-bottom:env(safe-area-inset-bottom)}
+.notes-open .notes-sheet{transform:none}
+.notes-open .notes-fab{display:none}
+.notes-sheet .nhead{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line)}
+.notes-sheet .nhead b{flex:1;font-size:.95rem}
+.notes-sheet .nstatus{color:var(--faint);font-size:.8rem}
+.notes-sheet textarea{display:block;width:100%;min-height:36vh;max-height:60vh;resize:vertical;border:none;background:#0f1424;color:var(--paper);font:inherit;font-size:1rem;line-height:1.5;padding:14px 16px;outline:none}
+.notes-sheet .nfoot{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;font-size:.85rem;color:var(--muted)}
+/* ---------- wide widgets scroll sideways instead of breaking the page ---------- */
+.tw{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:16px 0}
+.tw table{margin:0;min-width:520px}
+.fig{overflow-x:auto}
+@media (prefers-reduced-motion:reduce){.drawer,.notes-sheet,.scrim{transition:none}}
+/* ---------- phones ---------- */
+@media (max-width:760px){
+  body{font-size:16px}
+  .wrap{padding:0 16px 110px}
+  h1{font-size:1.85rem} h2{font-size:1.45rem;margin-top:2rem} h3{font-size:1.15rem}
+  .lede{font-size:1.05rem}
+  .topbar{padding:8px 12px;gap:10px}
+  .topbar .links{display:none}
+  .topbar .menu span{display:none}
+  .topbar .menu{padding:8px 11px}
+  .fig{padding:12px 12px;margin:16px -4px;border-radius:8px}
+  .crux,.source{padding:12px 14px}
+  pre{font-size:.8em;padding:12px 12px}
+  button,.btn{padding:10px 14px;font-size:.92rem}
+  .controls{gap:8px}
+  .controls label{display:flex;align-items:center;gap:6px}
+  input[type=number]{max-width:96px}
+  .cards{grid-template-columns:1fr 1fr;gap:8px}
+  .card,.card .inner{min-height:120px}
+  .card .face{font-size:.88rem;padding:10px}
+  .cells{min-width:420px}
+  .quiz .opt{padding:12px 12px;line-height:1.35}
+  .nav-bottom{flex-direction:column}
+  .nav-bottom a{text-align:center}
+  .notes-fab span{display:none}
+  .notes-fab{padding:14px;right:12px;bottom:12px}
+  .notes-sheet textarea{min-height:44vh}
+  .stepper .stage{padding:12px}
+  .gantt .row{grid-template-columns:44px 1fr;font-size:.75rem}
+  /* lesson-specific grids collapse */
+  .lde,.il,.two,.cry,.flash,.dl,.fdt,.how,.cards.wide,.vm{grid-template-columns:1fr}
+  .map{grid-template-columns:1fr}
+  .net{grid-template-columns:1fr}.net .arrow{padding:0;transform:rotate(90deg)}
+  .phil{grid-template-columns:repeat(2,1fr)}
+  .jobs{max-width:100%}
+  .trace{min-width:620px}.tl{min-width:720px}.disk{min-width:560px}
+}
+@media (max-width:420px){.cards{grid-template-columns:1fr}}
+
+</style>
+<style>.bits{display:flex;gap:2px;font-family:'IBM Plex Mono',monospace;font-size:.85rem}.bits span{padding:6px 0;text-align:center;flex:1;border:1px solid var(--line);border-radius:3px;background:#0f1424}.bits span.seg{background:#e8b84a;color:#111;font-weight:600}.bits span.off{background:#28304f}.out{margin-top:10px;font-size:.95rem}.out b{color:var(--accent)}.err{color:var(--bad)}</style></head>
+<body class="piece-virt"><div class="wrap">
+<header class="hero"><div class="chapters">OSTEP chapters 13–16 · Address Spaces · Memory API · Address Translation · Segmentation</div>
+<h1>Address spaces: the second illusion, and how hardware translates it</h1>
+<p class="lede">Every pointer you have ever printed was a lie — a virtual address. The OS gives each process a private, large, contiguous address space starting at 0, then uses hardware to redirect every load and store to wherever the bytes really are. This lesson builds that hardware up from a single pair of registers.</p></header>
+<div class="source"><b>Primary sources:</b> <a href="https://pages.cs.wisc.edu/~remzi/OSTEP/vm-intro.pdf">Ch 13</a>, <a href="https://pages.cs.wisc.edu/~remzi/OSTEP/vm-api.pdf">Ch 14</a>, <a href="https://pages.cs.wisc.edu/~remzi/OSTEP/vm-mechanism.pdf">Ch 15</a>, <a href="https://pages.cs.wisc.edu/~remzi/OSTEP/vm-segmentation.pdf">Ch 16</a>. Homework: <code>relocation.py</code>, <code>segmentation.py</code>. For C memory, the book sends you to K&R and Stevens; use <code>valgrind</code> on everything you write.</div>
+<h2>What you'll be able to do</h2><ul id="obj"></ul>
+
+<h2>The abstraction: an address space (chapter 13)</h2>
+<p>Early machines ran one program that used all memory. Time sharing meant several processes resident at once, and saving whole memory images to disk on every switch was far too slow — so processes stayed in memory, which made <b>protection</b> the issue. The abstraction that solved it:</p>
+<figure class="fig"><svg viewBox="0 0 900 300" role="img" aria-label="16KB address space layout">
+<rect x="330" y="20" width="240" height="60" fill="#28304f" stroke="#e8b84a" stroke-width="2"/><text x="450" y="55" text-anchor="middle" fill="#eef0f7" font-size="14">Program code</text><text x="320" y="30" text-anchor="end" fill="#a9b1cf" font-size="12" class="mono">0KB</text>
+<rect x="330" y="80" width="240" height="60" fill="#28304f" stroke="#e8b84a" stroke-width="2"/><text x="450" y="115" text-anchor="middle" fill="#eef0f7" font-size="14">Heap ↓ grows down</text><text x="320" y="90" text-anchor="end" fill="#a9b1cf" font-size="12" class="mono">1KB</text><text x="320" y="146" text-anchor="end" fill="#a9b1cf" font-size="12" class="mono">2KB</text>
+<rect x="330" y="140" width="240" height="90" fill="#0f1424" stroke="#3a4368" stroke-dasharray="5"/><text x="450" y="190" text-anchor="middle" fill="#6e779a" font-size="14">(free)</text>
+<rect x="330" y="230" width="240" height="50" fill="#28304f" stroke="#e8b84a" stroke-width="2"/><text x="450" y="260" text-anchor="middle" fill="#eef0f7" font-size="14">Stack ↑ grows up</text><text x="320" y="240" text-anchor="end" fill="#a9b1cf" font-size="12" class="mono">15KB</text><text x="320" y="286" text-anchor="end" fill="#a9b1cf" font-size="12" class="mono">16KB</text>
+<text x="600" y="55" fill="#a9b1cf" font-size="13">instructions; static at top</text><text x="600" y="115" fill="#a9b1cf" font-size="13">malloc()'d data, grows toward the middle</text><text x="600" y="260" fill="#a9b1cf" font-size="13">locals, arguments, return addresses</text>
+</svg><figcaption>The book's running example: a 16 KB address space. Code at the top, heap right after growing downward, stack at the bottom growing upward. Two growing regions placed at opposite ends so both have room.</figcaption></figure>
+<div class="crux"><b>Crux: how to virtualize memory.</b> Build this private, potentially large address space for many processes at once on top of one physical memory. Three goals: <b>transparency</b> (the program doesn't know), <b>efficiency</b> (time and space — needs hardware help), <b>protection</b> (isolation from other processes and the OS).</div>
+<div class="tip"><b>Every address you see is virtual.</b> Print <code>main</code>'s address, a <code>malloc</code> result, and a stack variable's address (the book's <code>va.c</code>): all virtual, all an illusion. Only the OS and hardware know the physical truth.</div>
+
+<h2>Interlude: the memory API (chapter 14)</h2>
+<p>Two kinds of memory in C. <b>Stack</b> (automatic): the compiler allocates and frees it when a function is entered and exits. <b>Heap</b>: you ask with <code>malloc(size)</code> and must give back with <code>free(ptr)</code>. <code>malloc</code> and <code>free</code> are <em>library</em> calls; underneath, the library grows the heap with the <code>brk</code>/<code>sbrk</code> system calls, or gets anonymous memory via <code>mmap</code>.</p>
+<pre><code>double *d = (double *) malloc(sizeof(double));   // use sizeof, not a number
+int *x = malloc(10 * sizeof(int));               // array of 10 ints
+char *dst = (char *) malloc(strlen(src) + 1);    // +1 for the terminating '\0'
+free(x);                                         // no size argument: the library remembers
+// also: calloc() zeroes memory; realloc() grows a region and copies</code></pre>
+<p>The chapter's catalogue of errors. Flip each to see the name and consequence:</p>
+<div id="errs"></div>
+<div class="tip"><b>Tools.</b> Compile with <code>-Wall -g</code>, run under <code>gdb</code> and <code>valgrind</code>. A process's leaks vanish at exit (the OS reclaims everything) — but long-running programs cannot rely on that.</div>
+
+<h2>Mechanism: address translation (chapter 15)</h2>
+<div class="crux"><b>Crux: how to efficiently and flexibly virtualize memory</b>, while keeping control over which locations a process may touch. The generic technique is <b>hardware-based address translation</b>: on every memory reference the hardware turns the virtual address into a physical one. The OS manages memory and sets up the hardware; the book calls this <b>dynamic relocation</b>, or <b>base and bounds</b>.</div>
+<p>Two registers per CPU, part of the <b>memory management unit (MMU)</b>: <code>base</code> and <code>bounds</code>. For every access: <span class="mono">physical = virtual + base</span>, after checking <span class="mono">virtual &lt; bounds</span>. Both registers are privileged; the OS sets them when it schedules a process and saves/restores them on a context switch.</p>
+<div class="fig"><h4>Try it: the book's example (process loaded at physical 32 KB, 16 KB address space)</h4><div class="controls"><label>base <input type="number" id="bb" value="32768" style="width:100px"></label><label>bounds <input type="number" id="bd" value="16384" style="width:100px"></label><label>virtual address <input type="number" id="va1" value="128" style="width:100px"></label><button class="primary" id="tr1">Translate</button></div><div class="out" id="o1"></div><div class="cap">Book values: the instruction at virtual 128 lands at physical 32896; a load from virtual 15 KB goes to 47 KB; anything ≥ 16 KB faults. Some hardware stores bounds as the end physical address instead — same idea.</div></div>
+<h3>What each side must do</h3>
+<div class="two"><div class="fig"><h4>Hardware</h4><ul><li>Privileged mode (two modes).</li><li>Base/bounds registers in the MMU.</li><li>Translate + check on every access.</li><li>Privileged instructions to update base/bounds and to register exception handlers.</li><li>Raise exceptions on out-of-bounds or privileged-instruction misuse.</li></ul></div><div class="fig"><h4>Operating system</h4><ul><li>At process creation: find room via a <b>free list</b> of physical slots, set the registers.</li><li>At termination: reclaim memory onto the free list.</li><li>At context switch: save/restore base and bounds in the PCB. (While a process is descheduled the OS may even <em>move</em> it: copy, update base.)</li><li>Install exception handlers at boot; typically kill the offending process.</li></ul></div></div>
+<p>The problem: the process's 16 KB is placed as one block, so the free space between heap and stack sits in physical memory doing nothing — <b>internal fragmentation</b>. That motivates the next step.</p>
+
+<h2>Segmentation (chapter 16)</h2>
+<div class="crux"><b>Crux: how to support a large address space</b> with a lot of possibly-empty space between stack and heap? A 32-bit (4 GB) address space would demand 4 GB resident even if the program uses megabytes.</div>
+<p>Generalize: one base/bounds pair <em>per logical segment</em> — code, heap, stack. Each segment sits independently in physical memory; the gap is never allocated. The book's segment table:</p>
+<table><tr><th>Segment</th><th>Base</th><th>Size (max 4K)</th><th>Grows positive?</th><th>Protection</th></tr>
+<tr><td>Code <span class="mono">00</span></td><td class="mono">32K</td><td class="mono">2K</td><td>1</td><td>Read-Execute</td></tr>
+<tr><td>Heap <span class="mono">01</span></td><td class="mono">34K</td><td class="mono">3K</td><td>1</td><td>Read-Write</td></tr>
+<tr><td>Stack <span class="mono">11</span></td><td class="mono">28K</td><td class="mono">2K</td><td>0</td><td>Read-Write</td></tr></table>
+<p><b>Which segment?</b> The <b>explicit</b> approach uses the top bits of the virtual address (here the top 2 of 14 bits; <code>11</code> = stack, and <code>10</code> is wasted). The <b>implicit</b> approach infers it from how the address was formed (PC → code, stack pointer → stack, otherwise heap). The stack <b>grows negative</b>, so its offset is computed differently — try it.</p>
+<div class="fig"><h4>Segmentation translator (14-bit VA, explicit top-2-bit segment)</h4><div class="controls"><label>virtual address (0–16383) <input type="number" id="va2" value="4200" style="width:110px"></label><button class="primary" id="tr2">Translate</button><button data-v="100">code 100</button><button data-v="4200">heap 4200</button><button data-v="7168">heap 7KB (fault)</button><button data-v="15360">stack 15KB</button></div><div id="bits" class="bits"></div><div class="out" id="o2"></div></div>
+<pre><code>// Segment  = (VirtualAddress & SEG_MASK) >> SEG_SHIFT
+// Offset   = VirtualAddress & OFFSET_MASK
+// if (Offset >= Bounds[Segment]) RaiseException(PROTECTION_FAULT)
+// else PhysAddr = Base[Segment] + Offset;  Register = AccessMemory(PhysAddr)</code></pre>
+<p><b>Sharing</b>: with protection bits, a read-execute code segment can be mapped into several processes at once. <b>Fine-grained</b> segmentation (Multics, Burroughs B5000) used many segments and a segment table; <b>coarse-grained</b> uses a few. OS duties grow: save/restore segment registers on switch, handle segment-growth requests (<code>sbrk</code>), and manage variable-sized free space — which brings <b>external fragmentation</b>: free memory chopped into odd-sized holes. Compaction fixes it but is expensive; smart allocators (next lesson) only mitigate it. And a large sparsely-used heap still must be entirely resident. Hence: paging.</p>
+
+<h2>Flash cards</h2><div id="cards"></div>
+<h2>Retrieval practice</h2><div id="quiz"></div>
+<p class="tip">Want extra translation drills with random tables, or a walk-through of <code>valgrind</code> output on a buggy program? Ask me in the chat.</p>
+</div>
+<script>
+/* OSTEP course — shared components. Every page loads this file (inlined by build.py). */
+window.OS = (function () {
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+  /* ---------- persistent storage (localStorage on a real site; in-memory fallback in sandboxes) ---------- */
+  const mem = {};
+  const store = {
+    get(k) { try { const v = localStorage.getItem('ostep:' + k); return v === null ? (mem[k] ?? null) : JSON.parse(v); } catch (e) { return mem[k] ?? null; } },
+    set(k, v) { mem[k] = v; try { localStorage.setItem('ostep:' + k, JSON.stringify(v)); } catch (e) {} },
+    del(k) { delete mem[k]; try { localStorage.removeItem('ostep:' + k); } catch (e) {} },
+    keys(prefix) { const out = new Set(Object.keys(mem).filter(k => k.startsWith(prefix))); try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith('ostep:' + prefix)) out.add(k.slice(6)); } } catch (e) {} return [...out]; },
+    available() { try { localStorage.setItem('ostep:test', '1'); localStorage.removeItem('ostep:test'); return true; } catch (e) { return false; } }
+  };
+
+  /* ---------- course structure ---------- */
+  const PIECES = [
+    ['intro', 'Introduction', [['0001-three-easy-pieces', 'Three easy pieces', 'ch 1–2']]],
+    ['virt', 'Virtualization', [
+      ['0002-processes', 'Processes & the process API', 'ch 4–5'],
+      ['0003-limited-direct-execution', 'Limited direct execution', 'ch 6'],
+      ['0004-scheduling', 'Scheduling', 'ch 7–10'],
+      ['0005-address-spaces', 'Address spaces & segments', 'ch 13–16'],
+      ['0006-paging-and-tlbs', 'Paging & TLBs', 'ch 17–20'],
+      ['0007-swapping', 'Swapping & policies', 'ch 21–23']]],
+    ['conc', 'Concurrency', [
+      ['0008-threads-and-locks', 'Threads & locks', 'ch 26–28'],
+      ['0009-cvs-and-semaphores', 'CVs & semaphores', 'ch 29–31'],
+      ['0010-bugs-and-events', 'Bugs & events', 'ch 32–33']]],
+    ['pers', 'Persistence', [
+      ['0011-devices-disks-raid', 'Devices, disks, RAID', 'ch 36–38'],
+      ['0012-files-and-vsfs', 'Files & a simple FS', 'ch 39–40'],
+      ['0013-ffs-journaling-lfs', 'FFS, journaling, LFS', 'ch 41–43'],
+      ['0014-ssd-and-integrity', 'SSDs & integrity', 'ch 44–45'],
+      ['0015-distributed-nfs-afs', 'Distributed FS', 'ch 48–50']]],
+    ['sec', 'Security', [['0016-security-and-vmms', 'Security & VMMs', 'ch 53–57, App B']]]
+  ];
+  const LESSONS = PIECES.flatMap(p => p[2].map(l => [l[0], l[1], p[0], l[2]]));
+  const title = id => (LESSONS.find(l => l[0] === id) || [])[1] || id;
+  let pageId = null, root = '../';
+
+  /* ---------- chrome: sticky header, slide-out directory, notes drawer, prev/next ---------- */
+  function chrome(id, rootPath) {
+    pageId = id; root = rootPath === undefined ? '../' : rootPath;
+    const i = LESSONS.findIndex(l => l[0] === id);
+    const isLesson = i >= 0;
+    const top = document.createElement('header'); top.className = 'topbar';
+    top.innerHTML = `<button class="menu" aria-label="Open directory" aria-expanded="false">☰<span>Directory</span></button>
+      <a class="brand" href="${root}index.html"><span class="dot"></span>OSTEP course</a>
+      <nav class="links"><a href="${root}reference/glossary.html">Glossary</a><a href="${root}reference/cheatsheets.html">Cheat sheets</a><a href="${root}notes.html">My notes</a></nav>
+      ${isLesson ? `<span class="where">${i+1} / ${LESSONS.length}</span>` : ''}`;
+    document.body.prepend(top);
+    // directory drawer
+    const drawer = document.createElement('aside'); drawer.className = 'drawer'; drawer.setAttribute('aria-label', 'Course directory');
+    const scores = Object.fromEntries(LESSONS.map(l => [l[0], store.get('quiz:' + l[0])]));
+    const notes = new Set(store.keys('notes:').map(k => k.slice(6)).filter(k => (store.get('notes:' + k) || {}).text));
+    drawer.innerHTML = `<div class="dhead"><b>Directory</b><button class="close" aria-label="Close">×</button></div>
+      <a class="ditem ${id === 'index' ? 'cur' : ''}" href="${root}index.html">Course hub</a>
+      ${PIECES.map(([cls, name, ls]) => `<div class="dgroup piece-${cls}"><div class="dname">${name}</div>${ls.map(l => {
+        const n = LESSONS.findIndex(x => x[0] === l[0]) + 1, s = scores[l[0]];
+        return `<a class="ditem ${l[0] === id ? 'cur' : ''}" href="${root}lessons/${l[0]}.html"><span class="n">${n}</span><span class="t">${l[1]}<small>${l[3]}</small></span><span class="badges">${notes.has(l[0]) ? '<i title="you have notes">✎</i>' : ''}${s ? `<em title="best quiz score">${s.score}/${s.total}</em>` : ''}</span></a>`; }).join('')}</div>`).join('')}
+      <div class="dgroup piece-intro"><div class="dname">Reference</div>
+        <a class="ditem ${id === 'glossary' ? 'cur' : ''}" href="${root}reference/glossary.html"><span class="t">Glossary</span></a>
+        <a class="ditem ${id === 'cheatsheets' ? 'cur' : ''}" href="${root}reference/cheatsheets.html"><span class="t">Cheat sheets</span></a>
+        <a class="ditem ${id === 'notes' ? 'cur' : ''}" href="${root}notes.html"><span class="t">My notes &amp; progress</span></a></div>
+      <div class="dfoot">${store.available() ? 'Notes and scores are saved in this browser.' : 'Notes and scores are kept for this session only (storage unavailable here).'}</div>`;
+    document.body.append(drawer);
+    const scrim = document.createElement('div'); scrim.className = 'scrim'; document.body.append(scrim);
+    const open = o => { document.body.classList.toggle('drawer-open', o); top.querySelector('.menu').setAttribute('aria-expanded', o); if (o) drawer.querySelector('.cur, .ditem')?.focus(); };
+    top.querySelector('.menu').onclick = () => open(!document.body.classList.contains('drawer-open'));
+    drawer.querySelector('.close').onclick = () => open(false); scrim.onclick = () => open(false);
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') { open(false); notesOpen(false); } });
+    // prev/next for lessons
+    if (isLesson) {
+      const nav = document.createElement('div'); nav.className = 'nav-bottom';
+      const prev = LESSONS[i-1], next = LESSONS[i+1];
+      nav.innerHTML = (prev ? `<a href="${prev[0]}.html">← ${i}. ${prev[1]}</a>` : '<span></span>') +
+                      (next ? `<a href="${next[0]}.html">${i+2}. ${next[1]} →</a>` : `<a href="${root}index.html">Back to course hub →</a>`);
+      document.querySelector('.wrap').append(nav);
+    }
+    // wrap tables so they scroll sideways on phones
+    document.querySelectorAll('.wrap table').forEach(t => { if (t.parentElement.classList.contains('tw')) return; const w = document.createElement('div'); w.className = 'tw'; t.replaceWith(w); w.append(t); });
+    // notes drawer (every page except the notes page itself)
+    if (id !== 'notes') notesUI(id, isLesson ? `${i+1}. ${LESSONS[i][1]}` : (document.title.split(' — ')[0]));
+  }
+
+  /* ---------- notes: floating button + bottom sheet, autosaved ---------- */
+  let notesOpen = () => {};
+  function notesUI(id, label) {
+    const btn = document.createElement('button'); btn.className = 'notes-fab'; btn.innerHTML = '✎ <span>Notes</span>'; btn.setAttribute('aria-label', 'Open notes');
+    const sheet = document.createElement('section'); sheet.className = 'notes-sheet'; sheet.setAttribute('aria-label', 'Notes for this page');
+    const saved = store.get('notes:' + id) || {};
+    sheet.innerHTML = `<div class="nhead"><b>Notes · ${esc(label)}</b><span class="nstatus"></span><button class="close" aria-label="Close notes">×</button></div>
+      <textarea placeholder="Your notes for this page. Markdown is fine. Saved automatically.">${esc(saved.text || '')}</textarea>
+      <div class="nfoot"><span class="ncount"></span><a href="${root}notes.html">All notes &amp; export →</a></div>`;
+    document.body.append(btn, sheet);
+    const ta = sheet.querySelector('textarea'), status = sheet.querySelector('.nstatus'), count = sheet.querySelector('.ncount');
+    const upd = () => { count.textContent = ta.value.trim() ? ta.value.trim().split(/\s+/).length + ' words' : ''; };
+    let t; ta.addEventListener('input', () => { status.textContent = 'saving…'; clearTimeout(t); t = setTimeout(() => { store.set('notes:' + id, { text: ta.value, title: label, updated: new Date().toISOString() }); status.textContent = 'saved'; upd(); }, 400); });
+    upd();
+    notesOpen = o => { document.body.classList.toggle('notes-open', o); if (o) ta.focus(); };
+    btn.onclick = () => notesOpen(!document.body.classList.contains('notes-open'));
+    sheet.querySelector('.close').onclick = () => notesOpen(false);
+  }
+
+  /* ---------- quiz: immediate feedback; best score persisted ---------- */
+  function quiz(el, qs) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('quiz');
+    let score = 0, answered = 0;
+    const best = pageId ? store.get('quiz:' + pageId) : null;
+    el.innerHTML = qs.map((q, i) => `<div class="q" data-i="${i}"><p>${i+1}. ${q.q}</p>
+      <div class="opts">${q.o.map((o, j) => `<button class="opt" data-j="${j}">${esc(o)}</button>`).join('')}</div>
+      <div class="why">${q.why}</div></div>`).join('') + `<div class="score">${best ? `Best so far: ${best.score}/${best.total} (${new Date(best.date).toLocaleDateString()})` : ''}</div>`;
+    el.querySelectorAll('.q').forEach(qd => {
+      const q = qs[+qd.dataset.i];
+      qd.querySelectorAll('.opt').forEach(b => b.addEventListener('click', () => {
+        if (qd.classList.contains('done')) return;
+        qd.classList.add('done'); answered++;
+        const j = +b.dataset.j;
+        if (j === q.a) { b.classList.add('right'); score++; }
+        else { b.classList.add('wrong'); qd.querySelectorAll('.opt')[q.a].classList.add('right'); }
+        const s = el.querySelector('.score');
+        s.textContent = `${score} / ${answered} correct`;
+        if (answered === qs.length) {
+          s.textContent += score === qs.length ? ' — all of them. Retry from memory in two days.' : ' — reread the sections you missed, then retry.';
+          if (pageId && (!best || score >= best.score)) store.set('quiz:' + pageId, { score, total: qs.length, date: new Date().toISOString() });
+        }
+      }));
+    });
+  }
+
+  /* ---------- flip cards ---------- */
+  function cards(el, list) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('cards');
+    el.innerHTML = list.map(([f, b]) => `<div class="card" tabindex="0" role="button" aria-label="flip card"><div class="inner"><div class="face front">${f}</div><div class="face back">${b}</div></div></div>`).join('');
+    el.querySelectorAll('.card').forEach(c => {
+      const t = () => c.classList.toggle('flipped');
+      c.addEventListener('click', t);
+      c.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); t(); } });
+    });
+  }
+
+  /* ---------- stepper ---------- */
+  function stepper(el, steps, render) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('stepper');
+    let i = 0;
+    el.innerHTML = `<div class="controls"><button class="prev">← Back</button><button class="next primary">Next step →</button><span class="idx"></span></div><div class="stage"></div><div class="extra"></div>`;
+    const stage = el.querySelector('.stage'), idx = el.querySelector('.idx'), extra = el.querySelector('.extra');
+    const draw = () => { stage.innerHTML = steps[i]; idx.textContent = `step ${i+1} / ${steps.length}`; if (render) render(i, extra); };
+    el.querySelector('.prev').onclick = () => { i = Math.max(0, i-1); draw(); };
+    el.querySelector('.next').onclick = () => { i = Math.min(steps.length-1, i+1); draw(); };
+    draw();
+  }
+
+  /* ---------- gantt ---------- */
+  function gantt(el, rows, total, colors) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('gantt');
+    const pal = colors || ['#e8b84a','#5bc8f5','#6bcb77','#f47fa0','#c9a8ff','#ffb86b'];
+    el.innerHTML = rows.map((r, i) => `<div class="row"><span>${esc(r.name)}</span><div class="track">${r.segs.map(s =>
+      `<div class="seg" style="left:${100*s.start/total}%;width:${100*(s.end-s.start)/total}%;background:${pal[i%pal.length]}" title="${s.start}–${s.end}">${(s.end-s.start)/total > .06 ? (s.end-s.start) : ''}</div>`).join('')}</div></div>`).join('') +
+      `<div class="row"><span></span><div style="display:flex;justify-content:space-between;font-size:.75rem;color:var(--muted)"><span>0</span><span>${total}</span></div></div>`;
+  }
+
+  /* ---------- objectives checklist (persisted) ---------- */
+  function objectives(el, items) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('objectives');
+    const saved = (pageId && store.get('obj:' + pageId)) || [];
+    el.innerHTML = items.map((t, i) => `<li><label><input type="checkbox" data-i="${i}" ${saved.includes(i) ? 'checked' : ''}>${t}</label></li>`).join('');
+    el.querySelectorAll('input').forEach(c => c.onchange = () => { const s = [...el.querySelectorAll('input:checked')].map(x => +x.dataset.i); if (pageId) store.set('obj:' + pageId, s); });
+  }
+
+  return { chrome, quiz, cards, stepper, gantt, objectives, esc, store, LESSONS, PIECES, title };
+})();
+
+</script>
+<script>
+OS.chrome('0005-address-spaces');
+OS.objectives('obj',['Sketch the address space layout and explain why heap and stack sit at opposite ends.','State the three goals of virtual memory and name the common C memory errors.','Translate virtual to physical addresses with base and bounds, including the bounds check.','Translate with segmentation, both positive-growing and negative-growing (stack) segments.','Distinguish internal from external fragmentation and say which scheme causes which.']);
+OS.cards('errs',[['<code>char *s; strcpy(s,"x");</code>','<b>Forgetting to allocate.</b> Dereferences a garbage pointer → segmentation fault.'],['<code>malloc(strlen(src))</code> then <code>strcpy</code>','<b>Not allocating enough</b> (forgot the \\0). A <b>buffer overflow</b>: writes past the end; may "work" by luck, and is a classic security hole.'],['<code>int *p=malloc(N); printf("%d",*p)</code>','<b>Forgetting to initialize.</b> An <b>uninitialized read</b> returns whatever was there.'],['allocate in a loop, never <code>free</code>','<b>Memory leak.</b> Fine at exit (the OS reclaims), fatal in long-running servers and inside the OS itself.'],['<code>free(p); ... *p = 1;</code>','<b>Dangling pointer</b>: using memory after freeing it. The allocator may have handed it to someone else.'],['<code>free(p); free(p);</code>','<b>Double free.</b> Undefined; commonly corrupts the allocator\'s bookkeeping and crashes.'],['<code>free(p + 4)</code>','<b>Invalid free.</b> Only pass pointers that came from malloc.']]);
+document.getElementById('tr1').onclick=()=>{const b=+document.getElementById('bb').value,d=+document.getElementById('bd').value,v=+document.getElementById('va1').value;const o=document.getElementById('o1');if(v<0||v>=d){o.innerHTML=`<span class="err">Virtual ${v} ≥ bounds ${d}: the hardware raises an exception; the OS handler runs and likely terminates the process.</span>`;return;}o.innerHTML=`Check: ${v} &lt; ${d} ✓ &nbsp; physical = ${v} + ${b} = <b>${v+b}</b>${v+b===32896?' (the book\'s 128 → 32896)':''}`;};
+const seg={0:{n:'code',b:32768,s:2048,g:1},1:{n:'heap',b:34816,s:3072,g:1},3:{n:'stack',b:28672,s:2048,g:0}};
+function tr2(v){const o=document.getElementById('o2'),bitsEl=document.getElementById('bits');if(v<0||v>16383){o.innerHTML='<span class="err">Out of the 14-bit range.</span>';return;}const bin=v.toString(2).padStart(14,'0');bitsEl.innerHTML=bin.split('').map((c,i)=>`<span class="${i<2?'seg':'off'}">${c}</span>`).join('');const sid=v>>12,off=v&0xFFF,s=seg[sid];if(!s){o.innerHTML=`<span class="err">Segment bits ${bin.slice(0,2)} = unused segment. Fault.</span>`;return;}if(s.g){if(off>=s.s){o.innerHTML=`Segment ${bin.slice(0,2)} = ${s.n}, offset ${off}. <span class="err">${off} ≥ size ${s.s}: protection fault (the book's 7KB heap example).</span>`;return;}o.innerHTML=`Segment ${bin.slice(0,2)} = <b>${s.n}</b> (base ${s.b}, size ${s.s}). Offset = ${off}. Physical = ${s.b} + ${off} = <b>${s.b+off}</b>${v===4200?' — the book\'s 4200 → 34920':''}.`;}else{const neg=off-4096;if(-neg>s.s){o.innerHTML=`Stack offset ${off} → negative offset ${neg}: <span class="err">|${neg}| &gt; size ${s.s}, fault.</span>`;return;}o.innerHTML=`Segment 11 = <b>stack</b>, grows negative. Offset ${off} − max segment size 4096 = <b>${neg}</b>. Physical = ${s.b} ${neg} = <b>${s.b+neg}</b>${v===15360?' — the book\'s 15KB → 27KB':''}. Bounds check: |${neg}| ≤ ${s.s} ✓`;}}
+document.getElementById('tr2').onclick=()=>tr2(+document.getElementById('va2').value);document.querySelectorAll('[data-v]').forEach(b=>b.onclick=()=>{document.getElementById('va2').value=b.dataset.v;tr2(+b.dataset.v);});tr2(4200);
+OS.cards('cards',[['Address space','The running program\'s view of memory: code, heap, stack, addressed from 0, private and (potentially) large.'],['Transparency','The program shouldn\'t be able to tell its memory is virtualized; it behaves as if it had its own physical memory.'],['Base & bounds','Dynamic relocation: physical = virtual + base, valid only if virtual < bounds. Two MMU registers, privileged.'],['Free list','OS structure listing unused physical memory ranges; consulted at process creation, updated at exit.'],['Internal fragmentation','Wasted space inside an allocated unit — e.g. the unused gap between heap and stack in one base/bounds block.'],['External fragmentation','Free memory split into many small holes so a request can\'t be satisfied though total free space suffices. Caused by variable-sized segments.'],['Explicit segmentation','Use the top bits of the virtual address to select the segment; the rest is the offset.'],['Grows-negative bit','Per-segment flag: for the stack, offset − max_size gives a negative offset added to the base.']]);
+OS.quiz('quiz',[
+{q:'A process\'s base register is 32 KB and bounds is 16 KB. Where does virtual address 15 KB go?',o:['physical 16 KB','physical 47 KB','physical 15 KB','it raises a fault'],a:1,why:'15 KB < 16 KB passes the check; 15 KB + 32 KB = 47 KB. Virtual 16 KB or higher would fault.'},
+{q:'Which of the three VM goals forces the OS to rely on hardware support?',o:['transparency','efficiency','protection','isolation'],a:1,why:'Translating on every access in software would be far too slow; efficiency requires the MMU (TLBs, page tables later) to do it in hardware.'},
+{q:'In the segment table above, virtual address 4200 (binary 01 000001101000) translates to:',o:['32,872','34,920','36,864','a protection fault'],a:1,why:'Top bits 01 = heap, offset 104. Heap base 34 KB = 34,816; 34,816 + 104 = 34,920.'},
+{q:'Stack segment: base 28 KB, size 2 KB, grows negative. Virtual 15 KB (offset 3 KB) maps to:',o:['31 KB','27 KB','28 KB','a fault'],a:1,why:'Negative offset = 3 KB − 4 KB = −1 KB. 28 KB − 1 KB = 27 KB; |−1 KB| ≤ 2 KB so it is legal.'},
+{q:'What kind of fragmentation does segmentation cause that a single base/bounds block does not?',o:['internal','external','temporal','logical'],a:1,why:'Variable-sized segments leave odd-sized holes in physical memory (external fragmentation). A single block wastes space inside itself (internal).'},
+{q:'Freeing a pointer, then reading through it later, is which error?',o:['double free','dangling pointer','memory leak','invalid free'],a:1,why:'The memory may now belong to a later allocation; reading it is undefined. Double free is freeing twice; a leak is never freeing.'},
+{q:'Where must base and bounds be saved when the OS switches processes?',o:['in the trap table','in the process structure','in the free list','on the user stack'],a:1,why:'They are per-process state; the OS stores them in the PCB and restores them before returning to the process, exactly like other registers.'}]);
+</script></body></html>

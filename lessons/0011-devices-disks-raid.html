@@ -1,0 +1,447 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>11 · Devices, disks, RAID — OSTEP course</title><style>
+/* OSTEP course — shared stylesheet. Three pieces, three hues. */
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+:root{
+  --ink:#151b2f; --ink-2:#1e2540; --ink-3:#28304f; --line:#3a4368;
+  --paper:#eef0f7; --muted:#a9b1cf; --faint:#6e779a;
+  --virt:#e8b84a; --conc:#5bc8f5; --pers:#6bcb77; --sec:#f47fa0; --intro:#c9a8ff;
+  --ok:#6bcb77; --bad:#ff6b6b;
+  --accent:var(--virt);
+  --radius:6px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--ink);color:var(--paper);font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:17px;line-height:1.6}
+a{color:var(--accent)}
+code,pre,kbd,.mono{font-family:'IBM Plex Mono',ui-monospace,monospace}
+code{background:var(--ink-3);padding:1px 5px;border-radius:4px;font-size:.9em}
+pre{background:#0f1424;border:1px solid var(--line);border-left:4px solid var(--accent);padding:14px 16px;overflow:auto;border-radius:var(--radius);font-size:.86em;line-height:1.5}
+pre code{background:none;padding:0;font-size:inherit}
+h1,h2,h3,h4{font-family:'Fraunces',Georgia,serif;font-weight:700;line-height:1.15;margin:0 0 .4em}
+h1{font-size:2.6rem;letter-spacing:-.01em}
+h2{font-size:1.9rem;margin-top:2.6rem;padding-top:1.2rem;border-top:1px solid var(--line)}
+h3{font-size:1.3rem;margin-top:1.8rem;color:var(--accent)}
+h4{font-size:1.05rem;margin-top:1.2rem}
+p,li{max-width:72ch}
+.wrap{max-width:1100px;margin:0 auto;padding:0 28px 96px}
+.hero{padding:44px 0 16px}
+.hero .chapters{color:var(--muted);font-size:.95rem;margin-bottom:6px}
+.lede{font-size:1.2rem;color:var(--muted);max-width:66ch}
+.piece-virt{--accent:var(--virt)} .piece-conc{--accent:var(--conc)} .piece-pers{--accent:var(--pers)} .piece-sec{--accent:var(--sec)} .piece-intro{--accent:var(--intro)}
+.fig{background:var(--ink-2);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;margin:22px 0}
+.fig figcaption,.cap{color:var(--muted);font-size:.9rem;margin-top:10px}
+.fig svg{max-width:100%;height:auto;display:block}
+svg text{font-family:'IBM Plex Sans',sans-serif}
+svg .mono{font-family:'IBM Plex Mono',monospace}
+.crux{border:1px solid var(--accent);border-radius:var(--radius);padding:14px 18px;margin:22px 0;background:color-mix(in srgb,var(--accent) 8%,transparent)}
+.crux b{color:var(--accent)}
+.tip{border-left:4px solid var(--muted);padding:6px 16px;margin:18px 0;color:var(--muted)}
+.tip b{color:var(--paper)}
+table{border-collapse:collapse;width:100%;margin:16px 0;font-size:.95rem}
+th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{color:var(--muted);font-weight:500}
+td.mono,th.mono{font-family:'IBM Plex Mono',monospace}
+button,.btn{font:inherit;font-size:.9rem;background:var(--ink-3);color:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:7px 13px;cursor:pointer}
+button:hover{border-color:var(--accent)}
+button.primary{background:var(--accent);color:#111;border-color:var(--accent);font-weight:600}
+button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+input[type=range]{accent-color:var(--accent)}
+input[type=text],input[type=number],select{font:inherit;background:#0f1424;color:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:6px 10px}
+.controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:10px 0}
+.controls label{font-size:.9rem;color:var(--muted)}
+details{border:1px solid var(--line);border-radius:var(--radius);margin:10px 0;background:var(--ink-2)}
+summary{cursor:pointer;padding:12px 16px;font-weight:600;list-style:none}
+summary::before{content:"+";display:inline-block;width:1.2em;color:var(--accent)}
+details[open] summary::before{content:"–"}
+details>div{padding:0 16px 14px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;margin:16px 0}
+.card{perspective:900px;min-height:140px;cursor:pointer}
+.card .inner{position:relative;width:100%;height:100%;min-height:140px;transition:transform .45s;transform-style:preserve-3d}
+.card.flipped .inner{transform:rotateY(180deg)}
+.card .face{position:absolute;inset:0;padding:14px;border-radius:var(--radius);border:1px solid var(--line);background:var(--ink-2);backface-visibility:hidden;display:flex;align-items:center;justify-content:center;text-align:center;font-size:.95rem}
+.card .back{transform:rotateY(180deg);background:var(--ink-3);border-color:var(--accent);font-size:.88rem;line-height:1.45}
+.card .front{font-weight:600}
+@media (prefers-reduced-motion:reduce){.card .inner{transition:none}}
+.quiz .q{border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin:12px 0;background:var(--ink-2)}
+.quiz .q p{margin:0 0 10px;font-weight:600}
+.quiz .opts{display:grid;gap:8px}
+.quiz .opt{text-align:left;background:var(--ink);width:100%}
+.quiz .opt.right{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 15%,var(--ink))}
+.quiz .opt.wrong{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 15%,var(--ink))}
+.quiz .why{margin-top:10px;color:var(--muted);font-size:.93rem;display:none}
+.quiz .q.done .why{display:block}
+.quiz .score{margin-top:12px;font-weight:600}
+.stepper .stage{min-height:60px;background:#0f1424;border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin:10px 0}
+.stepper .idx{color:var(--muted);font-size:.85rem}
+.gantt{display:grid;gap:6px;margin:10px 0}
+.gantt .row{display:grid;grid-template-columns:60px 1fr;align-items:center;gap:8px;font-size:.85rem}
+.gantt .track{position:relative;height:26px;background:#0f1424;border-radius:4px;overflow:hidden}
+.gantt .seg{position:absolute;top:0;bottom:0;display:flex;align-items:center;justify-content:center;font-size:.75rem;color:#111;font-weight:600;border-right:1px solid rgba(0,0,0,.3)}
+.cells{display:grid;gap:4px;margin:10px 0}
+.cell{background:#0f1424;border:1px solid var(--line);border-radius:4px;padding:6px;text-align:center;font-family:'IBM Plex Mono',monospace;font-size:.8rem;min-height:36px;display:flex;align-items:center;justify-content:center}
+.cell.hit{background:color-mix(in srgb,var(--ok) 35%,#0f1424);border-color:var(--ok)}
+.cell.miss{background:color-mix(in srgb,var(--bad) 35%,#0f1424);border-color:var(--bad)}
+.cell.active{outline:2px solid var(--accent)}
+.cell.free{opacity:.45}
+.hl{background:color-mix(in srgb,var(--accent) 30%,transparent);padding:1px 5px;border-radius:3px}
+.k{color:var(--accent);font-weight:600}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media (max-width:760px){.two{grid-template-columns:1fr}.topbar{gap:10px}h1{font-size:2rem}}
+.nav-bottom{display:flex;justify-content:space-between;gap:16px;margin-top:56px;padding-top:20px;border-top:1px solid var(--line)}
+.nav-bottom a{text-decoration:none;padding:12px 16px;border:1px solid var(--line);border-radius:var(--radius);color:var(--paper)}
+.source{background:var(--ink-2);border-radius:var(--radius);padding:14px 18px;margin:22px 0;font-size:.95rem}
+.source b{color:var(--accent)}
+.objectives li{list-style:none;margin:6px 0}
+.objectives input{margin-right:8px;accent-color:var(--accent)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.85rem;color:var(--muted)}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:5px;vertical-align:-2px}
+.tag{display:inline-block;font-size:.75rem;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted);margin-right:6px}
+.log{font-family:'IBM Plex Mono',monospace;font-size:.82rem;background:#0f1424;border:1px solid var(--line);border-radius:var(--radius);padding:10px 12px;max-height:220px;overflow:auto;white-space:pre-wrap}
+@media print{body{background:#fff;color:#111}.topbar,.nav-bottom,button{display:none}.fig,.crux,details,.source{border-color:#bbb;background:#fff}pre{background:#f5f5f5;color:#111}}
+
+/* ---------- site chrome: sticky header + directory drawer ---------- */
+.topbar{position:sticky;top:0;z-index:30;display:flex;gap:14px;align-items:center;padding:10px 16px;background:color-mix(in srgb,var(--ink) 92%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);font-size:.9rem}
+.topbar .menu{display:flex;align-items:center;gap:8px;padding:8px 12px;font-size:1rem}
+.topbar .menu span{font-size:.85rem}
+.topbar .brand{color:var(--paper);text-decoration:none;font-weight:600;display:flex;align-items:center;gap:8px}
+.topbar .dot{width:10px;height:10px;border-radius:50%;background:var(--accent);display:inline-block}
+.topbar .links{display:flex;gap:16px;margin-left:8px}
+.topbar .links a{color:var(--muted);text-decoration:none}
+.topbar .links a:hover{color:var(--paper)}
+.topbar .where{margin-left:auto;color:var(--faint);font-variant-numeric:tabular-nums}
+.drawer{position:fixed;top:0;left:0;bottom:0;width:min(340px,88vw);background:var(--ink-2);border-right:1px solid var(--line);z-index:50;transform:translateX(-102%);transition:transform .25s;overflow-y:auto;padding:0 0 24px;box-shadow:0 0 40px rgba(0,0,0,.5)}
+.drawer-open .drawer{transform:none}
+.scrim{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:40;opacity:0;pointer-events:none;transition:opacity .2s}
+.drawer-open .scrim{opacity:1;pointer-events:auto}
+.drawer .dhead{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--ink-2)}
+.drawer .close,.notes-sheet .close{font-size:1.3rem;line-height:1;padding:4px 10px}
+.drawer .dgroup{padding:8px 0 4px}
+.drawer .dname{padding:8px 16px 4px;color:var(--accent);font-family:'Fraunces',serif;font-weight:700}
+.drawer .ditem{display:flex;gap:10px;align-items:center;padding:9px 16px;color:var(--paper);text-decoration:none;border-left:3px solid transparent;font-size:.92rem}
+.drawer .ditem:hover{background:var(--ink-3)}
+.drawer .ditem.cur{border-left-color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
+.drawer .ditem .n{color:var(--faint);min-width:1.4em;font-variant-numeric:tabular-nums}
+.drawer .ditem .t{flex:1;line-height:1.25}
+.drawer .ditem .t small{display:block;color:var(--faint);font-size:.75rem}
+.drawer .badges{display:flex;gap:6px;align-items:center}
+.drawer .badges i{font-style:normal;color:var(--accent)}
+.drawer .badges em{font-style:normal;font-size:.75rem;padding:1px 6px;border-radius:999px;background:var(--ink-3);color:var(--muted);font-variant-numeric:tabular-nums}
+.drawer .dfoot{padding:16px;color:var(--faint);font-size:.8rem}
+/* ---------- notes: floating button + bottom sheet ---------- */
+.notes-fab{position:fixed;right:16px;bottom:16px;z-index:35;display:flex;gap:8px;align-items:center;padding:12px 16px;border-radius:999px;background:var(--accent);color:#111;border:none;font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,.4)}
+.notes-sheet{position:fixed;left:0;right:0;bottom:0;z-index:45;background:var(--ink-2);border-top:1px solid var(--line);border-radius:14px 14px 0 0;transform:translateY(105%);transition:transform .25s;box-shadow:0 -10px 40px rgba(0,0,0,.5);max-width:900px;margin:0 auto;padding-bottom:env(safe-area-inset-bottom)}
+.notes-open .notes-sheet{transform:none}
+.notes-open .notes-fab{display:none}
+.notes-sheet .nhead{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line)}
+.notes-sheet .nhead b{flex:1;font-size:.95rem}
+.notes-sheet .nstatus{color:var(--faint);font-size:.8rem}
+.notes-sheet textarea{display:block;width:100%;min-height:36vh;max-height:60vh;resize:vertical;border:none;background:#0f1424;color:var(--paper);font:inherit;font-size:1rem;line-height:1.5;padding:14px 16px;outline:none}
+.notes-sheet .nfoot{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;font-size:.85rem;color:var(--muted)}
+/* ---------- wide widgets scroll sideways instead of breaking the page ---------- */
+.tw{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:16px 0}
+.tw table{margin:0;min-width:520px}
+.fig{overflow-x:auto}
+@media (prefers-reduced-motion:reduce){.drawer,.notes-sheet,.scrim{transition:none}}
+/* ---------- phones ---------- */
+@media (max-width:760px){
+  body{font-size:16px}
+  .wrap{padding:0 16px 110px}
+  h1{font-size:1.85rem} h2{font-size:1.45rem;margin-top:2rem} h3{font-size:1.15rem}
+  .lede{font-size:1.05rem}
+  .topbar{padding:8px 12px;gap:10px}
+  .topbar .links{display:none}
+  .topbar .menu span{display:none}
+  .topbar .menu{padding:8px 11px}
+  .fig{padding:12px 12px;margin:16px -4px;border-radius:8px}
+  .crux,.source{padding:12px 14px}
+  pre{font-size:.8em;padding:12px 12px}
+  button,.btn{padding:10px 14px;font-size:.92rem}
+  .controls{gap:8px}
+  .controls label{display:flex;align-items:center;gap:6px}
+  input[type=number]{max-width:96px}
+  .cards{grid-template-columns:1fr 1fr;gap:8px}
+  .card,.card .inner{min-height:120px}
+  .card .face{font-size:.88rem;padding:10px}
+  .cells{min-width:420px}
+  .quiz .opt{padding:12px 12px;line-height:1.35}
+  .nav-bottom{flex-direction:column}
+  .nav-bottom a{text-align:center}
+  .notes-fab span{display:none}
+  .notes-fab{padding:14px;right:12px;bottom:12px}
+  .notes-sheet textarea{min-height:44vh}
+  .stepper .stage{padding:12px}
+  .gantt .row{grid-template-columns:44px 1fr;font-size:.75rem}
+  /* lesson-specific grids collapse */
+  .lde,.il,.two,.cry,.flash,.dl,.fdt,.how,.cards.wide,.vm{grid-template-columns:1fr}
+  .map{grid-template-columns:1fr}
+  .net{grid-template-columns:1fr}.net .arrow{padding:0;transform:rotate(90deg)}
+  .phil{grid-template-columns:repeat(2,1fr)}
+  .jobs{max-width:100%}
+  .trace{min-width:620px}.tl{min-width:720px}.disk{min-width:560px}
+}
+@media (max-width:420px){.cards{grid-template-columns:1fr}}
+
+</style>
+<style>.res{font-family:'IBM Plex Mono',monospace;font-size:.9rem;line-height:1.7}.res b{color:var(--accent)}.raid td{font-family:'IBM Plex Mono',monospace}.disk{width:100%;max-width:520px}.track{display:flex;gap:2px;margin:6px 0;font-family:'IBM Plex Mono',monospace;font-size:.75rem}.track div{flex:1;text-align:center;padding:5px 0;border:1px solid var(--line);border-radius:3px;background:#0f1424}.track .req{background:#6bcb77;color:#111;font-weight:600}.track .head{outline:2px solid var(--accent)}</style></head>
+<body class="piece-pers"><div class="wrap">
+<header class="hero"><div class="chapters">OSTEP chapters 36–38 · I/O Devices · Hard Disk Drives · Redundant Arrays of Inexpensive Disks</div>
+<h1>Talking to devices, the physics of a disk, and making many disks one</h1>
+<p class="lede">Persistence begins with hardware. A device is a few registers and a protocol; interrupts and DMA make talking to it cheap. A hard disk is a spinning platter whose costs are seek, rotate, transfer — so sequential access is everything. RAID turns several such disks into one that is bigger, faster, or safer, and the arithmetic tells you which.</p></header>
+<div class="source"><b>Primary sources:</b> <a href="https://pages.cs.wisc.edu/~remzi/OSTEP/file-devices.pdf">Ch 36</a>, <a href="https://pages.cs.wisc.edu/~remzi/OSTEP/file-disks.pdf">Ch 37</a>, <a href="https://pages.cs.wisc.edu/~remzi/OSTEP/file-raid.pdf">Ch 38</a>. Homework: <code>disk.py</code> (animated disk scheduling), <code>raid.py</code>. The RAID paper: Patterson, Gibson &amp; Katz, SIGMOD '88.</div>
+<h2>What you'll be able to do</h2><ul id="obj"></ul>
+
+<h2>I/O devices (chapter 36)</h2>
+<div class="crux"><b>Crux: how to integrate I/O into systems.</b> What are the general mechanisms, and how do we make them efficient?</div>
+<figure class="fig"><svg viewBox="0 0 900 250" role="img" aria-label="system architecture buses">
+<rect x="380" y="10" width="140" height="44" rx="6" fill="#6bcb77"/><text x="450" y="38" text-anchor="middle" fill="#111" font-weight="600">CPU</text><rect x="600" y="10" width="160" height="44" rx="6" fill="#28304f" stroke="#3a4368"/><text x="680" y="38" text-anchor="middle" fill="#eef0f7">Memory</text>
+<line x1="380" y1="70" x2="760" y2="70" stroke="#a9b1cf" stroke-width="3"/><text x="570" y="90" text-anchor="middle" fill="#a9b1cf" font-size="12">memory bus (fastest, shortest)</text><line x1="450" y1="54" x2="450" y2="70" stroke="#a9b1cf" stroke-width="2"/><line x1="680" y1="54" x2="680" y2="70" stroke="#a9b1cf" stroke-width="2"/>
+<line x1="200" y1="130" x2="760" y2="130" stroke="#a9b1cf" stroke-width="2"/><text x="480" y="150" text-anchor="middle" fill="#a9b1cf" font-size="12">general I/O bus, e.g. PCI (graphics, high-performance devices)</text><line x1="570" y1="70" x2="570" y2="130" stroke="#a9b1cf" stroke-width="2"/><rect x="200" y="105" width="120" height="30" rx="4" fill="#28304f" stroke="#3a4368"/><text x="260" y="125" text-anchor="middle" fill="#eef0f7" font-size="12">Graphics</text>
+<line x1="100" y1="200" x2="760" y2="200" stroke="#a9b1cf" stroke-width="1.5"/><text x="430" y="222" text-anchor="middle" fill="#a9b1cf" font-size="12">peripheral bus: SCSI, SATA, USB (slow devices, many of them)</text><line x1="480" y1="130" x2="480" y2="200" stroke="#a9b1cf" stroke-width="1.5"/>
+<rect x="100" y="175" width="90" height="26" rx="4" fill="#28304f" stroke="#3a4368"/><text x="145" y="193" text-anchor="middle" fill="#eef0f7" font-size="12">Disk</text><rect x="210" y="175" width="90" height="26" rx="4" fill="#28304f" stroke="#3a4368"/><text x="255" y="193" text-anchor="middle" fill="#eef0f7" font-size="12">Keyboard</text><rect x="320" y="175" width="90" height="26" rx="4" fill="#28304f" stroke="#3a4368"/><text x="365" y="193" text-anchor="middle" fill="#eef0f7" font-size="12">Mouse</text>
+</svg><figcaption>Hierarchical buses: the faster a bus, the shorter it must be, so only a few high-performance devices sit close to the CPU. Modern chipsets (e.g. Intel Z270) replace the shared buses with point-to-point links (DMI, PCIe, eSATA, USB) but the idea holds.</figcaption></figure>
+<p>A <b>canonical device</b> exposes an interface — <b>status</b>, <b>command</b> and <b>data</b> registers — and hides internals (a microcontroller, memory, ASICs; a modern RAID card runs firmware of hundreds of thousands of lines). The canonical protocol: <b>poll</b> status until not busy; write data (<b>programmed I/O</b>, PIO — the CPU moves each word); write the command; poll until done.</p>
+<div class="fig"><h4>From polling to interrupts to DMA</h4><div id="dev"></div><div id="devg" class="gantt"></div></div>
+<div class="tip"><b>Interrupts aren't always better.</b> For a fast device, spinning is cheaper than the switch-out-and-back; a flood of interrupts can <b>livelock</b> a server that only handles interrupts and never runs the application. Hybrids: poll briefly then block; <b>coalesce</b> several completions into one interrupt.</div>
+<div class="two"><div class="fig"><h4>Two ways to reach registers</h4><p><b>Explicit I/O instructions</b> (x86 <code>in</code>/<code>out</code>, privileged) name a port. <b>Memory-mapped I/O</b> maps registers to addresses; ordinary loads and stores are routed to the device. Both are in use.</p></div><div class="fig"><h4>Device drivers</h4><p>Abstraction keeps the rest of the OS device-neutral: file system → generic block layer → <b>device driver</b> → hardware. Cost: specialized capabilities (e.g. SCSI's rich error reporting) get lost behind generic interfaces. Drivers are over <b>70% of Linux kernel code</b>, often written by amateurs — hence a disproportionate share of crashes.</p></div></div>
+<pre><code>// xv6 IDE driver, the shape of it: wait for ready, issue, sleep; the interrupt handler finishes the job
+static void ide_start_request(struct buf *b) {
+    ide_wait_ready();
+    outb(0x3f6, 0);                                     // generate interrupt
+    outb(0x1f2, 1);                                     // how many sectors?
+    outb(0x1f3, b-&gt;sector &amp; 0xff); ...                  // LBA bytes
+    outb(0x1f7, b-&gt;flags &amp; B_DIRTY ? IDE_CMD_WRITE : IDE_CMD_READ);
+    if (b-&gt;flags &amp; B_DIRTY) outsl(0x1f0, b-&gt;data, 512/4);   // PIO transfer
+}
+void ide_intr() { if (!(b-&gt;flags &amp; B_DIRTY) &amp;&amp; ide_wait_ready() &gt;= 0) insl(0x1f0, b-&gt;data, 512/4);
+                  b-&gt;flags |= B_VALID; wakeup(b); if ((ide_queue = b-&gt;qnext) != 0) ide_start_request(ide_queue); }</code></pre>
+
+<h2>Hard disk drives (chapter 37)</h2>
+<div class="crux"><b>Crux: how to store and access data on disk.</b> What's the interface, how is data laid out, and how does scheduling help?</div>
+<p><b>Interface</b>: an array of 512-byte <b>sectors</b>, 0..n−1; a single sector write is atomic, multi-sector writes may <b>torn</b> on power loss. Unwritten contract: nearby sectors are fast; sequential is far faster than random. <b>Geometry</b>: platters with two <b>surfaces</b>, spinning at 7,200–15,000 <b>RPM</b> (10K RPM ≈ 6 ms per rotation); concentric <b>tracks</b> read by a <b>head</b> on an <b>arm</b>. Every access pays:</p>
+<p class="mono" style="font-size:1.1rem">T<sub>I/O</sub> = T<sub>seek</sub> + T<sub>rotation</sub> + T<sub>transfer</sub> &nbsp;&nbsp;&nbsp; R<sub>I/O</sub> = Size<sub>transfer</sub> / T<sub>I/O</sub></p>
+<p>Seeks have phases (accelerate, coast, decelerate, settle — settling alone is 0.5–2 ms); rotation averages half a revolution; transfer is fast. Drives add <b>track skew</b> so a sequential read that crosses tracks doesn't miss a whole rotation, <b>zones</b> with more sectors on outer tracks, and a <b>track buffer</b> cache (8–16 MB) with write-back ("immediate reporting") or write-through semantics.</p>
+<div class="fig"><h4>Calculator: the book's two drives</h4><div class="controls"><label>drive <select id="drv"><option value="c">Cheetah 15K.5 (15,000 RPM, 4 ms seek, 125 MB/s)</option><option value="b">Barracuda (7,200 RPM, 9 ms seek, 105 MB/s)</option></select></label><label>workload <select id="wl"><option value="r">random 4 KB reads</option><option value="s">sequential 100 MB read</option></select></label></div><div class="res" id="dres"></div></div>
+<h3>Disk scheduling</h3>
+<p>Because the disk's costs are known, the OS (or the drive) approximates SJF. <b>SSTF</b> (shortest seek time first) — starves far requests; <b>SCAN</b> (elevator: sweep across tracks, queue requests behind the sweep; <b>C-SCAN</b> sweeps one way, fairer to the outer tracks; <b>F-SCAN</b> freezes the queue per sweep); <b>SPTF</b> (shortest positioning time, accounting for rotation — "it depends", so done inside the drive). Modern OSes pick a few requests and let the drive's internal scheduler finish the job; they also do <b>I/O merging</b> and sometimes wait briefly (<b>anticipatory</b>, non-work-conserving) for a better request.</p>
+<div class="fig"><div class="controls"><button class="primary" data-s="fcfs">FCFS</button><button data-s="sstf">SSTF</button><button data-s="scan">SCAN</button><button data-s="cscan">C-SCAN</button><span class="cap">head at track 50, sweeping up; requests at 98, 183, 37, 122, 14, 124, 65, 67 (tracks 0–199)</span></div><div id="ds" class="res"></div></div>
+
+<h2>RAID (chapter 38)</h2>
+<div class="crux"><b>Crux: how to make a large, fast, reliable disk</b> from several small, slow, unreliable ones — <em>transparently</em>, so existing software just sees a bigger disk?</div>
+<p>A RAID is a computer (microcontroller, DRAM, sometimes non-volatile memory) running software that maps logical blocks to physical disks. Fault model: <b>fail-stop</b> (a disk works or is clearly dead). Evaluate by <b>capacity</b>, <b>reliability</b> (how many failures survive), and <b>performance</b>: single-request latency, and throughput for sequential (S MB/s per disk) vs random (R MB/s per disk) workloads. With the book's drive (7 ms seek, 3 ms rotate, 50 MB/s): S ≈ 47.6 MB/s, R ≈ 0.98 MB/s.</p>
+<div class="fig"><div class="controls"><label>N disks <input type="range" id="nd" min="2" max="16" value="4"></label><span id="ndv" class="mono"></span><label>disk size B (TB) <input type="number" id="bsz" value="4" style="width:70px"></label></div><table class="raid" id="rt"></table><div class="cap">Reproduces Figure 38.8 with numbers. T = time for one request to one disk. Try N = 2 vs 16 and watch RAID-5's random-write factor of 4 stay put.</div></div>
+<ul><li><b>RAID-0 striping</b>: blocks round-robin across disks; <b>chunk size</b> trades intra-file parallelism (small) against positioning time (large; 64 KB is typical). Best performance, no redundancy.</li><li><b>RAID-1 mirroring</b>: two copies (RAID-10 stripes over mirrors; RAID-01 mirrors stripes). Reads go to either copy; writes go to both (in parallel, but wait for the slower). A crash between the two copies is the <b>consistent-update problem</b>; fix with a write-ahead log, often in battery-backed NVRAM.</li><li><b>RAID-4 parity</b>: one parity disk, <code>P = XOR</code> of the stripe. Any single lost block is reconstructed by XOR-ing the rest. Full-stripe writes are cheap; a <b>small write</b> needs the old data and old parity (<b>subtractive parity</b>: <code>P_new = (C_old ⊕ C_new) ⊕ P_old</code>) — 2 reads + 2 writes, and every write hits the one parity disk: random writes cap at R/2.</li><li><b>RAID-5</b>: rotate parity across disks; random reads use all N and random writes reach (N/4)·R. Has replaced RAID-4 except where writes are always full-stripe. RAID-6 tolerates two failures; hot spares and rebuild are the other issues.</li></ul>
+
+<h2>Flash cards</h2><div id="cards"></div>
+<h2>Retrieval practice</h2><div id="quiz"></div>
+<p class="tip">Want to work more disk-time or RAID-throughput problems, or trace SPTF on a specific track layout? Ask me in the chat.</p>
+</div>
+<script>
+/* OSTEP course — shared components. Every page loads this file (inlined by build.py). */
+window.OS = (function () {
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+  /* ---------- persistent storage (localStorage on a real site; in-memory fallback in sandboxes) ---------- */
+  const mem = {};
+  const store = {
+    get(k) { try { const v = localStorage.getItem('ostep:' + k); return v === null ? (mem[k] ?? null) : JSON.parse(v); } catch (e) { return mem[k] ?? null; } },
+    set(k, v) { mem[k] = v; try { localStorage.setItem('ostep:' + k, JSON.stringify(v)); } catch (e) {} },
+    del(k) { delete mem[k]; try { localStorage.removeItem('ostep:' + k); } catch (e) {} },
+    keys(prefix) { const out = new Set(Object.keys(mem).filter(k => k.startsWith(prefix))); try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith('ostep:' + prefix)) out.add(k.slice(6)); } } catch (e) {} return [...out]; },
+    available() { try { localStorage.setItem('ostep:test', '1'); localStorage.removeItem('ostep:test'); return true; } catch (e) { return false; } }
+  };
+
+  /* ---------- course structure ---------- */
+  const PIECES = [
+    ['intro', 'Introduction', [['0001-three-easy-pieces', 'Three easy pieces', 'ch 1–2']]],
+    ['virt', 'Virtualization', [
+      ['0002-processes', 'Processes & the process API', 'ch 4–5'],
+      ['0003-limited-direct-execution', 'Limited direct execution', 'ch 6'],
+      ['0004-scheduling', 'Scheduling', 'ch 7–10'],
+      ['0005-address-spaces', 'Address spaces & segments', 'ch 13–16'],
+      ['0006-paging-and-tlbs', 'Paging & TLBs', 'ch 17–20'],
+      ['0007-swapping', 'Swapping & policies', 'ch 21–23']]],
+    ['conc', 'Concurrency', [
+      ['0008-threads-and-locks', 'Threads & locks', 'ch 26–28'],
+      ['0009-cvs-and-semaphores', 'CVs & semaphores', 'ch 29–31'],
+      ['0010-bugs-and-events', 'Bugs & events', 'ch 32–33']]],
+    ['pers', 'Persistence', [
+      ['0011-devices-disks-raid', 'Devices, disks, RAID', 'ch 36–38'],
+      ['0012-files-and-vsfs', 'Files & a simple FS', 'ch 39–40'],
+      ['0013-ffs-journaling-lfs', 'FFS, journaling, LFS', 'ch 41–43'],
+      ['0014-ssd-and-integrity', 'SSDs & integrity', 'ch 44–45'],
+      ['0015-distributed-nfs-afs', 'Distributed FS', 'ch 48–50']]],
+    ['sec', 'Security', [['0016-security-and-vmms', 'Security & VMMs', 'ch 53–57, App B']]]
+  ];
+  const LESSONS = PIECES.flatMap(p => p[2].map(l => [l[0], l[1], p[0], l[2]]));
+  const title = id => (LESSONS.find(l => l[0] === id) || [])[1] || id;
+  let pageId = null, root = '../';
+
+  /* ---------- chrome: sticky header, slide-out directory, notes drawer, prev/next ---------- */
+  function chrome(id, rootPath) {
+    pageId = id; root = rootPath === undefined ? '../' : rootPath;
+    const i = LESSONS.findIndex(l => l[0] === id);
+    const isLesson = i >= 0;
+    const top = document.createElement('header'); top.className = 'topbar';
+    top.innerHTML = `<button class="menu" aria-label="Open directory" aria-expanded="false">☰<span>Directory</span></button>
+      <a class="brand" href="${root}index.html"><span class="dot"></span>OSTEP course</a>
+      <nav class="links"><a href="${root}reference/glossary.html">Glossary</a><a href="${root}reference/cheatsheets.html">Cheat sheets</a><a href="${root}notes.html">My notes</a></nav>
+      ${isLesson ? `<span class="where">${i+1} / ${LESSONS.length}</span>` : ''}`;
+    document.body.prepend(top);
+    // directory drawer
+    const drawer = document.createElement('aside'); drawer.className = 'drawer'; drawer.setAttribute('aria-label', 'Course directory');
+    const scores = Object.fromEntries(LESSONS.map(l => [l[0], store.get('quiz:' + l[0])]));
+    const notes = new Set(store.keys('notes:').map(k => k.slice(6)).filter(k => (store.get('notes:' + k) || {}).text));
+    drawer.innerHTML = `<div class="dhead"><b>Directory</b><button class="close" aria-label="Close">×</button></div>
+      <a class="ditem ${id === 'index' ? 'cur' : ''}" href="${root}index.html">Course hub</a>
+      ${PIECES.map(([cls, name, ls]) => `<div class="dgroup piece-${cls}"><div class="dname">${name}</div>${ls.map(l => {
+        const n = LESSONS.findIndex(x => x[0] === l[0]) + 1, s = scores[l[0]];
+        return `<a class="ditem ${l[0] === id ? 'cur' : ''}" href="${root}lessons/${l[0]}.html"><span class="n">${n}</span><span class="t">${l[1]}<small>${l[3]}</small></span><span class="badges">${notes.has(l[0]) ? '<i title="you have notes">✎</i>' : ''}${s ? `<em title="best quiz score">${s.score}/${s.total}</em>` : ''}</span></a>`; }).join('')}</div>`).join('')}
+      <div class="dgroup piece-intro"><div class="dname">Reference</div>
+        <a class="ditem ${id === 'glossary' ? 'cur' : ''}" href="${root}reference/glossary.html"><span class="t">Glossary</span></a>
+        <a class="ditem ${id === 'cheatsheets' ? 'cur' : ''}" href="${root}reference/cheatsheets.html"><span class="t">Cheat sheets</span></a>
+        <a class="ditem ${id === 'notes' ? 'cur' : ''}" href="${root}notes.html"><span class="t">My notes &amp; progress</span></a></div>
+      <div class="dfoot">${store.available() ? 'Notes and scores are saved in this browser.' : 'Notes and scores are kept for this session only (storage unavailable here).'}</div>`;
+    document.body.append(drawer);
+    const scrim = document.createElement('div'); scrim.className = 'scrim'; document.body.append(scrim);
+    const open = o => { document.body.classList.toggle('drawer-open', o); top.querySelector('.menu').setAttribute('aria-expanded', o); if (o) drawer.querySelector('.cur, .ditem')?.focus(); };
+    top.querySelector('.menu').onclick = () => open(!document.body.classList.contains('drawer-open'));
+    drawer.querySelector('.close').onclick = () => open(false); scrim.onclick = () => open(false);
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') { open(false); notesOpen(false); } });
+    // prev/next for lessons
+    if (isLesson) {
+      const nav = document.createElement('div'); nav.className = 'nav-bottom';
+      const prev = LESSONS[i-1], next = LESSONS[i+1];
+      nav.innerHTML = (prev ? `<a href="${prev[0]}.html">← ${i}. ${prev[1]}</a>` : '<span></span>') +
+                      (next ? `<a href="${next[0]}.html">${i+2}. ${next[1]} →</a>` : `<a href="${root}index.html">Back to course hub →</a>`);
+      document.querySelector('.wrap').append(nav);
+    }
+    // wrap tables so they scroll sideways on phones
+    document.querySelectorAll('.wrap table').forEach(t => { if (t.parentElement.classList.contains('tw')) return; const w = document.createElement('div'); w.className = 'tw'; t.replaceWith(w); w.append(t); });
+    // notes drawer (every page except the notes page itself)
+    if (id !== 'notes') notesUI(id, isLesson ? `${i+1}. ${LESSONS[i][1]}` : (document.title.split(' — ')[0]));
+  }
+
+  /* ---------- notes: floating button + bottom sheet, autosaved ---------- */
+  let notesOpen = () => {};
+  function notesUI(id, label) {
+    const btn = document.createElement('button'); btn.className = 'notes-fab'; btn.innerHTML = '✎ <span>Notes</span>'; btn.setAttribute('aria-label', 'Open notes');
+    const sheet = document.createElement('section'); sheet.className = 'notes-sheet'; sheet.setAttribute('aria-label', 'Notes for this page');
+    const saved = store.get('notes:' + id) || {};
+    sheet.innerHTML = `<div class="nhead"><b>Notes · ${esc(label)}</b><span class="nstatus"></span><button class="close" aria-label="Close notes">×</button></div>
+      <textarea placeholder="Your notes for this page. Markdown is fine. Saved automatically.">${esc(saved.text || '')}</textarea>
+      <div class="nfoot"><span class="ncount"></span><a href="${root}notes.html">All notes &amp; export →</a></div>`;
+    document.body.append(btn, sheet);
+    const ta = sheet.querySelector('textarea'), status = sheet.querySelector('.nstatus'), count = sheet.querySelector('.ncount');
+    const upd = () => { count.textContent = ta.value.trim() ? ta.value.trim().split(/\s+/).length + ' words' : ''; };
+    let t; ta.addEventListener('input', () => { status.textContent = 'saving…'; clearTimeout(t); t = setTimeout(() => { store.set('notes:' + id, { text: ta.value, title: label, updated: new Date().toISOString() }); status.textContent = 'saved'; upd(); }, 400); });
+    upd();
+    notesOpen = o => { document.body.classList.toggle('notes-open', o); if (o) ta.focus(); };
+    btn.onclick = () => notesOpen(!document.body.classList.contains('notes-open'));
+    sheet.querySelector('.close').onclick = () => notesOpen(false);
+  }
+
+  /* ---------- quiz: immediate feedback; best score persisted ---------- */
+  function quiz(el, qs) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('quiz');
+    let score = 0, answered = 0;
+    const best = pageId ? store.get('quiz:' + pageId) : null;
+    el.innerHTML = qs.map((q, i) => `<div class="q" data-i="${i}"><p>${i+1}. ${q.q}</p>
+      <div class="opts">${q.o.map((o, j) => `<button class="opt" data-j="${j}">${esc(o)}</button>`).join('')}</div>
+      <div class="why">${q.why}</div></div>`).join('') + `<div class="score">${best ? `Best so far: ${best.score}/${best.total} (${new Date(best.date).toLocaleDateString()})` : ''}</div>`;
+    el.querySelectorAll('.q').forEach(qd => {
+      const q = qs[+qd.dataset.i];
+      qd.querySelectorAll('.opt').forEach(b => b.addEventListener('click', () => {
+        if (qd.classList.contains('done')) return;
+        qd.classList.add('done'); answered++;
+        const j = +b.dataset.j;
+        if (j === q.a) { b.classList.add('right'); score++; }
+        else { b.classList.add('wrong'); qd.querySelectorAll('.opt')[q.a].classList.add('right'); }
+        const s = el.querySelector('.score');
+        s.textContent = `${score} / ${answered} correct`;
+        if (answered === qs.length) {
+          s.textContent += score === qs.length ? ' — all of them. Retry from memory in two days.' : ' — reread the sections you missed, then retry.';
+          if (pageId && (!best || score >= best.score)) store.set('quiz:' + pageId, { score, total: qs.length, date: new Date().toISOString() });
+        }
+      }));
+    });
+  }
+
+  /* ---------- flip cards ---------- */
+  function cards(el, list) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('cards');
+    el.innerHTML = list.map(([f, b]) => `<div class="card" tabindex="0" role="button" aria-label="flip card"><div class="inner"><div class="face front">${f}</div><div class="face back">${b}</div></div></div>`).join('');
+    el.querySelectorAll('.card').forEach(c => {
+      const t = () => c.classList.toggle('flipped');
+      c.addEventListener('click', t);
+      c.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); t(); } });
+    });
+  }
+
+  /* ---------- stepper ---------- */
+  function stepper(el, steps, render) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('stepper');
+    let i = 0;
+    el.innerHTML = `<div class="controls"><button class="prev">← Back</button><button class="next primary">Next step →</button><span class="idx"></span></div><div class="stage"></div><div class="extra"></div>`;
+    const stage = el.querySelector('.stage'), idx = el.querySelector('.idx'), extra = el.querySelector('.extra');
+    const draw = () => { stage.innerHTML = steps[i]; idx.textContent = `step ${i+1} / ${steps.length}`; if (render) render(i, extra); };
+    el.querySelector('.prev').onclick = () => { i = Math.max(0, i-1); draw(); };
+    el.querySelector('.next').onclick = () => { i = Math.min(steps.length-1, i+1); draw(); };
+    draw();
+  }
+
+  /* ---------- gantt ---------- */
+  function gantt(el, rows, total, colors) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('gantt');
+    const pal = colors || ['#e8b84a','#5bc8f5','#6bcb77','#f47fa0','#c9a8ff','#ffb86b'];
+    el.innerHTML = rows.map((r, i) => `<div class="row"><span>${esc(r.name)}</span><div class="track">${r.segs.map(s =>
+      `<div class="seg" style="left:${100*s.start/total}%;width:${100*(s.end-s.start)/total}%;background:${pal[i%pal.length]}" title="${s.start}–${s.end}">${(s.end-s.start)/total > .06 ? (s.end-s.start) : ''}</div>`).join('')}</div></div>`).join('') +
+      `<div class="row"><span></span><div style="display:flex;justify-content:space-between;font-size:.75rem;color:var(--muted)"><span>0</span><span>${total}</span></div></div>`;
+  }
+
+  /* ---------- objectives checklist (persisted) ---------- */
+  function objectives(el, items) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('objectives');
+    const saved = (pageId && store.get('obj:' + pageId)) || [];
+    el.innerHTML = items.map((t, i) => `<li><label><input type="checkbox" data-i="${i}" ${saved.includes(i) ? 'checked' : ''}>${t}</label></li>`).join('');
+    el.querySelectorAll('input').forEach(c => c.onchange = () => { const s = [...el.querySelectorAll('input:checked')].map(x => +x.dataset.i); if (pageId) store.set('obj:' + pageId, s); });
+  }
+
+  return { chrome, quiz, cards, stepper, gantt, objectives, esc, store, LESSONS, PIECES, title };
+})();
+
+</script>
+<script>
+OS.chrome('0011-devices-disks-raid');
+OS.objectives('obj',['Describe the canonical device interface and protocol, and when interrupts, polling hybrids, or DMA are appropriate.','Compute disk I/O time and rate from seek, RPM and transfer rate for random vs sequential workloads.','Compare SSTF, SCAN, C-SCAN and SPTF and say where each fails.','Fill in the RAID-0/1/4/5 capacity, reliability and throughput table and derive RAID-5\'s small-write factor of 4.','Explain the consistent-update problem and subtractive parity.']);
+OS.stepper('dev',['<b>Polling with PIO.</b> The CPU writes the data word by word, issues the command, then spins reading the status register until the device is done. Simple; wastes the CPU for the whole device time.','<b>Interrupts.</b> Issue the request, put the calling process to sleep, run another process. When the device finishes it raises an <b>interrupt</b>; the CPU jumps to the OS\'s interrupt handler, which finishes the I/O and wakes the waiter. Overlap of computation and I/O.','<b>DMA.</b> The CPU still copied the data itself (PIO). A <b>DMA engine</b> is told where the data is, how much, and which device; it moves the bytes without the CPU. The CPU is free from the start, and the interrupt arrives when the transfer completes.'],(i,extra)=>{const rows=[[{name:'CPU',segs:[{start:0,end:1},{start:1,end:6}]},{name:'Disk',segs:[{start:1,end:6}]}],[{name:'CPU',segs:[{start:0,end:1},{start:6,end:7}]},{name:'CPU (proc 2)',segs:[{start:1,end:6}]},{name:'Disk',segs:[{start:1,end:6}]}],[{name:'CPU',segs:[{start:0,end:.5},{start:6,end:6.5}]},{name:'CPU (proc 2)',segs:[{start:.5,end:6}]},{name:'DMA',segs:[{start:.5,end:1}]},{name:'Disk',segs:[{start:1,end:6}]}]][i];OS.gantt('devg',rows,7);});
+function disk(){const d=document.getElementById('drv').value==='c'?{rpm:15000,seek:4,xfer:125}:{rpm:7200,seek:9,xfer:105};const rot=60000/d.rpm/2;const w=document.getElementById('wl').value;let out=`rotation: ${d.rpm} RPM → ${(60000/d.rpm).toFixed(2)} ms per revolution → average rotational delay ${rot.toFixed(2)} ms<br>`;if(w==='r'){const tx=4096/(d.xfer*1e6)*1e3;const t=d.seek+rot+tx;out+=`T<sub>I/O</sub> = ${d.seek} ms seek + ${rot.toFixed(1)} ms rotate + ${(tx*1000).toFixed(0)} µs transfer = <b>${t.toFixed(2)} ms</b><br>R<sub>I/O</sub> = 4 KB / ${t.toFixed(2)} ms = <b>${(4096/1e6/(t/1e3)).toFixed(2)} MB/s</b> — the book: Cheetah ≈ 0.66 MB/s, Barracuda ≈ 0.31 MB/s. Random I/O uses under 1% of the peak rate.`;}else{const tx=100/d.xfer*1e3;const t=d.seek+rot+tx;out+=`T<sub>I/O</sub> = ${d.seek} + ${rot.toFixed(1)} + ${tx.toFixed(0)} ms transfer = <b>${t.toFixed(0)} ms</b><br>R<sub>I/O</sub> = 100 MB / ${(t/1e3).toFixed(3)} s = <b>${(100/(t/1e3)).toFixed(1)} MB/s</b> — nearly the peak. Sequential beats random by 200–300×. Rule: transfer in large chunks.`;}document.getElementById('dres').innerHTML=out;}
+document.getElementById('drv').onchange=disk;document.getElementById('wl').onchange=disk;disk();
+const REQ=[98,183,37,122,14,124,65,67];
+function sched(kind){let head=50,order=[],dist=0,q=[...REQ];if(kind==='fcfs')order=q;else if(kind==='sstf'){while(q.length){q.sort((a,b)=>Math.abs(a-head)-Math.abs(b-head));const n=q.shift();order.push(n);head=n;}head=50;}else if(kind==='scan'){const up=q.filter(r=>r>=50).sort((a,b)=>a-b),down=q.filter(r=>r<50).sort((a,b)=>b-a);order=[...up,...down];}else{const up=q.filter(r=>r>=50).sort((a,b)=>a-b),low=q.filter(r=>r<50).sort((a,b)=>a-b);order=[...up,...low];}
+let h=50,path=[50];order.forEach(r=>{dist+=Math.abs(r-h);h=r;path.push(r);});if(kind==='cscan'){/* count wrap as 199->0 sweep */const up=order.filter(r=>r>=50);if(up.length&&order.length>up.length){dist=0;h=50;up.forEach(r=>{dist+=Math.abs(r-h);h=r;});dist+= (199-h)+199;h=0;order.slice(up.length).forEach(r=>{dist+=Math.abs(r-h);h=r;});}}
+document.getElementById('ds').innerHTML=`order: ${path.join(' → ')}<br>total head movement: <b>${dist} tracks</b>${{fcfs:' — no reordering; lots of back-and-forth.',sstf:' — greedy nearest; fine here, but a stream of near requests would starve 183 forever.',scan:' — the elevator: finish the upward sweep, then come back down; bounded waiting.',cscan:' — one-directional sweeps (return counted as a full traverse); fairer to edge tracks than SCAN, which visits the middle twice per cycle.'}[kind]}`;}
+document.querySelectorAll('[data-s]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-s]').forEach(x=>x.classList.remove('primary'));b.classList.add('primary');sched(b.dataset.s);});sched('fcfs');
+function raid(){const N=+document.getElementById('nd').value,B=+document.getElementById('bsz').value;document.getElementById('ndv').textContent=N+' disks';const f=(x)=>Number.isInteger(x)?x:x.toFixed(2);document.getElementById('rt').innerHTML=`<tr><th></th><th>RAID-0</th><th>RAID-1</th><th>RAID-4</th><th>RAID-5</th></tr>
+<tr><td>Capacity</td><td>N·B = ${N*B} TB</td><td>(N·B)/2 = ${N*B/2} TB</td><td>(N−1)·B = ${(N-1)*B} TB</td><td>(N−1)·B = ${(N-1)*B} TB</td></tr>
+<tr><td>Reliability</td><td>0 failures</td><td>1 for sure, up to N/2 = ${N/2} if lucky</td><td>1</td><td>1</td></tr>
+<tr><td>Seq. read / write</td><td>N·S = ${N}S</td><td>(N/2)·S = ${f(N/2)}S</td><td>(N−1)·S = ${N-1}S</td><td>(N−1)·S = ${N-1}S</td></tr>
+<tr><td>Random read</td><td>N·R = ${N}R</td><td>N·R = ${N}R</td><td>(N−1)·R = ${N-1}R</td><td>N·R = ${N}R</td></tr>
+<tr><td>Random write</td><td>N·R = ${N}R</td><td>(N/2)·R = ${f(N/2)}R</td><td>R/2 (parity-disk bottleneck)</td><td>(N/4)·R = ${f(N/4)}R</td></tr>
+<tr><td>Latency read / write</td><td>T / T</td><td>T / T</td><td>T / 2T</td><td>T / 2T</td></tr>`;}
+document.getElementById('nd').oninput=raid;document.getElementById('bsz').onchange=raid;raid();
+OS.cards('cards',[['Canonical device','Interface of status/command/data registers over hidden internals (microcontroller, firmware).'],['Programmed I/O','The CPU itself moves each word of data to/from the device; DMA offloads this.'],['Interrupt coalescing','Delay raising an interrupt so several completions are reported together, cutting overhead.'],['Memory-mapped I/O','Device registers appear at memory addresses; loads and stores are routed to the device.'],['T_I/O','Seek + rotational delay + transfer. Rotation averages half a revolution: 60000/RPM/2 ms.'],['Track skew','Offset sector numbering between adjacent tracks so sequential reads survive the seek without a missed rotation.'],['SPTF','Shortest positioning time first: schedule by seek plus rotation; needs drive internals, so done in the drive.'],['Fail-stop','RAID fault model: a disk either works correctly or has failed and the failure is detected.'],['Subtractive parity','P_new = (C_old ⊕ C_new) ⊕ P_old: update parity from the changed block only; 2 reads + 2 writes per small write.'],['Consistent-update problem','A crash between the two writes of a mirrored (or parity) update leaves copies inconsistent; fixed with a write-ahead log / NVRAM.']]);
+OS.quiz('quiz',[
+{q:'What does DMA remove from the CPU\'s workload that interrupts alone do not?',o:['waiting for the device to be ready','copying the data to the device','handling the completion event','choosing which process to run'],a:1,why:'With interrupts the CPU still does programmed I/O (copies every word). A DMA engine moves the data itself; the CPU only sets it up and takes the final interrupt.'},
+{q:'A 10,000 RPM disk: average rotational delay is about:',o:['6 ms','3 ms','1.5 ms','12 ms'],a:1,why:'One revolution = 60,000/10,000 = 6 ms; on average the head waits half a rotation, 3 ms.'},
+{q:'For the Cheetah (4 ms seek, 15K RPM, 125 MB/s), a random 4 KB read achieves roughly:',o:['about 125 MB/s','about 0.66 MB/s','about 12 MB/s','about 60 MB/s'],a:1,why:'4 + 2 + 0.03 ≈ 6 ms per 4 KB → 0.66 MB/s. Positioning time dominates; transfer is negligible.'},
+{q:'Which scheduler can starve a far-away request indefinitely?',o:['SCAN','SSTF','C-SCAN','F-SCAN'],a:1,why:'Shortest-seek-first always prefers nearby requests; a steady stream of them means the far one never runs. The elevator variants bound the wait.'},
+{q:'Under RAID-5, how many disk I/Os does a small (single-block) write cost?',o:['two','four','one','N'],a:1,why:'Read old data, read old parity, write new data, write new parity (subtractive parity). Hence random-write throughput of (N/4)·R.'},
+{q:'Why does RAID-4 random-write throughput stay at R/2 no matter how many disks?',o:['every write is mirrored twice','every write touches the one parity disk','each disk can only do half its rate','the controller serializes all writes'],a:1,why:'All parity updates go to a single disk, which needs a read and a write per logical write; that disk is the bottleneck. RAID-5 rotates parity to fix this.'},
+{q:'What fraction of the Linux kernel is device-driver code, per the chapter?',o:['about 10%','over 70%','roughly 30%','under 5%'],a:1,why:'Over 70% — and a major source of crashes, since drivers are numerous and often written by less-experienced developers.'}]);
+</script></body></html>

@@ -1,0 +1,467 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>4 · Scheduling — OSTEP course</title><style>
+/* OSTEP course — shared stylesheet. Three pieces, three hues. */
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+:root{
+  --ink:#151b2f; --ink-2:#1e2540; --ink-3:#28304f; --line:#3a4368;
+  --paper:#eef0f7; --muted:#a9b1cf; --faint:#6e779a;
+  --virt:#e8b84a; --conc:#5bc8f5; --pers:#6bcb77; --sec:#f47fa0; --intro:#c9a8ff;
+  --ok:#6bcb77; --bad:#ff6b6b;
+  --accent:var(--virt);
+  --radius:6px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--ink);color:var(--paper);font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:17px;line-height:1.6}
+a{color:var(--accent)}
+code,pre,kbd,.mono{font-family:'IBM Plex Mono',ui-monospace,monospace}
+code{background:var(--ink-3);padding:1px 5px;border-radius:4px;font-size:.9em}
+pre{background:#0f1424;border:1px solid var(--line);border-left:4px solid var(--accent);padding:14px 16px;overflow:auto;border-radius:var(--radius);font-size:.86em;line-height:1.5}
+pre code{background:none;padding:0;font-size:inherit}
+h1,h2,h3,h4{font-family:'Fraunces',Georgia,serif;font-weight:700;line-height:1.15;margin:0 0 .4em}
+h1{font-size:2.6rem;letter-spacing:-.01em}
+h2{font-size:1.9rem;margin-top:2.6rem;padding-top:1.2rem;border-top:1px solid var(--line)}
+h3{font-size:1.3rem;margin-top:1.8rem;color:var(--accent)}
+h4{font-size:1.05rem;margin-top:1.2rem}
+p,li{max-width:72ch}
+.wrap{max-width:1100px;margin:0 auto;padding:0 28px 96px}
+.hero{padding:44px 0 16px}
+.hero .chapters{color:var(--muted);font-size:.95rem;margin-bottom:6px}
+.lede{font-size:1.2rem;color:var(--muted);max-width:66ch}
+.piece-virt{--accent:var(--virt)} .piece-conc{--accent:var(--conc)} .piece-pers{--accent:var(--pers)} .piece-sec{--accent:var(--sec)} .piece-intro{--accent:var(--intro)}
+.fig{background:var(--ink-2);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;margin:22px 0}
+.fig figcaption,.cap{color:var(--muted);font-size:.9rem;margin-top:10px}
+.fig svg{max-width:100%;height:auto;display:block}
+svg text{font-family:'IBM Plex Sans',sans-serif}
+svg .mono{font-family:'IBM Plex Mono',monospace}
+.crux{border:1px solid var(--accent);border-radius:var(--radius);padding:14px 18px;margin:22px 0;background:color-mix(in srgb,var(--accent) 8%,transparent)}
+.crux b{color:var(--accent)}
+.tip{border-left:4px solid var(--muted);padding:6px 16px;margin:18px 0;color:var(--muted)}
+.tip b{color:var(--paper)}
+table{border-collapse:collapse;width:100%;margin:16px 0;font-size:.95rem}
+th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{color:var(--muted);font-weight:500}
+td.mono,th.mono{font-family:'IBM Plex Mono',monospace}
+button,.btn{font:inherit;font-size:.9rem;background:var(--ink-3);color:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:7px 13px;cursor:pointer}
+button:hover{border-color:var(--accent)}
+button.primary{background:var(--accent);color:#111;border-color:var(--accent);font-weight:600}
+button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+input[type=range]{accent-color:var(--accent)}
+input[type=text],input[type=number],select{font:inherit;background:#0f1424;color:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:6px 10px}
+.controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:10px 0}
+.controls label{font-size:.9rem;color:var(--muted)}
+details{border:1px solid var(--line);border-radius:var(--radius);margin:10px 0;background:var(--ink-2)}
+summary{cursor:pointer;padding:12px 16px;font-weight:600;list-style:none}
+summary::before{content:"+";display:inline-block;width:1.2em;color:var(--accent)}
+details[open] summary::before{content:"–"}
+details>div{padding:0 16px 14px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;margin:16px 0}
+.card{perspective:900px;min-height:140px;cursor:pointer}
+.card .inner{position:relative;width:100%;height:100%;min-height:140px;transition:transform .45s;transform-style:preserve-3d}
+.card.flipped .inner{transform:rotateY(180deg)}
+.card .face{position:absolute;inset:0;padding:14px;border-radius:var(--radius);border:1px solid var(--line);background:var(--ink-2);backface-visibility:hidden;display:flex;align-items:center;justify-content:center;text-align:center;font-size:.95rem}
+.card .back{transform:rotateY(180deg);background:var(--ink-3);border-color:var(--accent);font-size:.88rem;line-height:1.45}
+.card .front{font-weight:600}
+@media (prefers-reduced-motion:reduce){.card .inner{transition:none}}
+.quiz .q{border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin:12px 0;background:var(--ink-2)}
+.quiz .q p{margin:0 0 10px;font-weight:600}
+.quiz .opts{display:grid;gap:8px}
+.quiz .opt{text-align:left;background:var(--ink);width:100%}
+.quiz .opt.right{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 15%,var(--ink))}
+.quiz .opt.wrong{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 15%,var(--ink))}
+.quiz .why{margin-top:10px;color:var(--muted);font-size:.93rem;display:none}
+.quiz .q.done .why{display:block}
+.quiz .score{margin-top:12px;font-weight:600}
+.stepper .stage{min-height:60px;background:#0f1424;border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin:10px 0}
+.stepper .idx{color:var(--muted);font-size:.85rem}
+.gantt{display:grid;gap:6px;margin:10px 0}
+.gantt .row{display:grid;grid-template-columns:60px 1fr;align-items:center;gap:8px;font-size:.85rem}
+.gantt .track{position:relative;height:26px;background:#0f1424;border-radius:4px;overflow:hidden}
+.gantt .seg{position:absolute;top:0;bottom:0;display:flex;align-items:center;justify-content:center;font-size:.75rem;color:#111;font-weight:600;border-right:1px solid rgba(0,0,0,.3)}
+.cells{display:grid;gap:4px;margin:10px 0}
+.cell{background:#0f1424;border:1px solid var(--line);border-radius:4px;padding:6px;text-align:center;font-family:'IBM Plex Mono',monospace;font-size:.8rem;min-height:36px;display:flex;align-items:center;justify-content:center}
+.cell.hit{background:color-mix(in srgb,var(--ok) 35%,#0f1424);border-color:var(--ok)}
+.cell.miss{background:color-mix(in srgb,var(--bad) 35%,#0f1424);border-color:var(--bad)}
+.cell.active{outline:2px solid var(--accent)}
+.cell.free{opacity:.45}
+.hl{background:color-mix(in srgb,var(--accent) 30%,transparent);padding:1px 5px;border-radius:3px}
+.k{color:var(--accent);font-weight:600}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media (max-width:760px){.two{grid-template-columns:1fr}.topbar{gap:10px}h1{font-size:2rem}}
+.nav-bottom{display:flex;justify-content:space-between;gap:16px;margin-top:56px;padding-top:20px;border-top:1px solid var(--line)}
+.nav-bottom a{text-decoration:none;padding:12px 16px;border:1px solid var(--line);border-radius:var(--radius);color:var(--paper)}
+.source{background:var(--ink-2);border-radius:var(--radius);padding:14px 18px;margin:22px 0;font-size:.95rem}
+.source b{color:var(--accent)}
+.objectives li{list-style:none;margin:6px 0}
+.objectives input{margin-right:8px;accent-color:var(--accent)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.85rem;color:var(--muted)}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:5px;vertical-align:-2px}
+.tag{display:inline-block;font-size:.75rem;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted);margin-right:6px}
+.log{font-family:'IBM Plex Mono',monospace;font-size:.82rem;background:#0f1424;border:1px solid var(--line);border-radius:var(--radius);padding:10px 12px;max-height:220px;overflow:auto;white-space:pre-wrap}
+@media print{body{background:#fff;color:#111}.topbar,.nav-bottom,button{display:none}.fig,.crux,details,.source{border-color:#bbb;background:#fff}pre{background:#f5f5f5;color:#111}}
+
+/* ---------- site chrome: sticky header + directory drawer ---------- */
+.topbar{position:sticky;top:0;z-index:30;display:flex;gap:14px;align-items:center;padding:10px 16px;background:color-mix(in srgb,var(--ink) 92%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);font-size:.9rem}
+.topbar .menu{display:flex;align-items:center;gap:8px;padding:8px 12px;font-size:1rem}
+.topbar .menu span{font-size:.85rem}
+.topbar .brand{color:var(--paper);text-decoration:none;font-weight:600;display:flex;align-items:center;gap:8px}
+.topbar .dot{width:10px;height:10px;border-radius:50%;background:var(--accent);display:inline-block}
+.topbar .links{display:flex;gap:16px;margin-left:8px}
+.topbar .links a{color:var(--muted);text-decoration:none}
+.topbar .links a:hover{color:var(--paper)}
+.topbar .where{margin-left:auto;color:var(--faint);font-variant-numeric:tabular-nums}
+.drawer{position:fixed;top:0;left:0;bottom:0;width:min(340px,88vw);background:var(--ink-2);border-right:1px solid var(--line);z-index:50;transform:translateX(-102%);transition:transform .25s;overflow-y:auto;padding:0 0 24px;box-shadow:0 0 40px rgba(0,0,0,.5)}
+.drawer-open .drawer{transform:none}
+.scrim{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:40;opacity:0;pointer-events:none;transition:opacity .2s}
+.drawer-open .scrim{opacity:1;pointer-events:auto}
+.drawer .dhead{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--ink-2)}
+.drawer .close,.notes-sheet .close{font-size:1.3rem;line-height:1;padding:4px 10px}
+.drawer .dgroup{padding:8px 0 4px}
+.drawer .dname{padding:8px 16px 4px;color:var(--accent);font-family:'Fraunces',serif;font-weight:700}
+.drawer .ditem{display:flex;gap:10px;align-items:center;padding:9px 16px;color:var(--paper);text-decoration:none;border-left:3px solid transparent;font-size:.92rem}
+.drawer .ditem:hover{background:var(--ink-3)}
+.drawer .ditem.cur{border-left-color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
+.drawer .ditem .n{color:var(--faint);min-width:1.4em;font-variant-numeric:tabular-nums}
+.drawer .ditem .t{flex:1;line-height:1.25}
+.drawer .ditem .t small{display:block;color:var(--faint);font-size:.75rem}
+.drawer .badges{display:flex;gap:6px;align-items:center}
+.drawer .badges i{font-style:normal;color:var(--accent)}
+.drawer .badges em{font-style:normal;font-size:.75rem;padding:1px 6px;border-radius:999px;background:var(--ink-3);color:var(--muted);font-variant-numeric:tabular-nums}
+.drawer .dfoot{padding:16px;color:var(--faint);font-size:.8rem}
+/* ---------- notes: floating button + bottom sheet ---------- */
+.notes-fab{position:fixed;right:16px;bottom:16px;z-index:35;display:flex;gap:8px;align-items:center;padding:12px 16px;border-radius:999px;background:var(--accent);color:#111;border:none;font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,.4)}
+.notes-sheet{position:fixed;left:0;right:0;bottom:0;z-index:45;background:var(--ink-2);border-top:1px solid var(--line);border-radius:14px 14px 0 0;transform:translateY(105%);transition:transform .25s;box-shadow:0 -10px 40px rgba(0,0,0,.5);max-width:900px;margin:0 auto;padding-bottom:env(safe-area-inset-bottom)}
+.notes-open .notes-sheet{transform:none}
+.notes-open .notes-fab{display:none}
+.notes-sheet .nhead{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line)}
+.notes-sheet .nhead b{flex:1;font-size:.95rem}
+.notes-sheet .nstatus{color:var(--faint);font-size:.8rem}
+.notes-sheet textarea{display:block;width:100%;min-height:36vh;max-height:60vh;resize:vertical;border:none;background:#0f1424;color:var(--paper);font:inherit;font-size:1rem;line-height:1.5;padding:14px 16px;outline:none}
+.notes-sheet .nfoot{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;font-size:.85rem;color:var(--muted)}
+/* ---------- wide widgets scroll sideways instead of breaking the page ---------- */
+.tw{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:16px 0}
+.tw table{margin:0;min-width:520px}
+.fig{overflow-x:auto}
+@media (prefers-reduced-motion:reduce){.drawer,.notes-sheet,.scrim{transition:none}}
+/* ---------- phones ---------- */
+@media (max-width:760px){
+  body{font-size:16px}
+  .wrap{padding:0 16px 110px}
+  h1{font-size:1.85rem} h2{font-size:1.45rem;margin-top:2rem} h3{font-size:1.15rem}
+  .lede{font-size:1.05rem}
+  .topbar{padding:8px 12px;gap:10px}
+  .topbar .links{display:none}
+  .topbar .menu span{display:none}
+  .topbar .menu{padding:8px 11px}
+  .fig{padding:12px 12px;margin:16px -4px;border-radius:8px}
+  .crux,.source{padding:12px 14px}
+  pre{font-size:.8em;padding:12px 12px}
+  button,.btn{padding:10px 14px;font-size:.92rem}
+  .controls{gap:8px}
+  .controls label{display:flex;align-items:center;gap:6px}
+  input[type=number]{max-width:96px}
+  .cards{grid-template-columns:1fr 1fr;gap:8px}
+  .card,.card .inner{min-height:120px}
+  .card .face{font-size:.88rem;padding:10px}
+  .cells{min-width:420px}
+  .quiz .opt{padding:12px 12px;line-height:1.35}
+  .nav-bottom{flex-direction:column}
+  .nav-bottom a{text-align:center}
+  .notes-fab span{display:none}
+  .notes-fab{padding:14px;right:12px;bottom:12px}
+  .notes-sheet textarea{min-height:44vh}
+  .stepper .stage{padding:12px}
+  .gantt .row{grid-template-columns:44px 1fr;font-size:.75rem}
+  /* lesson-specific grids collapse */
+  .lde,.il,.two,.cry,.flash,.dl,.fdt,.how,.cards.wide,.vm{grid-template-columns:1fr}
+  .map{grid-template-columns:1fr}
+  .net{grid-template-columns:1fr}.net .arrow{padding:0;transform:rotate(90deg)}
+  .phil{grid-template-columns:repeat(2,1fr)}
+  .jobs{max-width:100%}
+  .trace{min-width:620px}.tl{min-width:720px}.disk{min-width:560px}
+}
+@media (max-width:420px){.cards{grid-template-columns:1fr}}
+
+</style>
+<style>.jobs{display:grid;grid-template-columns:auto 1fr 1fr auto;gap:6px 10px;align-items:center;font-size:.9rem;max-width:520px}.jobs input{width:90px}.metrics{display:flex;gap:24px;flex-wrap:wrap;margin-top:8px}.metrics b{color:var(--accent);font-size:1.3rem}.mlfq{display:grid;gap:8px}.mlfq .qrow{display:grid;grid-template-columns:60px 1fr;gap:8px;align-items:center}.mlfq .slot{display:flex;gap:6px;min-height:34px;background:#0f1424;border:1px solid var(--line);border-radius:4px;padding:4px}.job{padding:4px 10px;border-radius:4px;font-size:.85rem;font-weight:600;color:#111}</style></head>
+<body class="piece-virt"><div class="wrap">
+<header class="hero"><div class="chapters">OSTEP chapters 7–10 · Scheduling: Introduction · MLFQ · Proportional Share · Multiprocessor</div>
+<h1>Scheduling: who runs next, and by what measure</h1>
+<p class="lede">The context switch is the mechanism; scheduling is the policy. Two families of policies pull in opposite directions — finish short jobs early, or give everyone a quick turn — and the multi-level feedback queue gets the best of both by watching what jobs actually do.</p></header>
+<div class="source"><b>Primary sources:</b> <a href="https://pages.cs.wisc.edu/~remzi/OSTEP/cpu-sched.pdf">Ch 7</a>, <a href="https://pages.cs.wisc.edu/~remzi/OSTEP/cpu-sched-mlfq.pdf">Ch 8</a>, <a href="https://pages.cs.wisc.edu/~remzi/OSTEP/cpu-sched-lottery.pdf">Ch 9</a>, <a href="https://pages.cs.wisc.edu/~remzi/OSTEP/cpu-sched-multi.pdf">Ch 10</a>. Homework simulators: <code>scheduler.py</code>, <code>mlfq.py</code>, <code>lottery.py</code>, <code>multi.py</code> in <a href="https://github.com/remzi-arpacidusseau/ostep-homework">ostep-homework</a>.</div>
+<h2>What you'll be able to do</h2><ul id="obj"></ul>
+
+<h2>Assumptions and metrics (chapter 7)</h2>
+<p>The book starts with a deliberately unrealistic workload and relaxes it one assumption at a time: (1) every job runs the same length, (2) all arrive at the same time, (3) each runs to completion once started, (4) jobs only use the CPU, (5) run-times are known. Two metrics matter:</p>
+<div class="two"><div class="fig"><h4>Turnaround time (performance)</h4><p class="mono">T<sub>turnaround</sub> = T<sub>completion</sub> − T<sub>arrival</sub></p><p>How long from arrival to finish. Minimized by running short things first.</p></div><div class="fig"><h4>Response time (interactivity)</h4><p class="mono">T<sub>response</sub> = T<sub>firstrun</sub> − T<sub>arrival</sub></p><p>How long until it first gets the CPU. Minimized by giving everyone a turn quickly.</p></div></div>
+
+<h2>Simulator: FIFO, SJF, STCF, RR</h2>
+<p>Edit arrivals and lengths, choose a policy, and read the Gantt chart and averages. Preloaded is the book's convoy example: A needs 100, B and C need 10 each, all arriving at 0.</p>
+<div class="fig"><div class="jobs" id="jobs"><span></span><span style="color:var(--muted)">arrival</span><span style="color:var(--muted)">length</span><span></span></div>
+<div class="controls"><button id="addjob">+ job</button><label>Policy <select id="pol"><option value="FIFO">FIFO</option><option value="SJF">SJF (non-preemptive)</option><option value="STCF">STCF (preemptive SJF)</option><option value="RR">Round robin</option></select></label><label>RR quantum <input type="number" id="q" value="1" min="1" style="width:70px"></label><button class="primary" id="run">Run</button><button id="ex1">Book: convoy</button><button id="ex2">Book: late arrivals</button><button id="ex3">Book: RR vs SJF</button></div>
+<div id="g"></div><div class="metrics"><span>avg turnaround <b id="mt">—</b></span><span>avg response <b id="mr">—</b></span></div><div id="note" class="cap"></div></div>
+<div class="tip"><b>The trade-off is inherent.</b> SJF/STCF optimize turnaround and are terrible for response; RR optimizes response and is among the worst for turnaround (it stretches every job). The book: "both are bad where the other is good." The RR quantum must be a multiple of the timer period; too short and context-switch cost dominates — <b>amortize</b> it with a longer slice.</div>
+<h3>Incorporating I/O</h3>
+<p>Treat each CPU burst between I/Os as its own job. When A issues I/O and blocks, STCF runs B in the gap; when A's I/O completes, A (now with a short remaining burst) preempts. This <b>overlap</b> keeps the CPU busy while the disk works.</p>
+
+<h2>MLFQ: scheduling without knowing job lengths (chapter 8)</h2>
+<div class="crux"><b>Crux: how to schedule without perfect knowledge?</b> Minimize response time for interactive jobs and turnaround for everyone, with no a-priori knowledge of job length. Answer: <b>learn from history</b>.</div>
+<p>Several queues, each a priority level. A job's priority is set by observed behaviour: if it keeps giving up the CPU (interactive) it stays high; if it burns whole time slices (CPU-bound) it sinks. The book refines the rules three times; the final set is:</p>
+<ol><li>If Priority(A) &gt; Priority(B), A runs (B doesn't).</li><li>If Priority(A) = Priority(B), A and B run in round-robin using that queue's time slice.</li><li>When a job enters the system, it is placed at the highest priority.</li><li>Once a job uses up its <em>time allotment</em> at a level (regardless of how many times it gave up the CPU), its priority is reduced.</li><li>After some period S, move all jobs to the topmost queue.</li></ol>
+<p>Step through why each refinement was needed:</p>
+<div class="fig"><div id="mlfqs"></div><div class="mlfq" id="mq"></div></div>
+<div class="tip"><b>Tuning.</b> How many queues, how long a slice per queue, how often to boost — these are the "voo-doo constants" Ousterhout warned about. Solaris's MLFQ (the Time-Sharing class) uses 60 queues with slices from ~20 ms (high priority) to a few hundred ms, boosting about every second. Some systems let admins change defaults or let users give <em>advice</em> (nice). BSD UNIX, Solaris and Windows NT and later all use an MLFQ variant as base scheduler.</div>
+
+<h2>Proportional share: lottery, stride, CFS (chapter 9)</h2>
+<div class="crux"><b>Crux: how to share the CPU proportionally?</b> Instead of optimizing turnaround or response, guarantee each job a percentage of CPU time.</div>
+<div class="two"><div class="fig"><h4>Lottery scheduling</h4><p><b>Tickets</b> represent share. Hold a lottery each slice: with A = 75 tickets, B = 25, A should win about 75% of the time. Randomness is light on state and handles corner cases gracefully, but only approaches the target over time (the book measures an unfairness metric U that approaches 1 as jobs get longer). Mechanisms: ticket <b>currency</b> (users hand out their own tickets), <b>transfer</b> (client → server), <b>inflation</b> (trusted processes raise their own count).</p><div class="controls"><label>A tickets <input type="number" id="ta" value="75" style="width:70px"></label><label>B tickets <input type="number" id="tb" value="25" style="width:70px"></label><button id="draw">Draw 100 slices</button></div><div id="lot" class="cells" style="grid-template-columns:repeat(20,1fr)"></div><div id="lotres" class="cap"></div></div>
+<div class="fig"><h4>Stride scheduling (deterministic)</h4><p>Each job has a <b>stride</b> inversely proportional to its tickets (book: 10000/tickets → A 100, B 200, C 40) and a <b>pass</b> counter. Always run the lowest pass, then add its stride. Exact proportions, but it needs global state: a new job's pass must be set sensibly or it monopolizes the CPU — lottery has no such issue.</p><table><tr><th>A (100)</th><th>B (200)</th><th>C (40)</th><th>runs</th></tr><tbody id="stride"></tbody></table><button id="stridego">Trace 10 steps</button></div></div>
+<h3>Linux CFS, the fair scheduler you actually use</h3>
+<p>Each process accumulates <b>vruntime</b>; pick the smallest. The slice comes from <code>sched_latency</code> (e.g. 48 ms) divided among runnable processes, floored by <code>min_granularity</code> (e.g. 6 ms) so slices don't get absurdly small. <b>nice</b> values (−20..+19) map to weights; the slice is proportional to weight and vruntime advances slower for heavier processes:</p>
+<pre><code>time_slice_k = weight_k / Σ weight_i × sched_latency
+vruntime_i  += weight_0 / weight_i × runtime_i      // weight_0 = 1024 (nice 0)
+
+static const int prio_to_weight[40] = {
+ /* -20 */ 88761, 71755, 56483, 46273, 36291,  /* -15 */ 29154, 23254, 18705, 14949, 11916,
+ /* -10 */  9548,  7620,  6100,  4904,  3906,  /*  -5 */  3121,  2501,  1991,  1586,  1277,
+ /*   0 */  1024,   820,   655,   526,   423,  /*   5 */   335,   272,   215,   172,   137,
+ /*  10 */   110,    87,    70,    56,    45,  /*  15 */    36,    29,    23,    18,    15 };</code></pre>
+<div class="controls"><label>nice A <input type="range" id="na" min="-20" max="19" value="0"></label><span id="nav" class="mono"></span><label>nice B <input type="range" id="nb" min="-20" max="19" value="5"></label><span id="nbv" class="mono"></span></div><div id="cfs" class="cap"></div>
+<p>Runnable processes live in a <b>red-black tree</b> keyed by vruntime (O(log n) insert, O(1) min). A process waking after a long sleep gets its vruntime set to the tree's minimum so it doesn't starve everyone else. Weaknesses of fair-share schedulers: I/O-heavy jobs can miss their share, and someone must assign tickets/nice values — general-purpose schedulers like MLFQ handle that automatically. Proportional share shines in clouds and VMs ("give this VM one quarter of the CPU").</p>
+
+<h2>Multiprocessor scheduling (chapter 10)</h2>
+<div class="two"><div class="fig"><h4>Why it's different: caches</h4><p>Each CPU has its own cache. <b>Cache coherence</b> (via <b>bus snooping</b>) keeps copies consistent so correctness is fine, but performance depends on <b>cache affinity</b>: a job that keeps running on the same CPU finds its state warm. And kernel data shared across CPUs needs <b>locks</b>, which limit scaling.</p></div><div class="fig"><h4>Two designs</h4><p><b>SQMS</b> — one queue for all CPUs. Simple, balances load naturally; but the shared lock doesn't scale and jobs bounce between CPUs (poor affinity) unless you add affinity hacks.</p><p><b>MQMS</b> — one queue per CPU. Scales, affinity for free; but <b>load imbalance</b> needs <b>migration</b>, e.g. <b>work stealing</b> (an idle queue peeks at a busier one occasionally — not too often, or the peeking itself costs).</p></div></div>
+<p>Linux has had three: the O(1) scheduler (priority, MLFQ-like), CFS (proportional), and BFS (single queue, proportional). No consensus: "small code changes can lead to large behavioral differences."</p>
+
+<h2>Flash cards</h2><div id="cards"></div>
+<h2>Retrieval practice</h2><div id="quiz"></div>
+<p class="tip">Want me to generate scheduling problems with solutions, or simulate a specific MLFQ configuration? Ask in the chat.</p>
+</div>
+<script>
+/* OSTEP course — shared components. Every page loads this file (inlined by build.py). */
+window.OS = (function () {
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+  /* ---------- persistent storage (localStorage on a real site; in-memory fallback in sandboxes) ---------- */
+  const mem = {};
+  const store = {
+    get(k) { try { const v = localStorage.getItem('ostep:' + k); return v === null ? (mem[k] ?? null) : JSON.parse(v); } catch (e) { return mem[k] ?? null; } },
+    set(k, v) { mem[k] = v; try { localStorage.setItem('ostep:' + k, JSON.stringify(v)); } catch (e) {} },
+    del(k) { delete mem[k]; try { localStorage.removeItem('ostep:' + k); } catch (e) {} },
+    keys(prefix) { const out = new Set(Object.keys(mem).filter(k => k.startsWith(prefix))); try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith('ostep:' + prefix)) out.add(k.slice(6)); } } catch (e) {} return [...out]; },
+    available() { try { localStorage.setItem('ostep:test', '1'); localStorage.removeItem('ostep:test'); return true; } catch (e) { return false; } }
+  };
+
+  /* ---------- course structure ---------- */
+  const PIECES = [
+    ['intro', 'Introduction', [['0001-three-easy-pieces', 'Three easy pieces', 'ch 1–2']]],
+    ['virt', 'Virtualization', [
+      ['0002-processes', 'Processes & the process API', 'ch 4–5'],
+      ['0003-limited-direct-execution', 'Limited direct execution', 'ch 6'],
+      ['0004-scheduling', 'Scheduling', 'ch 7–10'],
+      ['0005-address-spaces', 'Address spaces & segments', 'ch 13–16'],
+      ['0006-paging-and-tlbs', 'Paging & TLBs', 'ch 17–20'],
+      ['0007-swapping', 'Swapping & policies', 'ch 21–23']]],
+    ['conc', 'Concurrency', [
+      ['0008-threads-and-locks', 'Threads & locks', 'ch 26–28'],
+      ['0009-cvs-and-semaphores', 'CVs & semaphores', 'ch 29–31'],
+      ['0010-bugs-and-events', 'Bugs & events', 'ch 32–33']]],
+    ['pers', 'Persistence', [
+      ['0011-devices-disks-raid', 'Devices, disks, RAID', 'ch 36–38'],
+      ['0012-files-and-vsfs', 'Files & a simple FS', 'ch 39–40'],
+      ['0013-ffs-journaling-lfs', 'FFS, journaling, LFS', 'ch 41–43'],
+      ['0014-ssd-and-integrity', 'SSDs & integrity', 'ch 44–45'],
+      ['0015-distributed-nfs-afs', 'Distributed FS', 'ch 48–50']]],
+    ['sec', 'Security', [['0016-security-and-vmms', 'Security & VMMs', 'ch 53–57, App B']]]
+  ];
+  const LESSONS = PIECES.flatMap(p => p[2].map(l => [l[0], l[1], p[0], l[2]]));
+  const title = id => (LESSONS.find(l => l[0] === id) || [])[1] || id;
+  let pageId = null, root = '../';
+
+  /* ---------- chrome: sticky header, slide-out directory, notes drawer, prev/next ---------- */
+  function chrome(id, rootPath) {
+    pageId = id; root = rootPath === undefined ? '../' : rootPath;
+    const i = LESSONS.findIndex(l => l[0] === id);
+    const isLesson = i >= 0;
+    const top = document.createElement('header'); top.className = 'topbar';
+    top.innerHTML = `<button class="menu" aria-label="Open directory" aria-expanded="false">☰<span>Directory</span></button>
+      <a class="brand" href="${root}index.html"><span class="dot"></span>OSTEP course</a>
+      <nav class="links"><a href="${root}reference/glossary.html">Glossary</a><a href="${root}reference/cheatsheets.html">Cheat sheets</a><a href="${root}notes.html">My notes</a></nav>
+      ${isLesson ? `<span class="where">${i+1} / ${LESSONS.length}</span>` : ''}`;
+    document.body.prepend(top);
+    // directory drawer
+    const drawer = document.createElement('aside'); drawer.className = 'drawer'; drawer.setAttribute('aria-label', 'Course directory');
+    const scores = Object.fromEntries(LESSONS.map(l => [l[0], store.get('quiz:' + l[0])]));
+    const notes = new Set(store.keys('notes:').map(k => k.slice(6)).filter(k => (store.get('notes:' + k) || {}).text));
+    drawer.innerHTML = `<div class="dhead"><b>Directory</b><button class="close" aria-label="Close">×</button></div>
+      <a class="ditem ${id === 'index' ? 'cur' : ''}" href="${root}index.html">Course hub</a>
+      ${PIECES.map(([cls, name, ls]) => `<div class="dgroup piece-${cls}"><div class="dname">${name}</div>${ls.map(l => {
+        const n = LESSONS.findIndex(x => x[0] === l[0]) + 1, s = scores[l[0]];
+        return `<a class="ditem ${l[0] === id ? 'cur' : ''}" href="${root}lessons/${l[0]}.html"><span class="n">${n}</span><span class="t">${l[1]}<small>${l[3]}</small></span><span class="badges">${notes.has(l[0]) ? '<i title="you have notes">✎</i>' : ''}${s ? `<em title="best quiz score">${s.score}/${s.total}</em>` : ''}</span></a>`; }).join('')}</div>`).join('')}
+      <div class="dgroup piece-intro"><div class="dname">Reference</div>
+        <a class="ditem ${id === 'glossary' ? 'cur' : ''}" href="${root}reference/glossary.html"><span class="t">Glossary</span></a>
+        <a class="ditem ${id === 'cheatsheets' ? 'cur' : ''}" href="${root}reference/cheatsheets.html"><span class="t">Cheat sheets</span></a>
+        <a class="ditem ${id === 'notes' ? 'cur' : ''}" href="${root}notes.html"><span class="t">My notes &amp; progress</span></a></div>
+      <div class="dfoot">${store.available() ? 'Notes and scores are saved in this browser.' : 'Notes and scores are kept for this session only (storage unavailable here).'}</div>`;
+    document.body.append(drawer);
+    const scrim = document.createElement('div'); scrim.className = 'scrim'; document.body.append(scrim);
+    const open = o => { document.body.classList.toggle('drawer-open', o); top.querySelector('.menu').setAttribute('aria-expanded', o); if (o) drawer.querySelector('.cur, .ditem')?.focus(); };
+    top.querySelector('.menu').onclick = () => open(!document.body.classList.contains('drawer-open'));
+    drawer.querySelector('.close').onclick = () => open(false); scrim.onclick = () => open(false);
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') { open(false); notesOpen(false); } });
+    // prev/next for lessons
+    if (isLesson) {
+      const nav = document.createElement('div'); nav.className = 'nav-bottom';
+      const prev = LESSONS[i-1], next = LESSONS[i+1];
+      nav.innerHTML = (prev ? `<a href="${prev[0]}.html">← ${i}. ${prev[1]}</a>` : '<span></span>') +
+                      (next ? `<a href="${next[0]}.html">${i+2}. ${next[1]} →</a>` : `<a href="${root}index.html">Back to course hub →</a>`);
+      document.querySelector('.wrap').append(nav);
+    }
+    // wrap tables so they scroll sideways on phones
+    document.querySelectorAll('.wrap table').forEach(t => { if (t.parentElement.classList.contains('tw')) return; const w = document.createElement('div'); w.className = 'tw'; t.replaceWith(w); w.append(t); });
+    // notes drawer (every page except the notes page itself)
+    if (id !== 'notes') notesUI(id, isLesson ? `${i+1}. ${LESSONS[i][1]}` : (document.title.split(' — ')[0]));
+  }
+
+  /* ---------- notes: floating button + bottom sheet, autosaved ---------- */
+  let notesOpen = () => {};
+  function notesUI(id, label) {
+    const btn = document.createElement('button'); btn.className = 'notes-fab'; btn.innerHTML = '✎ <span>Notes</span>'; btn.setAttribute('aria-label', 'Open notes');
+    const sheet = document.createElement('section'); sheet.className = 'notes-sheet'; sheet.setAttribute('aria-label', 'Notes for this page');
+    const saved = store.get('notes:' + id) || {};
+    sheet.innerHTML = `<div class="nhead"><b>Notes · ${esc(label)}</b><span class="nstatus"></span><button class="close" aria-label="Close notes">×</button></div>
+      <textarea placeholder="Your notes for this page. Markdown is fine. Saved automatically.">${esc(saved.text || '')}</textarea>
+      <div class="nfoot"><span class="ncount"></span><a href="${root}notes.html">All notes &amp; export →</a></div>`;
+    document.body.append(btn, sheet);
+    const ta = sheet.querySelector('textarea'), status = sheet.querySelector('.nstatus'), count = sheet.querySelector('.ncount');
+    const upd = () => { count.textContent = ta.value.trim() ? ta.value.trim().split(/\s+/).length + ' words' : ''; };
+    let t; ta.addEventListener('input', () => { status.textContent = 'saving…'; clearTimeout(t); t = setTimeout(() => { store.set('notes:' + id, { text: ta.value, title: label, updated: new Date().toISOString() }); status.textContent = 'saved'; upd(); }, 400); });
+    upd();
+    notesOpen = o => { document.body.classList.toggle('notes-open', o); if (o) ta.focus(); };
+    btn.onclick = () => notesOpen(!document.body.classList.contains('notes-open'));
+    sheet.querySelector('.close').onclick = () => notesOpen(false);
+  }
+
+  /* ---------- quiz: immediate feedback; best score persisted ---------- */
+  function quiz(el, qs) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('quiz');
+    let score = 0, answered = 0;
+    const best = pageId ? store.get('quiz:' + pageId) : null;
+    el.innerHTML = qs.map((q, i) => `<div class="q" data-i="${i}"><p>${i+1}. ${q.q}</p>
+      <div class="opts">${q.o.map((o, j) => `<button class="opt" data-j="${j}">${esc(o)}</button>`).join('')}</div>
+      <div class="why">${q.why}</div></div>`).join('') + `<div class="score">${best ? `Best so far: ${best.score}/${best.total} (${new Date(best.date).toLocaleDateString()})` : ''}</div>`;
+    el.querySelectorAll('.q').forEach(qd => {
+      const q = qs[+qd.dataset.i];
+      qd.querySelectorAll('.opt').forEach(b => b.addEventListener('click', () => {
+        if (qd.classList.contains('done')) return;
+        qd.classList.add('done'); answered++;
+        const j = +b.dataset.j;
+        if (j === q.a) { b.classList.add('right'); score++; }
+        else { b.classList.add('wrong'); qd.querySelectorAll('.opt')[q.a].classList.add('right'); }
+        const s = el.querySelector('.score');
+        s.textContent = `${score} / ${answered} correct`;
+        if (answered === qs.length) {
+          s.textContent += score === qs.length ? ' — all of them. Retry from memory in two days.' : ' — reread the sections you missed, then retry.';
+          if (pageId && (!best || score >= best.score)) store.set('quiz:' + pageId, { score, total: qs.length, date: new Date().toISOString() });
+        }
+      }));
+    });
+  }
+
+  /* ---------- flip cards ---------- */
+  function cards(el, list) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('cards');
+    el.innerHTML = list.map(([f, b]) => `<div class="card" tabindex="0" role="button" aria-label="flip card"><div class="inner"><div class="face front">${f}</div><div class="face back">${b}</div></div></div>`).join('');
+    el.querySelectorAll('.card').forEach(c => {
+      const t = () => c.classList.toggle('flipped');
+      c.addEventListener('click', t);
+      c.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); t(); } });
+    });
+  }
+
+  /* ---------- stepper ---------- */
+  function stepper(el, steps, render) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('stepper');
+    let i = 0;
+    el.innerHTML = `<div class="controls"><button class="prev">← Back</button><button class="next primary">Next step →</button><span class="idx"></span></div><div class="stage"></div><div class="extra"></div>`;
+    const stage = el.querySelector('.stage'), idx = el.querySelector('.idx'), extra = el.querySelector('.extra');
+    const draw = () => { stage.innerHTML = steps[i]; idx.textContent = `step ${i+1} / ${steps.length}`; if (render) render(i, extra); };
+    el.querySelector('.prev').onclick = () => { i = Math.max(0, i-1); draw(); };
+    el.querySelector('.next').onclick = () => { i = Math.min(steps.length-1, i+1); draw(); };
+    draw();
+  }
+
+  /* ---------- gantt ---------- */
+  function gantt(el, rows, total, colors) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('gantt');
+    const pal = colors || ['#e8b84a','#5bc8f5','#6bcb77','#f47fa0','#c9a8ff','#ffb86b'];
+    el.innerHTML = rows.map((r, i) => `<div class="row"><span>${esc(r.name)}</span><div class="track">${r.segs.map(s =>
+      `<div class="seg" style="left:${100*s.start/total}%;width:${100*(s.end-s.start)/total}%;background:${pal[i%pal.length]}" title="${s.start}–${s.end}">${(s.end-s.start)/total > .06 ? (s.end-s.start) : ''}</div>`).join('')}</div></div>`).join('') +
+      `<div class="row"><span></span><div style="display:flex;justify-content:space-between;font-size:.75rem;color:var(--muted)"><span>0</span><span>${total}</span></div></div>`;
+  }
+
+  /* ---------- objectives checklist (persisted) ---------- */
+  function objectives(el, items) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('objectives');
+    const saved = (pageId && store.get('obj:' + pageId)) || [];
+    el.innerHTML = items.map((t, i) => `<li><label><input type="checkbox" data-i="${i}" ${saved.includes(i) ? 'checked' : ''}>${t}</label></li>`).join('');
+    el.querySelectorAll('input').forEach(c => c.onchange = () => { const s = [...el.querySelectorAll('input:checked')].map(x => +x.dataset.i); if (pageId) store.set('obj:' + pageId, s); });
+  }
+
+  return { chrome, quiz, cards, stepper, gantt, objectives, esc, store, LESSONS, PIECES, title };
+})();
+
+</script>
+<script>
+OS.chrome('0004-scheduling');
+OS.objectives('obj',['Compute turnaround and response time for FIFO, SJF, STCF and RR on a small workload.','Explain the convoy effect and why preemption fixes it.','State the five MLFQ rules and the problem each refinement solved (starvation, gaming).','Explain tickets, stride/pass, and CFS vruntime with nice weights.','Compare single-queue vs multi-queue multiprocessor scheduling (locks, affinity, imbalance, work stealing).']);
+/* ---- scheduler sim ---- */
+let jobs=[{n:'A',a:0,l:100},{n:'B',a:0,l:10},{n:'C',a:0,l:10}];
+const J=document.getElementById('jobs');
+function drawJobs(){J.querySelectorAll('.jr').forEach(e=>e.remove());jobs.forEach((j,i)=>{const r=document.createElement('div');r.className='jr';r.style.display='contents';r.innerHTML=`<span><b>${j.n}</b></span><input type="number" value="${j.a}" min="0" data-k="a" data-i="${i}"><input type="number" value="${j.l}" min="1" data-k="l" data-i="${i}"><button data-del="${i}" title="remove">×</button>`;J.append(r);});J.querySelectorAll('input').forEach(inp=>inp.onchange=()=>{jobs[+inp.dataset.i][inp.dataset.k]=+inp.value;});J.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{jobs.splice(+b.dataset.del,1);drawJobs();});}
+document.getElementById('addjob').onclick=()=>{if(jobs.length<6){jobs.push({n:'ABCDEF'[jobs.length],a:0,l:10});drawJobs();}};
+function simulate(pol,q){const js=jobs.map(j=>({...j,rem:j.l,segs:[],first:null,done:null}));let t=0,cur=null,qleft=0,rr=[];const arrivedSet=new Set();const total=Math.max(...js.map(j=>j.a))+js.reduce((s,j)=>s+j.l,0)+1;
+while(js.some(j=>j.rem>0)&&t<total*2){js.forEach(j=>{if(j.a<=t&&!arrivedSet.has(j)){arrivedSet.add(j);rr.push(j);}});const ready=js.filter(j=>j.a<=t&&j.rem>0);if(!ready.length){t++;continue;}
+let pick;if(pol==='FIFO'){pick=cur&&cur.rem>0?cur:ready.reduce((m,j)=>j.a<m.a?j:m);}else if(pol==='SJF'){pick=cur&&cur.rem>0?cur:ready.reduce((m,j)=>j.l<m.l?j:m);}else if(pol==='STCF'){pick=ready.reduce((m,j)=>j.rem<m.rem?j:m);}else{if(!cur||cur.rem===0||qleft===0){if(cur&&cur.rem>0){rr=rr.filter(x=>x!==cur);rr.push(cur);}pick=rr.filter(j=>j.rem>0)[0];qleft=q;}else pick=cur;}
+if(pick.first===null)pick.first=t;const last=pick.segs[pick.segs.length-1];if(last&&last.end===t&&cur===pick)last.end=t+1;else pick.segs.push({start:t,end:t+1});pick.rem--;if(pol==='RR')qleft--;t++;if(pick.rem===0){pick.done=t;if(pol==='RR')rr=rr.filter(x=>x!==pick);}cur=pick;}
+return js;}
+function run(){const pol=document.getElementById('pol').value,q=+document.getElementById('q').value||1;const js=simulate(pol,q);const end=Math.max(...js.map(j=>j.done));OS.gantt('g',js.map(j=>({name:j.n,segs:j.segs})),end);const mt=js.reduce((s,j)=>s+(j.done-j.a),0)/js.length,mr=js.reduce((s,j)=>s+(j.first-j.a),0)/js.length;document.getElementById('mt').textContent=mt.toFixed(2);document.getElementById('mr').textContent=mr.toFixed(2);document.getElementById('note').innerHTML=js.map(j=>`${j.n}: turnaround ${j.done-j.a}, response ${j.first-j.a}`).join(' · ');}
+document.getElementById('run').onclick=run;
+document.getElementById('ex1').onclick=()=>{jobs=[{n:'A',a:0,l:100},{n:'B',a:0,l:10},{n:'C',a:0,l:10}];drawJobs();document.getElementById('pol').value='FIFO';run();document.getElementById('note').innerHTML+='<br>FIFO: (100+110+120)/3 = 110 — the <b>convoy effect</b>: short jobs queue behind a long one. Switch to SJF: (10+20+120)/3 = 50.';};
+document.getElementById('ex2').onclick=()=>{jobs=[{n:'A',a:0,l:100},{n:'B',a:10,l:10},{n:'C',a:10,l:10}];drawJobs();document.getElementById('pol').value='SJF';run();document.getElementById('note').innerHTML+='<br>SJF with late arrivals: 103.33 — the convoy is back because SJF cannot preempt. Switch to STCF: A is preempted at t=10, average drops to 50.';};
+document.getElementById('ex3').onclick=()=>{jobs=[{n:'A',a:0,l:5},{n:'B',a:0,l:5},{n:'C',a:0,l:5}];drawJobs();document.getElementById('pol').value='RR';document.getElementById('q').value=1;run();document.getElementById('note').innerHTML+='<br>RR, quantum 1: response (0+1+2)/3 = 1 vs SJF\'s (0+5+10)/3 = 5. But turnaround: RR 14 vs SJF 10. Both are bad where the other is good.';};
+drawJobs();run();
+/* ---- MLFQ stepper ---- */
+const colors={A:'#e8b84a',B:'#5bc8f5',C:'#6bcb77'};
+function mq(rows){document.getElementById('mq').innerHTML=rows.map((r,i)=>`<div class="qrow"><span style="color:var(--muted)">Q${rows.length-1-i}${i===0?' (high)':i===rows.length-1?' (low)':''}</span><div class="slot">${r.map(j=>`<span class="job" style="background:${colors[j[0]]}">${j}</span>`).join('')}</div></div>`).join('');}
+const M=[['<b>Attempt 1 — rules 1–4a/4b.</b> New jobs start at the top; use a whole slice → drop a level; give up the CPU before the slice ends → stay. A long CPU-bound job A sinks to the bottom. An interactive job B that does short bursts and I/O stays at the top. Looks good.',[['B (interactive)'],[],['A (CPU-bound)']]],
+['<b>Problem: starvation.</b> With enough interactive jobs, the long job at the bottom never runs. And a job that changes behaviour (compute-heavy → interactive) is stuck low forever.',[['B','C','D'],[],['A — starving']]],
+['<b>Problem: gaming.</b> A job that does a trivial I/O just before its slice ends (99% used) keeps its priority under rule 4b and can monopolize the CPU.',[['A (issues I/O at 99% of slice)'],[],[]]],
+['<b>Fix 1 — rule 5, priority boost.</b> Every S ms, move every job to the top queue. Long jobs get some CPU (no starvation) and jobs that turned interactive get treated properly. S is a voo-doo constant: too high and long jobs starve; too low and interactive jobs lose their advantage.',[['A','B','C','D'],[],[]]],
+['<b>Fix 2 — better accounting (new rule 4).</b> Track total <em>allotment</em> used at a level, regardless of how many times the job gave up the CPU. Once it\'s used up, demote — no more gaming by issuing I/O at the last moment.',[['B','C','D'],['A — demoted despite its trick'],[]]],
+['<b>Result.</b> SJF-like turnaround for short interactive jobs, fairness and progress for long ones, no knowledge of job lengths needed. Different queues can use different slice lengths: short at the top (10 ms), long at the bottom (hundreds of ms).',[['B','C'],['D'],['A']]]];
+OS.stepper('mlfqs',M.map(m=>m[0]),i=>mq(M[i][1]));
+/* ---- lottery ---- */
+document.getElementById('draw').onclick=()=>{const a=+document.getElementById('ta').value,b=+document.getElementById('tb').value;let wa=0;const cells=[];for(let i=0;i<100;i++){const w=Math.floor(Math.random()*(a+b))<a;if(w)wa++;cells.push(`<div class="cell" style="background:${w?'#e8b84a':'#5bc8f5'};color:#111">${w?'A':'B'}</div>`);}document.getElementById('lot').innerHTML=cells.join('');document.getElementById('lotres').textContent=`A won ${wa}%, B won ${100-wa}% (targets ${(100*a/(a+b)).toFixed(0)}% / ${(100*b/(a+b)).toFixed(0)}%). Draw again — it varies, and converges over longer runs.`;};
+/* ---- stride ---- */
+document.getElementById('stridego').onclick=()=>{const p={A:0,B:0,C:0},s={A:100,B:200,C:40};let out='';for(let i=0;i<10;i++){const who=Object.keys(p).reduce((m,k)=>p[k]<p[m]?k:m);out+=`<tr><td class="mono">${p.A}</td><td class="mono">${p.B}</td><td class="mono">${p.C}</td><td>${who}</td></tr>`;p[who]+=s[who];}document.getElementById('stride').innerHTML=out+`<tr><td colspan=4 class="cap">After 10 steps: C ran 5×, A 2×, B 1× (+2 more to reach the 5:2:1 pattern) — exactly proportional to 250:100:50 tickets.</td></tr>`;};
+/* ---- CFS ---- */
+const W=[88761,71755,56483,46273,36291,29154,23254,18705,14949,11916,9548,7620,6100,4904,3906,3121,2501,1991,1586,1277,1024,820,655,526,423,335,272,215,172,137,110,87,70,56,45,36,29,23,18,15];
+function cfs(){const na=+document.getElementById('na').value,nb=+document.getElementById('nb').value,wa=W[na+20],wb=W[nb+20];document.getElementById('nav').textContent=`${na} (w=${wa})`;document.getElementById('nbv').textContent=`${nb} (w=${wb})`;const sl=48;document.getElementById('cfs').innerHTML=`With sched_latency 48 ms: A gets ${(sl*wa/(wa+wb)).toFixed(1)} ms per round, B gets ${(sl*wb/(wa+wb)).toFixed(1)} ms. Running 10 ms adds ${(10*1024/wa).toFixed(2)} ms of vruntime to A and ${(10*1024/wb).toFixed(2)} ms to B. Roughly, each nice step changes share by ~1.25×.`;}
+document.getElementById('na').oninput=cfs;document.getElementById('nb').oninput=cfs;cfs();
+OS.cards('cards',[['Convoy effect','Short jobs stuck behind a long one (FIFO), inflating average turnaround. Fixed by SJF; with late arrivals, by preemptive STCF.'],['STCF','Shortest Time-to-Completion First: preempt whenever a job with less remaining time arrives. Optimal for turnaround if lengths are known.'],['Round robin','Run each job for a time slice, then switch. Great response time, poor turnaround; slice must be a multiple of the timer period.'],['MLFQ rule 4 (final)','Once a job uses its time allotment at a level — however many times it yielded — demote it. Defeats gaming.'],['Priority boost','MLFQ rule 5: every S ms move all jobs to the top queue; prevents starvation and handles jobs that change behaviour.'],['vruntime','CFS\'s per-process virtual runtime; the runnable process with the smallest vruntime runs next. Heavier (lower nice) processes accumulate it more slowly.'],['Cache affinity','Prefer to keep a job on the CPU whose cache already holds its data; a key reason per-CPU queues (MQMS) perform well.'],['Work stealing','In MQMS, an idle CPU occasionally inspects another\'s queue and takes jobs to fix load imbalance.']]);
+OS.quiz('quiz',[
+{q:'Three jobs of length 100, 10, 10 arrive at t=0. Average turnaround under FIFO (long job first) is:',o:['50 seconds','110 seconds','120 seconds','40 seconds'],a:1,why:'Completions at 100, 110, 120 → (100+110+120)/3 = 110. That is the convoy effect; SJF gives (10+20+120)/3 = 50.'},
+{q:'A is running (100 left) when B and C (10 each) arrive at t=10. Which policy immediately preempts A?',o:['SJF','STCF','FIFO','none'],a:1,why:'SJF is non-preemptive: once A started it runs to completion (avg 103.33). STCF preempts because B and C have less time-to-completion (avg 50).'},
+{q:'Round robin with slice 1 on three 5-second jobs. Average response time and turnaround?',o:['response 5, turnaround 10','response 1, turnaround 14','response 0, turnaround 15','response 2, turnaround 12'],a:1,why:'First runs at 0, 1, 2 → response 1. Completions at 13, 14, 15 → turnaround 14. SJF would give response 5 and turnaround 10 — the inherent trade-off.'},
+{q:'What does MLFQ\'s priority boost (rule 5) prevent?',o:['jobs gaming the slice length','long jobs starving at the bottom','interactive jobs losing priority','the timer interrupt being late'],a:1,why:'Periodically moving all jobs to the top queue guarantees long-running CPU-bound jobs make progress, and re-evaluates jobs that changed behaviour.'},
+{q:'How did the final MLFQ rule 4 stop a job from gaming the scheduler by issuing I/O at 99% of its slice?',o:['by shortening every queue\'s slice','by counting total allotment per level','by boosting only interactive jobs','by banning I/O in the top queue'],a:1,why:'Better accounting: track the total CPU time used at a level regardless of yields; when the allotment is used up, demote. The trick no longer keeps the job on top.'},
+{q:'In stride scheduling with strides A=100, B=200, C=40 (pass all 0), after A, B, C each run once, who runs next?',o:['A, pass 100','C, pass 40','B, pass 200','A, pass 200'],a:1,why:'Passes are A=100, B=200, C=40. Lowest pass wins: C runs and its pass becomes 80. C has the most tickets (250) so it should run most often.'},
+{q:'Under CFS, what happens to vruntime for a process with a lower (more favourable) nice value?',o:['it increases faster than others','it increases slower than others','it resets to zero each slice','it is ignored by the scheduler'],a:1,why:'vruntime += (weight_0 / weight_i) × runtime. A heavier weight makes the ratio smaller, so vruntime grows slowly and the process is picked more often.'},
+{q:'Which is a strength of single-queue multiprocessor scheduling (SQMS)?',o:['excellent cache affinity','automatic load balance','lock-free scalability','per-CPU run queues'],a:1,why:'One shared queue naturally balances load, but it needs a global lock (poor scaling) and jobs bounce across CPUs (poor affinity) unless affinity hacks are added.'}]);
+</script></body></html>

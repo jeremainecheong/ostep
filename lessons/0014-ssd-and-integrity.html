@@ -1,0 +1,424 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>14 · SSDs & integrity — OSTEP course</title><style>
+/* OSTEP course — shared stylesheet. Three pieces, three hues. */
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+:root{
+  --ink:#151b2f; --ink-2:#1e2540; --ink-3:#28304f; --line:#3a4368;
+  --paper:#eef0f7; --muted:#a9b1cf; --faint:#6e779a;
+  --virt:#e8b84a; --conc:#5bc8f5; --pers:#6bcb77; --sec:#f47fa0; --intro:#c9a8ff;
+  --ok:#6bcb77; --bad:#ff6b6b;
+  --accent:var(--virt);
+  --radius:6px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--ink);color:var(--paper);font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:17px;line-height:1.6}
+a{color:var(--accent)}
+code,pre,kbd,.mono{font-family:'IBM Plex Mono',ui-monospace,monospace}
+code{background:var(--ink-3);padding:1px 5px;border-radius:4px;font-size:.9em}
+pre{background:#0f1424;border:1px solid var(--line);border-left:4px solid var(--accent);padding:14px 16px;overflow:auto;border-radius:var(--radius);font-size:.86em;line-height:1.5}
+pre code{background:none;padding:0;font-size:inherit}
+h1,h2,h3,h4{font-family:'Fraunces',Georgia,serif;font-weight:700;line-height:1.15;margin:0 0 .4em}
+h1{font-size:2.6rem;letter-spacing:-.01em}
+h2{font-size:1.9rem;margin-top:2.6rem;padding-top:1.2rem;border-top:1px solid var(--line)}
+h3{font-size:1.3rem;margin-top:1.8rem;color:var(--accent)}
+h4{font-size:1.05rem;margin-top:1.2rem}
+p,li{max-width:72ch}
+.wrap{max-width:1100px;margin:0 auto;padding:0 28px 96px}
+.hero{padding:44px 0 16px}
+.hero .chapters{color:var(--muted);font-size:.95rem;margin-bottom:6px}
+.lede{font-size:1.2rem;color:var(--muted);max-width:66ch}
+.piece-virt{--accent:var(--virt)} .piece-conc{--accent:var(--conc)} .piece-pers{--accent:var(--pers)} .piece-sec{--accent:var(--sec)} .piece-intro{--accent:var(--intro)}
+.fig{background:var(--ink-2);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;margin:22px 0}
+.fig figcaption,.cap{color:var(--muted);font-size:.9rem;margin-top:10px}
+.fig svg{max-width:100%;height:auto;display:block}
+svg text{font-family:'IBM Plex Sans',sans-serif}
+svg .mono{font-family:'IBM Plex Mono',monospace}
+.crux{border:1px solid var(--accent);border-radius:var(--radius);padding:14px 18px;margin:22px 0;background:color-mix(in srgb,var(--accent) 8%,transparent)}
+.crux b{color:var(--accent)}
+.tip{border-left:4px solid var(--muted);padding:6px 16px;margin:18px 0;color:var(--muted)}
+.tip b{color:var(--paper)}
+table{border-collapse:collapse;width:100%;margin:16px 0;font-size:.95rem}
+th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{color:var(--muted);font-weight:500}
+td.mono,th.mono{font-family:'IBM Plex Mono',monospace}
+button,.btn{font:inherit;font-size:.9rem;background:var(--ink-3);color:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:7px 13px;cursor:pointer}
+button:hover{border-color:var(--accent)}
+button.primary{background:var(--accent);color:#111;border-color:var(--accent);font-weight:600}
+button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+input[type=range]{accent-color:var(--accent)}
+input[type=text],input[type=number],select{font:inherit;background:#0f1424;color:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:6px 10px}
+.controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:10px 0}
+.controls label{font-size:.9rem;color:var(--muted)}
+details{border:1px solid var(--line);border-radius:var(--radius);margin:10px 0;background:var(--ink-2)}
+summary{cursor:pointer;padding:12px 16px;font-weight:600;list-style:none}
+summary::before{content:"+";display:inline-block;width:1.2em;color:var(--accent)}
+details[open] summary::before{content:"–"}
+details>div{padding:0 16px 14px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;margin:16px 0}
+.card{perspective:900px;min-height:140px;cursor:pointer}
+.card .inner{position:relative;width:100%;height:100%;min-height:140px;transition:transform .45s;transform-style:preserve-3d}
+.card.flipped .inner{transform:rotateY(180deg)}
+.card .face{position:absolute;inset:0;padding:14px;border-radius:var(--radius);border:1px solid var(--line);background:var(--ink-2);backface-visibility:hidden;display:flex;align-items:center;justify-content:center;text-align:center;font-size:.95rem}
+.card .back{transform:rotateY(180deg);background:var(--ink-3);border-color:var(--accent);font-size:.88rem;line-height:1.45}
+.card .front{font-weight:600}
+@media (prefers-reduced-motion:reduce){.card .inner{transition:none}}
+.quiz .q{border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin:12px 0;background:var(--ink-2)}
+.quiz .q p{margin:0 0 10px;font-weight:600}
+.quiz .opts{display:grid;gap:8px}
+.quiz .opt{text-align:left;background:var(--ink);width:100%}
+.quiz .opt.right{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 15%,var(--ink))}
+.quiz .opt.wrong{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 15%,var(--ink))}
+.quiz .why{margin-top:10px;color:var(--muted);font-size:.93rem;display:none}
+.quiz .q.done .why{display:block}
+.quiz .score{margin-top:12px;font-weight:600}
+.stepper .stage{min-height:60px;background:#0f1424;border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin:10px 0}
+.stepper .idx{color:var(--muted);font-size:.85rem}
+.gantt{display:grid;gap:6px;margin:10px 0}
+.gantt .row{display:grid;grid-template-columns:60px 1fr;align-items:center;gap:8px;font-size:.85rem}
+.gantt .track{position:relative;height:26px;background:#0f1424;border-radius:4px;overflow:hidden}
+.gantt .seg{position:absolute;top:0;bottom:0;display:flex;align-items:center;justify-content:center;font-size:.75rem;color:#111;font-weight:600;border-right:1px solid rgba(0,0,0,.3)}
+.cells{display:grid;gap:4px;margin:10px 0}
+.cell{background:#0f1424;border:1px solid var(--line);border-radius:4px;padding:6px;text-align:center;font-family:'IBM Plex Mono',monospace;font-size:.8rem;min-height:36px;display:flex;align-items:center;justify-content:center}
+.cell.hit{background:color-mix(in srgb,var(--ok) 35%,#0f1424);border-color:var(--ok)}
+.cell.miss{background:color-mix(in srgb,var(--bad) 35%,#0f1424);border-color:var(--bad)}
+.cell.active{outline:2px solid var(--accent)}
+.cell.free{opacity:.45}
+.hl{background:color-mix(in srgb,var(--accent) 30%,transparent);padding:1px 5px;border-radius:3px}
+.k{color:var(--accent);font-weight:600}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media (max-width:760px){.two{grid-template-columns:1fr}.topbar{gap:10px}h1{font-size:2rem}}
+.nav-bottom{display:flex;justify-content:space-between;gap:16px;margin-top:56px;padding-top:20px;border-top:1px solid var(--line)}
+.nav-bottom a{text-decoration:none;padding:12px 16px;border:1px solid var(--line);border-radius:var(--radius);color:var(--paper)}
+.source{background:var(--ink-2);border-radius:var(--radius);padding:14px 18px;margin:22px 0;font-size:.95rem}
+.source b{color:var(--accent)}
+.objectives li{list-style:none;margin:6px 0}
+.objectives input{margin-right:8px;accent-color:var(--accent)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.85rem;color:var(--muted)}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:5px;vertical-align:-2px}
+.tag{display:inline-block;font-size:.75rem;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted);margin-right:6px}
+.log{font-family:'IBM Plex Mono',monospace;font-size:.82rem;background:#0f1424;border:1px solid var(--line);border-radius:var(--radius);padding:10px 12px;max-height:220px;overflow:auto;white-space:pre-wrap}
+@media print{body{background:#fff;color:#111}.topbar,.nav-bottom,button{display:none}.fig,.crux,details,.source{border-color:#bbb;background:#fff}pre{background:#f5f5f5;color:#111}}
+
+/* ---------- site chrome: sticky header + directory drawer ---------- */
+.topbar{position:sticky;top:0;z-index:30;display:flex;gap:14px;align-items:center;padding:10px 16px;background:color-mix(in srgb,var(--ink) 92%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);font-size:.9rem}
+.topbar .menu{display:flex;align-items:center;gap:8px;padding:8px 12px;font-size:1rem}
+.topbar .menu span{font-size:.85rem}
+.topbar .brand{color:var(--paper);text-decoration:none;font-weight:600;display:flex;align-items:center;gap:8px}
+.topbar .dot{width:10px;height:10px;border-radius:50%;background:var(--accent);display:inline-block}
+.topbar .links{display:flex;gap:16px;margin-left:8px}
+.topbar .links a{color:var(--muted);text-decoration:none}
+.topbar .links a:hover{color:var(--paper)}
+.topbar .where{margin-left:auto;color:var(--faint);font-variant-numeric:tabular-nums}
+.drawer{position:fixed;top:0;left:0;bottom:0;width:min(340px,88vw);background:var(--ink-2);border-right:1px solid var(--line);z-index:50;transform:translateX(-102%);transition:transform .25s;overflow-y:auto;padding:0 0 24px;box-shadow:0 0 40px rgba(0,0,0,.5)}
+.drawer-open .drawer{transform:none}
+.scrim{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:40;opacity:0;pointer-events:none;transition:opacity .2s}
+.drawer-open .scrim{opacity:1;pointer-events:auto}
+.drawer .dhead{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--ink-2)}
+.drawer .close,.notes-sheet .close{font-size:1.3rem;line-height:1;padding:4px 10px}
+.drawer .dgroup{padding:8px 0 4px}
+.drawer .dname{padding:8px 16px 4px;color:var(--accent);font-family:'Fraunces',serif;font-weight:700}
+.drawer .ditem{display:flex;gap:10px;align-items:center;padding:9px 16px;color:var(--paper);text-decoration:none;border-left:3px solid transparent;font-size:.92rem}
+.drawer .ditem:hover{background:var(--ink-3)}
+.drawer .ditem.cur{border-left-color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
+.drawer .ditem .n{color:var(--faint);min-width:1.4em;font-variant-numeric:tabular-nums}
+.drawer .ditem .t{flex:1;line-height:1.25}
+.drawer .ditem .t small{display:block;color:var(--faint);font-size:.75rem}
+.drawer .badges{display:flex;gap:6px;align-items:center}
+.drawer .badges i{font-style:normal;color:var(--accent)}
+.drawer .badges em{font-style:normal;font-size:.75rem;padding:1px 6px;border-radius:999px;background:var(--ink-3);color:var(--muted);font-variant-numeric:tabular-nums}
+.drawer .dfoot{padding:16px;color:var(--faint);font-size:.8rem}
+/* ---------- notes: floating button + bottom sheet ---------- */
+.notes-fab{position:fixed;right:16px;bottom:16px;z-index:35;display:flex;gap:8px;align-items:center;padding:12px 16px;border-radius:999px;background:var(--accent);color:#111;border:none;font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,.4)}
+.notes-sheet{position:fixed;left:0;right:0;bottom:0;z-index:45;background:var(--ink-2);border-top:1px solid var(--line);border-radius:14px 14px 0 0;transform:translateY(105%);transition:transform .25s;box-shadow:0 -10px 40px rgba(0,0,0,.5);max-width:900px;margin:0 auto;padding-bottom:env(safe-area-inset-bottom)}
+.notes-open .notes-sheet{transform:none}
+.notes-open .notes-fab{display:none}
+.notes-sheet .nhead{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line)}
+.notes-sheet .nhead b{flex:1;font-size:.95rem}
+.notes-sheet .nstatus{color:var(--faint);font-size:.8rem}
+.notes-sheet textarea{display:block;width:100%;min-height:36vh;max-height:60vh;resize:vertical;border:none;background:#0f1424;color:var(--paper);font:inherit;font-size:1rem;line-height:1.5;padding:14px 16px;outline:none}
+.notes-sheet .nfoot{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;font-size:.85rem;color:var(--muted)}
+/* ---------- wide widgets scroll sideways instead of breaking the page ---------- */
+.tw{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:16px 0}
+.tw table{margin:0;min-width:520px}
+.fig{overflow-x:auto}
+@media (prefers-reduced-motion:reduce){.drawer,.notes-sheet,.scrim{transition:none}}
+/* ---------- phones ---------- */
+@media (max-width:760px){
+  body{font-size:16px}
+  .wrap{padding:0 16px 110px}
+  h1{font-size:1.85rem} h2{font-size:1.45rem;margin-top:2rem} h3{font-size:1.15rem}
+  .lede{font-size:1.05rem}
+  .topbar{padding:8px 12px;gap:10px}
+  .topbar .links{display:none}
+  .topbar .menu span{display:none}
+  .topbar .menu{padding:8px 11px}
+  .fig{padding:12px 12px;margin:16px -4px;border-radius:8px}
+  .crux,.source{padding:12px 14px}
+  pre{font-size:.8em;padding:12px 12px}
+  button,.btn{padding:10px 14px;font-size:.92rem}
+  .controls{gap:8px}
+  .controls label{display:flex;align-items:center;gap:6px}
+  input[type=number]{max-width:96px}
+  .cards{grid-template-columns:1fr 1fr;gap:8px}
+  .card,.card .inner{min-height:120px}
+  .card .face{font-size:.88rem;padding:10px}
+  .cells{min-width:420px}
+  .quiz .opt{padding:12px 12px;line-height:1.35}
+  .nav-bottom{flex-direction:column}
+  .nav-bottom a{text-align:center}
+  .notes-fab span{display:none}
+  .notes-fab{padding:14px;right:12px;bottom:12px}
+  .notes-sheet textarea{min-height:44vh}
+  .stepper .stage{padding:12px}
+  .gantt .row{grid-template-columns:44px 1fr;font-size:.75rem}
+  /* lesson-specific grids collapse */
+  .lde,.il,.two,.cry,.flash,.dl,.fdt,.how,.cards.wide,.vm{grid-template-columns:1fr}
+  .map{grid-template-columns:1fr}
+  .net{grid-template-columns:1fr}.net .arrow{padding:0;transform:rotate(90deg)}
+  .phil{grid-template-columns:repeat(2,1fr)}
+  .jobs{max-width:100%}
+  .trace{min-width:620px}.tl{min-width:720px}.disk{min-width:560px}
+}
+@media (max-width:420px){.cards{grid-template-columns:1fr}}
+
+</style>
+<style>.flash{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.blk{background:#0f1424;border:1px solid var(--line);border-radius:6px;padding:8px}.blk h4{margin:0 0 6px;font-family:inherit;font-size:.8rem;color:var(--muted)}.pg{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}.pg div{padding:8px 2px;text-align:center;border-radius:3px;font-family:'IBM Plex Mono',monospace;font-size:.75rem;border:1px solid var(--line)}.pg .E{background:#0f1424;color:#6e779a}.pg .V{background:#6bcb77;color:#111}.pg .i{background:#3a4368;color:#a9b1cf;text-decoration:line-through}.map{font-family:'IBM Plex Mono',monospace;font-size:.85rem;margin-top:8px}.map b{color:var(--accent)}.ck{font-family:'IBM Plex Mono',monospace;font-size:.85rem}.ck input{width:56px;text-align:center}</style></head>
+<body class="piece-pers"><div class="wrap">
+<header class="hero"><div class="chapters">OSTEP chapters 44–45 · Flash-based SSDs · Data Integrity and Protection</div>
+<h1>Flash SSDs: a log-structured device — and how storage lies to you</h1>
+<p class="lede">Flash can't overwrite a page; it must erase a whole block first, and every erase wears it out. So inside every SSD is a small log-structured file system called the flash translation layer. Then the failures RAID's fail-stop model ignores: sectors that quietly go bad, and blocks that return the wrong data with a smile. Checksums are how a file system stops trusting its disk.</p></header>
+<div class="source"><b>Primary sources:</b> <a href="https://pages.cs.wisc.edu/~remzi/OSTEP/file-ssd.pdf">Ch 44</a>, <a href="https://pages.cs.wisc.edu/~remzi/OSTEP/file-integrity.pdf">Ch 45</a>. Papers the book leans on: Agrawal et al. (SSD design space), the "unwritten contract" of SSDs (He et al.), Bairavasundaram et al. on latent sector errors and corruption in 1.5 million drives.</div>
+<h2>What you'll be able to do</h2><ul id="obj"></ul>
+
+<h2>Flash: bits, pages, blocks (chapter 44)</h2>
+<div class="crux"><b>Crux: how to build a flash-based SSD.</b> How to handle the expensive erase, and how to build a device that lasts when repeated overwrites wear it out?</div>
+<p>A flash cell traps charge in a transistor: <b>SLC</b> stores 1 bit, <b>MLC</b> 2, <b>TLC</b> 3 (more bits per cell → cheaper, slower, shorter-lived). Cells form <b>pages</b> (1–8 KB... the unit you read or program) inside <b>erase blocks</b> (128–256 KB, up to 2 MB; the unit you erase) inside banks/planes. Three operations:</p>
+<table><tr><th>Operation</th><th>Granularity</th><th>Effect</th><th>SLC</th><th>MLC</th><th>TLC</th></tr>
+<tr><td>read</td><td>page</td><td>any page, fast, uniform (a <em>random access</em> device)</td><td>25 µs</td><td>50 µs</td><td>~75 µs</td></tr>
+<tr><td>program</td><td>page</td><td>write a page — only if it is <em>erased</em>; changes 1s to 0s</td><td>200–300 µs</td><td>600–900 µs</td><td>~900–1350 µs</td></tr>
+<tr><td>erase</td><td>block</td><td>set every bit in the block to 1; destroys all its pages' contents</td><td>1.5–2 ms</td><td>~3 ms</td><td>~4.5 ms</td></tr></table>
+<p>Reliability: each block survives a limited number of program/erase cycles (rated ~10,000 for MLC, ~100,000 for SLC; in practice more) — <b>wear out</b>. And programming a page can flip bits in neighbours (<b>program disturbance</b>), so FTLs program pages within a block in order, low to high.</p>
+
+<h2>The flash translation layer</h2>
+<p>The <b>FTL</b> turns reads and writes on <em>logical</em> blocks into reads, programs and erases on physical pages, while pursuing performance (parallelism across chips; low <b>write amplification</b> = bytes written to flash ÷ bytes the client wrote) and reliability (<b>wear leveling</b>, disturbance avoidance). A <b>direct-mapped</b> FTL (logical page N always lives in physical page N) is a disaster: every write reads the whole block, erases it, and reprograms everything — write amplification equal to the block/page ratio, and hot logical pages burn out their block. So real FTLs are <b>log-structured</b>:</p>
+<div class="fig"><div class="controls"><button class="primary" data-w="100">write logical 100</button><button data-w="101">write logical 101</button><button data-w="2000">write logical 2000</button><button data-w="2001">write logical 2001</button><button id="gc">garbage collect</button><button id="frs">reset</button></div><div class="flash" id="flash"></div><div class="map" id="map"></div><div class="cap" id="fmsg">Three blocks of four pages (E = erased, V = valid, struck = invalid/old). Writes append to the next free page; the mapping table records where each logical block lives. Overwrite a block and its old page becomes garbage.</div></div>
+<ul><li><b>Garbage collection</b>: pick a block with dead pages, read its live pages, write them to the end of the log, erase the block. Costs reads, writes and an erase — the write amplification you pay for logging. Devices <b>overprovision</b> capacity and clean in the background. The <b>trim</b> command tells the FTL a logical range is deleted so it needn't preserve it.</li><li><b>Mapping table size</b>: a page-level map costs 4 bytes per 4 KB page — <b>1 GB</b> of DRAM for a 1 TB SSD. <b>Block-level</b> mapping (like big virtual-memory pages) shrinks it but makes small writes copy whole blocks. <b>Hybrid</b> FTLs keep a few page-mapped <em>log blocks</em> and many block-mapped <em>data blocks</em>, merging with <b>switch</b> (best: a log block filled in order simply becomes a data block), <b>partial</b>, or <b>full</b> merges. Modern devices <b>cache</b> the hot part of a page-level map instead.</li><li><b>Wear leveling</b>: because the log spreads writes naturally, most blocks age evenly; but blocks full of long-lived cold data never get erased, so the FTL periodically migrates that data to even out wear (more write amplification).</li></ul>
+<table><tr><th>Device (book's table, Figure 44.4)</th><th>Random reads MB/s</th><th>Random writes MB/s</th><th>Seq. reads MB/s</th><th>Seq. writes MB/s</th></tr>
+<tr><td>Samsung 840 Pro SSD</td><td>103</td><td>287</td><td>421</td><td>384</td></tr><tr><td>Seagate 600 SSD</td><td>84</td><td>252</td><td>424</td><td>374</td></tr><tr><td>Intel SSD 335</td><td>39</td><td>222</td><td>344</td><td>354</td></tr><tr><td>Seagate Savvio 15K.3 HDD</td><td>2</td><td>2</td><td>223</td><td>223</td></tr></table>
+<p>Three lessons: SSDs' random I/O is tens to hundreds of MB/s where the hard drive manages 2; sequential is still better than random even on flash (the unwritten contract); and random <em>writes</em> beat random reads because the log makes them sequential internally. The remaining gap is cost: the book quotes roughly 60 cents per GB for flash versus about 5 cents for disk, so archival stays on disk while performance-critical data moves to flash.</p>
+
+<h2>Data integrity (chapter 45)</h2>
+<div class="crux"><b>Crux: how to ensure data integrity</b> given failures more subtle than fail-stop — with low space and time overhead?</div>
+<p>Two partial-failure modes from Bairavasundaram et al.'s three-year study of 1.5 M drives. <b>Latent sector errors (LSEs)</b>: a sector is unreadable (head crash, cosmic rays); the drive's own error-correcting codes detect it and return an error. <b>Block corruption</b>: the drive returns <em>wrong</em> data with no error — a buggy firmware write, a faulty bus, a bit flip. Cheap drives: 9.40% had an LSE and 0.50% corruption; enterprise drives: 1.40% and 0.05%. Both grow with age, cluster in space and time, and are found mostly by <b>scrubbing</b>.</p>
+<div class="two"><div class="fig"><h4>LSEs are easy</h4><p>Because they are <em>detected</em>, just use your redundancy: read the mirror copy, or reconstruct from parity. But a RAID-4/5 rebuild after one whole-disk failure now risks hitting an LSE on another disk — one reason RAID-DP (two parity disks, NetApp) exists.</p></div><div class="fig"><h4>Corruption needs detection: the checksum</h4><p>A small function of the data (4–8 bytes) stored alongside it; on read, recompute and compare. Mismatch → use another copy, or report an error. Stronger checksums cost more compute:</p><ul><li><b>XOR</b> of all words: cheap; misses two bits flipped in the same position.</li><li><b>Addition</b> (2's-complement sum): fast; misses shifted data.</li><li><b>Fletcher</b>: two running sums s1 += d, s2 += s1 (mod 255); catches all single-bit, double-bit and most burst errors.</li><li><b>CRC</b>: treat the data as a polynomial, divide by an agreed value, keep the remainder; the standard in networking.</li></ul></div></div>
+<div class="fig"><h4>Try XOR vs addition on four bytes</h4><div class="ck">bytes: <input id="c0" value="365e"> <input id="c1" value="4d2a"> <input id="c2" value="f0e9"> <input id="c3" value="1c8b"> (hex, 16-bit words) <button class="primary" id="ckb">compute</button></div><div class="ck" id="ckr" style="margin-top:8px"></div><div class="cap">Flip the same bit in two different words and recompute: XOR won't notice. The book's example words XOR to 0x201b.</div></div>
+<h3>Layout and the two harder faults</h3>
+<ul><li><b>Layout</b>: drives with 520-byte sectors put the 8-byte checksum with each 512-byte sector; otherwise pack a sector's worth of checksums ahead of every n data sectors (cheaper for reads, an extra write for small updates).</li><li><b>Misdirected writes</b>: the controller writes the right data to the wrong disk or sector; the checksum matches its data, so it passes. Fix: add a <b>physical identifier</b> (disk number + sector offset) to the stored checksum block and check it on read.</li><li><b>Lost writes</b>: the device reports success but never wrote; old data with an old, valid checksum remains. Fixes: <b>write verify</b> (read after write — doubles write cost), or store checksums <em>elsewhere</em> too — ZFS keeps every block's checksum in its parent inode/indirect block, so a lost write to either the data or the checksum is caught unless both are lost.</li><li><b>Scrubbing</b>: periodically read the whole disk and verify checksums (nightly or weekly) so cold data doesn't rot unnoticed.</li><li><b>Overheads</b>: space is tiny (8 B per 4 KB ≈ 0.19%); time is the CPU cost of computing (combine with the data copy) and, for some layouts, extra I/O. Well-designed systems make integrity nearly free.</li></ul>
+
+<h2>Flash cards</h2><div id="cards"></div>
+<h2>Retrieval practice</h2><div id="quiz"></div>
+<p class="tip">Want to compute write amplification for a workload, or derive Fletcher's checksum step by step? Ask me in the chat.</p>
+</div>
+<script>
+/* OSTEP course — shared components. Every page loads this file (inlined by build.py). */
+window.OS = (function () {
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+  /* ---------- persistent storage (localStorage on a real site; in-memory fallback in sandboxes) ---------- */
+  const mem = {};
+  const store = {
+    get(k) { try { const v = localStorage.getItem('ostep:' + k); return v === null ? (mem[k] ?? null) : JSON.parse(v); } catch (e) { return mem[k] ?? null; } },
+    set(k, v) { mem[k] = v; try { localStorage.setItem('ostep:' + k, JSON.stringify(v)); } catch (e) {} },
+    del(k) { delete mem[k]; try { localStorage.removeItem('ostep:' + k); } catch (e) {} },
+    keys(prefix) { const out = new Set(Object.keys(mem).filter(k => k.startsWith(prefix))); try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith('ostep:' + prefix)) out.add(k.slice(6)); } } catch (e) {} return [...out]; },
+    available() { try { localStorage.setItem('ostep:test', '1'); localStorage.removeItem('ostep:test'); return true; } catch (e) { return false; } }
+  };
+
+  /* ---------- course structure ---------- */
+  const PIECES = [
+    ['intro', 'Introduction', [['0001-three-easy-pieces', 'Three easy pieces', 'ch 1–2']]],
+    ['virt', 'Virtualization', [
+      ['0002-processes', 'Processes & the process API', 'ch 4–5'],
+      ['0003-limited-direct-execution', 'Limited direct execution', 'ch 6'],
+      ['0004-scheduling', 'Scheduling', 'ch 7–10'],
+      ['0005-address-spaces', 'Address spaces & segments', 'ch 13–16'],
+      ['0006-paging-and-tlbs', 'Paging & TLBs', 'ch 17–20'],
+      ['0007-swapping', 'Swapping & policies', 'ch 21–23']]],
+    ['conc', 'Concurrency', [
+      ['0008-threads-and-locks', 'Threads & locks', 'ch 26–28'],
+      ['0009-cvs-and-semaphores', 'CVs & semaphores', 'ch 29–31'],
+      ['0010-bugs-and-events', 'Bugs & events', 'ch 32–33']]],
+    ['pers', 'Persistence', [
+      ['0011-devices-disks-raid', 'Devices, disks, RAID', 'ch 36–38'],
+      ['0012-files-and-vsfs', 'Files & a simple FS', 'ch 39–40'],
+      ['0013-ffs-journaling-lfs', 'FFS, journaling, LFS', 'ch 41–43'],
+      ['0014-ssd-and-integrity', 'SSDs & integrity', 'ch 44–45'],
+      ['0015-distributed-nfs-afs', 'Distributed FS', 'ch 48–50']]],
+    ['sec', 'Security', [['0016-security-and-vmms', 'Security & VMMs', 'ch 53–57, App B']]]
+  ];
+  const LESSONS = PIECES.flatMap(p => p[2].map(l => [l[0], l[1], p[0], l[2]]));
+  const title = id => (LESSONS.find(l => l[0] === id) || [])[1] || id;
+  let pageId = null, root = '../';
+
+  /* ---------- chrome: sticky header, slide-out directory, notes drawer, prev/next ---------- */
+  function chrome(id, rootPath) {
+    pageId = id; root = rootPath === undefined ? '../' : rootPath;
+    const i = LESSONS.findIndex(l => l[0] === id);
+    const isLesson = i >= 0;
+    const top = document.createElement('header'); top.className = 'topbar';
+    top.innerHTML = `<button class="menu" aria-label="Open directory" aria-expanded="false">☰<span>Directory</span></button>
+      <a class="brand" href="${root}index.html"><span class="dot"></span>OSTEP course</a>
+      <nav class="links"><a href="${root}reference/glossary.html">Glossary</a><a href="${root}reference/cheatsheets.html">Cheat sheets</a><a href="${root}notes.html">My notes</a></nav>
+      ${isLesson ? `<span class="where">${i+1} / ${LESSONS.length}</span>` : ''}`;
+    document.body.prepend(top);
+    // directory drawer
+    const drawer = document.createElement('aside'); drawer.className = 'drawer'; drawer.setAttribute('aria-label', 'Course directory');
+    const scores = Object.fromEntries(LESSONS.map(l => [l[0], store.get('quiz:' + l[0])]));
+    const notes = new Set(store.keys('notes:').map(k => k.slice(6)).filter(k => (store.get('notes:' + k) || {}).text));
+    drawer.innerHTML = `<div class="dhead"><b>Directory</b><button class="close" aria-label="Close">×</button></div>
+      <a class="ditem ${id === 'index' ? 'cur' : ''}" href="${root}index.html">Course hub</a>
+      ${PIECES.map(([cls, name, ls]) => `<div class="dgroup piece-${cls}"><div class="dname">${name}</div>${ls.map(l => {
+        const n = LESSONS.findIndex(x => x[0] === l[0]) + 1, s = scores[l[0]];
+        return `<a class="ditem ${l[0] === id ? 'cur' : ''}" href="${root}lessons/${l[0]}.html"><span class="n">${n}</span><span class="t">${l[1]}<small>${l[3]}</small></span><span class="badges">${notes.has(l[0]) ? '<i title="you have notes">✎</i>' : ''}${s ? `<em title="best quiz score">${s.score}/${s.total}</em>` : ''}</span></a>`; }).join('')}</div>`).join('')}
+      <div class="dgroup piece-intro"><div class="dname">Reference</div>
+        <a class="ditem ${id === 'glossary' ? 'cur' : ''}" href="${root}reference/glossary.html"><span class="t">Glossary</span></a>
+        <a class="ditem ${id === 'cheatsheets' ? 'cur' : ''}" href="${root}reference/cheatsheets.html"><span class="t">Cheat sheets</span></a>
+        <a class="ditem ${id === 'notes' ? 'cur' : ''}" href="${root}notes.html"><span class="t">My notes &amp; progress</span></a></div>
+      <div class="dfoot">${store.available() ? 'Notes and scores are saved in this browser.' : 'Notes and scores are kept for this session only (storage unavailable here).'}</div>`;
+    document.body.append(drawer);
+    const scrim = document.createElement('div'); scrim.className = 'scrim'; document.body.append(scrim);
+    const open = o => { document.body.classList.toggle('drawer-open', o); top.querySelector('.menu').setAttribute('aria-expanded', o); if (o) drawer.querySelector('.cur, .ditem')?.focus(); };
+    top.querySelector('.menu').onclick = () => open(!document.body.classList.contains('drawer-open'));
+    drawer.querySelector('.close').onclick = () => open(false); scrim.onclick = () => open(false);
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') { open(false); notesOpen(false); } });
+    // prev/next for lessons
+    if (isLesson) {
+      const nav = document.createElement('div'); nav.className = 'nav-bottom';
+      const prev = LESSONS[i-1], next = LESSONS[i+1];
+      nav.innerHTML = (prev ? `<a href="${prev[0]}.html">← ${i}. ${prev[1]}</a>` : '<span></span>') +
+                      (next ? `<a href="${next[0]}.html">${i+2}. ${next[1]} →</a>` : `<a href="${root}index.html">Back to course hub →</a>`);
+      document.querySelector('.wrap').append(nav);
+    }
+    // wrap tables so they scroll sideways on phones
+    document.querySelectorAll('.wrap table').forEach(t => { if (t.parentElement.classList.contains('tw')) return; const w = document.createElement('div'); w.className = 'tw'; t.replaceWith(w); w.append(t); });
+    // notes drawer (every page except the notes page itself)
+    if (id !== 'notes') notesUI(id, isLesson ? `${i+1}. ${LESSONS[i][1]}` : (document.title.split(' — ')[0]));
+  }
+
+  /* ---------- notes: floating button + bottom sheet, autosaved ---------- */
+  let notesOpen = () => {};
+  function notesUI(id, label) {
+    const btn = document.createElement('button'); btn.className = 'notes-fab'; btn.innerHTML = '✎ <span>Notes</span>'; btn.setAttribute('aria-label', 'Open notes');
+    const sheet = document.createElement('section'); sheet.className = 'notes-sheet'; sheet.setAttribute('aria-label', 'Notes for this page');
+    const saved = store.get('notes:' + id) || {};
+    sheet.innerHTML = `<div class="nhead"><b>Notes · ${esc(label)}</b><span class="nstatus"></span><button class="close" aria-label="Close notes">×</button></div>
+      <textarea placeholder="Your notes for this page. Markdown is fine. Saved automatically.">${esc(saved.text || '')}</textarea>
+      <div class="nfoot"><span class="ncount"></span><a href="${root}notes.html">All notes &amp; export →</a></div>`;
+    document.body.append(btn, sheet);
+    const ta = sheet.querySelector('textarea'), status = sheet.querySelector('.nstatus'), count = sheet.querySelector('.ncount');
+    const upd = () => { count.textContent = ta.value.trim() ? ta.value.trim().split(/\s+/).length + ' words' : ''; };
+    let t; ta.addEventListener('input', () => { status.textContent = 'saving…'; clearTimeout(t); t = setTimeout(() => { store.set('notes:' + id, { text: ta.value, title: label, updated: new Date().toISOString() }); status.textContent = 'saved'; upd(); }, 400); });
+    upd();
+    notesOpen = o => { document.body.classList.toggle('notes-open', o); if (o) ta.focus(); };
+    btn.onclick = () => notesOpen(!document.body.classList.contains('notes-open'));
+    sheet.querySelector('.close').onclick = () => notesOpen(false);
+  }
+
+  /* ---------- quiz: immediate feedback; best score persisted ---------- */
+  function quiz(el, qs) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('quiz');
+    let score = 0, answered = 0;
+    const best = pageId ? store.get('quiz:' + pageId) : null;
+    el.innerHTML = qs.map((q, i) => `<div class="q" data-i="${i}"><p>${i+1}. ${q.q}</p>
+      <div class="opts">${q.o.map((o, j) => `<button class="opt" data-j="${j}">${esc(o)}</button>`).join('')}</div>
+      <div class="why">${q.why}</div></div>`).join('') + `<div class="score">${best ? `Best so far: ${best.score}/${best.total} (${new Date(best.date).toLocaleDateString()})` : ''}</div>`;
+    el.querySelectorAll('.q').forEach(qd => {
+      const q = qs[+qd.dataset.i];
+      qd.querySelectorAll('.opt').forEach(b => b.addEventListener('click', () => {
+        if (qd.classList.contains('done')) return;
+        qd.classList.add('done'); answered++;
+        const j = +b.dataset.j;
+        if (j === q.a) { b.classList.add('right'); score++; }
+        else { b.classList.add('wrong'); qd.querySelectorAll('.opt')[q.a].classList.add('right'); }
+        const s = el.querySelector('.score');
+        s.textContent = `${score} / ${answered} correct`;
+        if (answered === qs.length) {
+          s.textContent += score === qs.length ? ' — all of them. Retry from memory in two days.' : ' — reread the sections you missed, then retry.';
+          if (pageId && (!best || score >= best.score)) store.set('quiz:' + pageId, { score, total: qs.length, date: new Date().toISOString() });
+        }
+      }));
+    });
+  }
+
+  /* ---------- flip cards ---------- */
+  function cards(el, list) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('cards');
+    el.innerHTML = list.map(([f, b]) => `<div class="card" tabindex="0" role="button" aria-label="flip card"><div class="inner"><div class="face front">${f}</div><div class="face back">${b}</div></div></div>`).join('');
+    el.querySelectorAll('.card').forEach(c => {
+      const t = () => c.classList.toggle('flipped');
+      c.addEventListener('click', t);
+      c.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); t(); } });
+    });
+  }
+
+  /* ---------- stepper ---------- */
+  function stepper(el, steps, render) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('stepper');
+    let i = 0;
+    el.innerHTML = `<div class="controls"><button class="prev">← Back</button><button class="next primary">Next step →</button><span class="idx"></span></div><div class="stage"></div><div class="extra"></div>`;
+    const stage = el.querySelector('.stage'), idx = el.querySelector('.idx'), extra = el.querySelector('.extra');
+    const draw = () => { stage.innerHTML = steps[i]; idx.textContent = `step ${i+1} / ${steps.length}`; if (render) render(i, extra); };
+    el.querySelector('.prev').onclick = () => { i = Math.max(0, i-1); draw(); };
+    el.querySelector('.next').onclick = () => { i = Math.min(steps.length-1, i+1); draw(); };
+    draw();
+  }
+
+  /* ---------- gantt ---------- */
+  function gantt(el, rows, total, colors) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('gantt');
+    const pal = colors || ['#e8b84a','#5bc8f5','#6bcb77','#f47fa0','#c9a8ff','#ffb86b'];
+    el.innerHTML = rows.map((r, i) => `<div class="row"><span>${esc(r.name)}</span><div class="track">${r.segs.map(s =>
+      `<div class="seg" style="left:${100*s.start/total}%;width:${100*(s.end-s.start)/total}%;background:${pal[i%pal.length]}" title="${s.start}–${s.end}">${(s.end-s.start)/total > .06 ? (s.end-s.start) : ''}</div>`).join('')}</div></div>`).join('') +
+      `<div class="row"><span></span><div style="display:flex;justify-content:space-between;font-size:.75rem;color:var(--muted)"><span>0</span><span>${total}</span></div></div>`;
+  }
+
+  /* ---------- objectives checklist (persisted) ---------- */
+  function objectives(el, items) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('objectives');
+    const saved = (pageId && store.get('obj:' + pageId)) || [];
+    el.innerHTML = items.map((t, i) => `<li><label><input type="checkbox" data-i="${i}" ${saved.includes(i) ? 'checked' : ''}>${t}</label></li>`).join('');
+    el.querySelectorAll('input').forEach(c => c.onchange = () => { const s = [...el.querySelectorAll('input:checked')].map(x => +x.dataset.i); if (pageId) store.set('obj:' + pageId, s); });
+  }
+
+  return { chrome, quiz, cards, stepper, gantt, objectives, esc, store, LESSONS, PIECES, title };
+})();
+
+</script>
+<script>
+OS.chrome('0014-ssd-and-integrity');
+OS.objectives('obj',['State the three flash operations, their granularity and relative costs, and what wears flash out.','Explain why a direct-mapped FTL fails and how a log-structured FTL with a mapping table works, including GC and trim.','Compare page-, block- and hybrid-level mapping and the reasons for wear leveling.','Distinguish latent sector errors from silent corruption and match each fault to its defence.','Compare XOR, addition, Fletcher and CRC checksums and explain physical IDs and ZFS\'s parent checksums.']);
+/* FTL sim */
+let F,MAP;const reset=()=>{F=[[],[],[]].map(()=>[{s:'E'},{s:'E'},{s:'E'},{s:'E'}]);MAP={};draw();document.getElementById('fmsg').textContent='Reset: all pages erased.';};
+function draw(){document.getElementById('flash').innerHTML=F.map((b,bi)=>`<div class="blk"><h4>block ${bi}${b.every(p=>p.s==='E')?' (erased)':''}</h4><div class="pg">${b.map((p,pi)=>`<div class="${p.s}">${p.s==='E'?'erased':p.s==='V'?'L'+p.l:'L'+p.l}</div>`).join('')}</div></div>`).join('');document.getElementById('map').innerHTML='mapping table: '+(Object.keys(MAP).length?Object.entries(MAP).map(([l,[b,p]])=>`<b>${l}</b>→blk${b}/pg${p}`).join('  '):'(empty)');}
+function nextFree(){for(let b=0;b<3;b++)for(let p=0;p<4;p++)if(F[b][p].s==='E')return[b,p];return null;}
+document.querySelectorAll('[data-w]').forEach(btn=>btn.onclick=()=>{const l=+btn.dataset.w;const nf=nextFree();if(!nf){document.getElementById('fmsg').textContent='No erased page left — run garbage collection (a real device does this in the background, using over-provisioned spare blocks).';return;}let note='';if(MAP[l]){const[ob,op]=MAP[l];F[ob][op].s='i';note=` The old copy in block ${ob}/page ${op} is now invalid (garbage).`;}F[nf[0]][nf[1]]={s:'V',l};MAP[l]=nf;draw();document.getElementById('fmsg').textContent=`Logical ${l} programmed into block ${nf[0]}, page ${nf[1]} (next free page in the log); mapping table updated.`+note;});
+document.getElementById('gc').onclick=()=>{let best=-1,dead=0;F.forEach((b,bi)=>{const d=b.filter(p=>p.s==='i').length;if(d>dead){dead=d;best=bi;}});if(best<0){document.getElementById('fmsg').textContent='Nothing to collect: no block contains invalid pages.';return;}const live=F[best].filter(p=>p.s==='V').map(p=>p.l);const wa=live.length;F[best]=[{s:'E'},{s:'E'},{s:'E'},{s:'E'}];live.forEach(l=>{const nf=nextFree();F[nf[0]][nf[1]]={s:'V',l};MAP[l]=nf;});draw();document.getElementById('fmsg').textContent=`GC picked block ${best} (${dead} dead pages): read ${wa} live page(s), erased the block, re-wrote the live pages to the log. Write amplification from this step: ${wa} extra page write(s) + 1 erase.`;};
+document.getElementById('frs').onclick=reset;reset();
+/* checksum */
+document.getElementById('ckb').onclick=()=>{const w=[0,1,2,3].map(i=>parseInt(document.getElementById('c'+i).value,16)||0);const x=w.reduce((a,b)=>a^b,0),s=w.reduce((a,b)=>(a+b)&0xffff,0);let s1=0,s2=0;w.forEach(v=>{s1=(s1+v)%65535;s2=(s2+s1)%65535;});document.getElementById('ckr').innerHTML=`XOR = 0x${x.toString(16).padStart(4,'0')} &nbsp; addition (mod 2¹⁶) = 0x${s.toString(16).padStart(4,'0')} &nbsp; Fletcher-32-style (s1,s2) = (0x${s1.toString(16)}, 0x${s2.toString(16)})`;};document.getElementById('ckb').click();
+OS.cards('cards',[['Erase block','Unit of the flash erase operation (128 KB–2 MB); erasing sets all bits to 1 and destroys every page in it.'],['Program','Write a page (only if erased), turning 1s to 0s; hundreds of µs, much slower than a read.'],['Write amplification','Bytes written to flash ÷ bytes written by the client; driven by GC, merges and wear leveling.'],['Log-structured FTL','Append every write to the next free page and record its location in a mapping table; overwrites create garbage.'],['Trim','Client tells the SSD a logical range is deleted so the FTL can drop its mapping and skip copying it during GC.'],['Hybrid mapping','A few page-mapped log blocks plus block-mapped data blocks; log blocks are folded in by switch/partial/full merges.'],['Latent sector error','Sector the drive itself cannot read (detected via its ECC); recover from redundancy.'],['Silent corruption','Drive returns wrong data without error; only detectable with a checksum.'],['Physical ID','Disk and sector number stored with the checksum to detect writes that landed in the wrong place.'],['Scrubbing','Periodic background read-and-verify of all data so errors in cold data are found while redundancy still exists.']]);
+OS.quiz('quiz',[
+{q:'Which flash operation is the slowest and works on the coarsest unit?',o:['read (page)','erase (block)','program (page)','trim (range)'],a:1,why:'Erase clears a whole block (128 KB+) and takes milliseconds; program is hundreds of µs per page; read is tens of µs.'},
+{q:'Why is a direct-mapped FTL unacceptable?',o:['reads become too slow','every write rewrites a whole block','it needs a huge mapping table','it cannot support trim'],a:1,why:'To overwrite one page it must read the block, erase it, and program everything back — massive write amplification, and hot pages wear out their block.'},
+{q:'What does the FTL\'s mapping table store in a log-structured design?',o:['checksums of every page','logical block → physical page location','the erase count per block','a list of bad sectors'],a:1,why:'Writes go to the next free page, so the FTL must remember where each logical block currently lives; it also keeps an inverse map for GC.'},
+{q:'A page-level map for a 1 TB SSD with 4 KB pages and 4-byte entries needs about:',o:['1 MB','1 GB','16 MB','256 KB'],a:1,why:'2^28 pages × 4 bytes = 1 GB of DRAM — hence block-level, hybrid, and cached mapping schemes.'},
+{q:'Random writes on the SSDs in the book\'s table are faster than random reads because:',o:['reads must check checksums','the FTL turns them into sequential writes','writes are cached in the host','flash cells favour programming'],a:1,why:'Log-structured FTLs append writes sequentially inside the device, while random reads scatter across chips and mapping lookups.'},
+{q:'A write lands intact but on the wrong sector. Which defence catches it on the next read?',o:['a stronger CRC over the data','a physical ID stored with the checksum','write-verify after each write','disk scrubbing every night'],a:1,why:'The data\'s checksum still matches its data. Only a stored disk/sector identifier reveals that this block belongs elsewhere.'},
+{q:'How does ZFS detect a lost write (device said OK, never wrote)?',o:['it rereads every block after writing','it keeps each block\'s checksum in its parent','it uses XOR parity across disks','it timestamps every sector'],a:1,why:'The parent inode/indirect block holds the child\'s checksum; stale data no longer matches unless both the data write and the parent write were lost.'}]);
+</script></body></html>

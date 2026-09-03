@@ -1,0 +1,438 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>16 · Security & VMMs — OSTEP course</title><style>
+/* OSTEP course — shared stylesheet. Three pieces, three hues. */
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+:root{
+  --ink:#151b2f; --ink-2:#1e2540; --ink-3:#28304f; --line:#3a4368;
+  --paper:#eef0f7; --muted:#a9b1cf; --faint:#6e779a;
+  --virt:#e8b84a; --conc:#5bc8f5; --pers:#6bcb77; --sec:#f47fa0; --intro:#c9a8ff;
+  --ok:#6bcb77; --bad:#ff6b6b;
+  --accent:var(--virt);
+  --radius:6px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--ink);color:var(--paper);font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:17px;line-height:1.6}
+a{color:var(--accent)}
+code,pre,kbd,.mono{font-family:'IBM Plex Mono',ui-monospace,monospace}
+code{background:var(--ink-3);padding:1px 5px;border-radius:4px;font-size:.9em}
+pre{background:#0f1424;border:1px solid var(--line);border-left:4px solid var(--accent);padding:14px 16px;overflow:auto;border-radius:var(--radius);font-size:.86em;line-height:1.5}
+pre code{background:none;padding:0;font-size:inherit}
+h1,h2,h3,h4{font-family:'Fraunces',Georgia,serif;font-weight:700;line-height:1.15;margin:0 0 .4em}
+h1{font-size:2.6rem;letter-spacing:-.01em}
+h2{font-size:1.9rem;margin-top:2.6rem;padding-top:1.2rem;border-top:1px solid var(--line)}
+h3{font-size:1.3rem;margin-top:1.8rem;color:var(--accent)}
+h4{font-size:1.05rem;margin-top:1.2rem}
+p,li{max-width:72ch}
+.wrap{max-width:1100px;margin:0 auto;padding:0 28px 96px}
+.hero{padding:44px 0 16px}
+.hero .chapters{color:var(--muted);font-size:.95rem;margin-bottom:6px}
+.lede{font-size:1.2rem;color:var(--muted);max-width:66ch}
+.piece-virt{--accent:var(--virt)} .piece-conc{--accent:var(--conc)} .piece-pers{--accent:var(--pers)} .piece-sec{--accent:var(--sec)} .piece-intro{--accent:var(--intro)}
+.fig{background:var(--ink-2);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;margin:22px 0}
+.fig figcaption,.cap{color:var(--muted);font-size:.9rem;margin-top:10px}
+.fig svg{max-width:100%;height:auto;display:block}
+svg text{font-family:'IBM Plex Sans',sans-serif}
+svg .mono{font-family:'IBM Plex Mono',monospace}
+.crux{border:1px solid var(--accent);border-radius:var(--radius);padding:14px 18px;margin:22px 0;background:color-mix(in srgb,var(--accent) 8%,transparent)}
+.crux b{color:var(--accent)}
+.tip{border-left:4px solid var(--muted);padding:6px 16px;margin:18px 0;color:var(--muted)}
+.tip b{color:var(--paper)}
+table{border-collapse:collapse;width:100%;margin:16px 0;font-size:.95rem}
+th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{color:var(--muted);font-weight:500}
+td.mono,th.mono{font-family:'IBM Plex Mono',monospace}
+button,.btn{font:inherit;font-size:.9rem;background:var(--ink-3);color:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:7px 13px;cursor:pointer}
+button:hover{border-color:var(--accent)}
+button.primary{background:var(--accent);color:#111;border-color:var(--accent);font-weight:600}
+button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+input[type=range]{accent-color:var(--accent)}
+input[type=text],input[type=number],select{font:inherit;background:#0f1424;color:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:6px 10px}
+.controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:10px 0}
+.controls label{font-size:.9rem;color:var(--muted)}
+details{border:1px solid var(--line);border-radius:var(--radius);margin:10px 0;background:var(--ink-2)}
+summary{cursor:pointer;padding:12px 16px;font-weight:600;list-style:none}
+summary::before{content:"+";display:inline-block;width:1.2em;color:var(--accent)}
+details[open] summary::before{content:"–"}
+details>div{padding:0 16px 14px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;margin:16px 0}
+.card{perspective:900px;min-height:140px;cursor:pointer}
+.card .inner{position:relative;width:100%;height:100%;min-height:140px;transition:transform .45s;transform-style:preserve-3d}
+.card.flipped .inner{transform:rotateY(180deg)}
+.card .face{position:absolute;inset:0;padding:14px;border-radius:var(--radius);border:1px solid var(--line);background:var(--ink-2);backface-visibility:hidden;display:flex;align-items:center;justify-content:center;text-align:center;font-size:.95rem}
+.card .back{transform:rotateY(180deg);background:var(--ink-3);border-color:var(--accent);font-size:.88rem;line-height:1.45}
+.card .front{font-weight:600}
+@media (prefers-reduced-motion:reduce){.card .inner{transition:none}}
+.quiz .q{border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin:12px 0;background:var(--ink-2)}
+.quiz .q p{margin:0 0 10px;font-weight:600}
+.quiz .opts{display:grid;gap:8px}
+.quiz .opt{text-align:left;background:var(--ink);width:100%}
+.quiz .opt.right{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 15%,var(--ink))}
+.quiz .opt.wrong{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 15%,var(--ink))}
+.quiz .why{margin-top:10px;color:var(--muted);font-size:.93rem;display:none}
+.quiz .q.done .why{display:block}
+.quiz .score{margin-top:12px;font-weight:600}
+.stepper .stage{min-height:60px;background:#0f1424;border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin:10px 0}
+.stepper .idx{color:var(--muted);font-size:.85rem}
+.gantt{display:grid;gap:6px;margin:10px 0}
+.gantt .row{display:grid;grid-template-columns:60px 1fr;align-items:center;gap:8px;font-size:.85rem}
+.gantt .track{position:relative;height:26px;background:#0f1424;border-radius:4px;overflow:hidden}
+.gantt .seg{position:absolute;top:0;bottom:0;display:flex;align-items:center;justify-content:center;font-size:.75rem;color:#111;font-weight:600;border-right:1px solid rgba(0,0,0,.3)}
+.cells{display:grid;gap:4px;margin:10px 0}
+.cell{background:#0f1424;border:1px solid var(--line);border-radius:4px;padding:6px;text-align:center;font-family:'IBM Plex Mono',monospace;font-size:.8rem;min-height:36px;display:flex;align-items:center;justify-content:center}
+.cell.hit{background:color-mix(in srgb,var(--ok) 35%,#0f1424);border-color:var(--ok)}
+.cell.miss{background:color-mix(in srgb,var(--bad) 35%,#0f1424);border-color:var(--bad)}
+.cell.active{outline:2px solid var(--accent)}
+.cell.free{opacity:.45}
+.hl{background:color-mix(in srgb,var(--accent) 30%,transparent);padding:1px 5px;border-radius:3px}
+.k{color:var(--accent);font-weight:600}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media (max-width:760px){.two{grid-template-columns:1fr}.topbar{gap:10px}h1{font-size:2rem}}
+.nav-bottom{display:flex;justify-content:space-between;gap:16px;margin-top:56px;padding-top:20px;border-top:1px solid var(--line)}
+.nav-bottom a{text-decoration:none;padding:12px 16px;border:1px solid var(--line);border-radius:var(--radius);color:var(--paper)}
+.source{background:var(--ink-2);border-radius:var(--radius);padding:14px 18px;margin:22px 0;font-size:.95rem}
+.source b{color:var(--accent)}
+.objectives li{list-style:none;margin:6px 0}
+.objectives input{margin-right:8px;accent-color:var(--accent)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.85rem;color:var(--muted)}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:5px;vertical-align:-2px}
+.tag{display:inline-block;font-size:.75rem;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted);margin-right:6px}
+.log{font-family:'IBM Plex Mono',monospace;font-size:.82rem;background:#0f1424;border:1px solid var(--line);border-radius:var(--radius);padding:10px 12px;max-height:220px;overflow:auto;white-space:pre-wrap}
+@media print{body{background:#fff;color:#111}.topbar,.nav-bottom,button{display:none}.fig,.crux,details,.source{border-color:#bbb;background:#fff}pre{background:#f5f5f5;color:#111}}
+
+/* ---------- site chrome: sticky header + directory drawer ---------- */
+.topbar{position:sticky;top:0;z-index:30;display:flex;gap:14px;align-items:center;padding:10px 16px;background:color-mix(in srgb,var(--ink) 92%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);font-size:.9rem}
+.topbar .menu{display:flex;align-items:center;gap:8px;padding:8px 12px;font-size:1rem}
+.topbar .menu span{font-size:.85rem}
+.topbar .brand{color:var(--paper);text-decoration:none;font-weight:600;display:flex;align-items:center;gap:8px}
+.topbar .dot{width:10px;height:10px;border-radius:50%;background:var(--accent);display:inline-block}
+.topbar .links{display:flex;gap:16px;margin-left:8px}
+.topbar .links a{color:var(--muted);text-decoration:none}
+.topbar .links a:hover{color:var(--paper)}
+.topbar .where{margin-left:auto;color:var(--faint);font-variant-numeric:tabular-nums}
+.drawer{position:fixed;top:0;left:0;bottom:0;width:min(340px,88vw);background:var(--ink-2);border-right:1px solid var(--line);z-index:50;transform:translateX(-102%);transition:transform .25s;overflow-y:auto;padding:0 0 24px;box-shadow:0 0 40px rgba(0,0,0,.5)}
+.drawer-open .drawer{transform:none}
+.scrim{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:40;opacity:0;pointer-events:none;transition:opacity .2s}
+.drawer-open .scrim{opacity:1;pointer-events:auto}
+.drawer .dhead{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--ink-2)}
+.drawer .close,.notes-sheet .close{font-size:1.3rem;line-height:1;padding:4px 10px}
+.drawer .dgroup{padding:8px 0 4px}
+.drawer .dname{padding:8px 16px 4px;color:var(--accent);font-family:'Fraunces',serif;font-weight:700}
+.drawer .ditem{display:flex;gap:10px;align-items:center;padding:9px 16px;color:var(--paper);text-decoration:none;border-left:3px solid transparent;font-size:.92rem}
+.drawer .ditem:hover{background:var(--ink-3)}
+.drawer .ditem.cur{border-left-color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
+.drawer .ditem .n{color:var(--faint);min-width:1.4em;font-variant-numeric:tabular-nums}
+.drawer .ditem .t{flex:1;line-height:1.25}
+.drawer .ditem .t small{display:block;color:var(--faint);font-size:.75rem}
+.drawer .badges{display:flex;gap:6px;align-items:center}
+.drawer .badges i{font-style:normal;color:var(--accent)}
+.drawer .badges em{font-style:normal;font-size:.75rem;padding:1px 6px;border-radius:999px;background:var(--ink-3);color:var(--muted);font-variant-numeric:tabular-nums}
+.drawer .dfoot{padding:16px;color:var(--faint);font-size:.8rem}
+/* ---------- notes: floating button + bottom sheet ---------- */
+.notes-fab{position:fixed;right:16px;bottom:16px;z-index:35;display:flex;gap:8px;align-items:center;padding:12px 16px;border-radius:999px;background:var(--accent);color:#111;border:none;font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,.4)}
+.notes-sheet{position:fixed;left:0;right:0;bottom:0;z-index:45;background:var(--ink-2);border-top:1px solid var(--line);border-radius:14px 14px 0 0;transform:translateY(105%);transition:transform .25s;box-shadow:0 -10px 40px rgba(0,0,0,.5);max-width:900px;margin:0 auto;padding-bottom:env(safe-area-inset-bottom)}
+.notes-open .notes-sheet{transform:none}
+.notes-open .notes-fab{display:none}
+.notes-sheet .nhead{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line)}
+.notes-sheet .nhead b{flex:1;font-size:.95rem}
+.notes-sheet .nstatus{color:var(--faint);font-size:.8rem}
+.notes-sheet textarea{display:block;width:100%;min-height:36vh;max-height:60vh;resize:vertical;border:none;background:#0f1424;color:var(--paper);font:inherit;font-size:1rem;line-height:1.5;padding:14px 16px;outline:none}
+.notes-sheet .nfoot{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;font-size:.85rem;color:var(--muted)}
+/* ---------- wide widgets scroll sideways instead of breaking the page ---------- */
+.tw{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:16px 0}
+.tw table{margin:0;min-width:520px}
+.fig{overflow-x:auto}
+@media (prefers-reduced-motion:reduce){.drawer,.notes-sheet,.scrim{transition:none}}
+/* ---------- phones ---------- */
+@media (max-width:760px){
+  body{font-size:16px}
+  .wrap{padding:0 16px 110px}
+  h1{font-size:1.85rem} h2{font-size:1.45rem;margin-top:2rem} h3{font-size:1.15rem}
+  .lede{font-size:1.05rem}
+  .topbar{padding:8px 12px;gap:10px}
+  .topbar .links{display:none}
+  .topbar .menu span{display:none}
+  .topbar .menu{padding:8px 11px}
+  .fig{padding:12px 12px;margin:16px -4px;border-radius:8px}
+  .crux,.source{padding:12px 14px}
+  pre{font-size:.8em;padding:12px 12px}
+  button,.btn{padding:10px 14px;font-size:.92rem}
+  .controls{gap:8px}
+  .controls label{display:flex;align-items:center;gap:6px}
+  input[type=number]{max-width:96px}
+  .cards{grid-template-columns:1fr 1fr;gap:8px}
+  .card,.card .inner{min-height:120px}
+  .card .face{font-size:.88rem;padding:10px}
+  .cells{min-width:420px}
+  .quiz .opt{padding:12px 12px;line-height:1.35}
+  .nav-bottom{flex-direction:column}
+  .nav-bottom a{text-align:center}
+  .notes-fab span{display:none}
+  .notes-fab{padding:14px;right:12px;bottom:12px}
+  .notes-sheet textarea{min-height:44vh}
+  .stepper .stage{padding:12px}
+  .gantt .row{grid-template-columns:44px 1fr;font-size:.75rem}
+  /* lesson-specific grids collapse */
+  .lde,.il,.two,.cry,.flash,.dl,.fdt,.how,.cards.wide,.vm{grid-template-columns:1fr}
+  .map{grid-template-columns:1fr}
+  .net{grid-template-columns:1fr}.net .arrow{padding:0;transform:rotate(90deg)}
+  .phil{grid-template-columns:repeat(2,1fr)}
+  .jobs{max-width:100%}
+  .trace{min-width:620px}.tl{min-width:720px}.disk{min-width:560px}
+}
+@media (max-width:420px){.cards{grid-template-columns:1fr}}
+
+</style>
+<style>.matrix{font-family:'IBM Plex Mono',monospace;font-size:.85rem}.matrix td,.matrix th{text-align:center;border:1px solid var(--line)}.matrix td.y{background:#6bcb77;color:#111}.matrix .rowh,.matrix .colh{background:#28304f}.matrix .hl{outline:2px solid var(--accent)}.cry{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}.cry div{background:#0f1424;border:1px solid var(--line);border-radius:6px;padding:10px;font-size:.88rem}.cry h4{margin:0 0 6px;font-family:inherit;font-size:.9rem;color:var(--accent)}.cry.f div{cursor:pointer}.cry div.on{border-color:var(--accent)}.hash{font-family:'IBM Plex Mono',monospace;font-size:.85rem;word-break:break-all}.vm{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;align-items:center;text-align:center;font-size:.85rem}.vm div{background:#0f1424;border:1px solid var(--line);border-radius:6px;padding:10px}@media(max-width:700px){.cry,.vm{grid-template-columns:1fr}}</style></head>
+<body class="piece-sec"><div class="wrap">
+<header class="hero"><div class="chapters">OSTEP chapters 53–57 (Peter Reiher's security chapters) · Appendix B: Virtual Machine Monitors</div>
+<h1>Security: policies, identities, access, cryptography — and one more layer of virtualization</h1>
+<p class="lede">Every mechanism in this book — modes, page tables, file permissions — is also a security mechanism. These chapters make that explicit: what we protect, who a process <em>is</em>, how the OS decides yes or no, and what cryptography can do once data leaves the OS's custody. The appendix closes the loop: virtualize the whole machine, and the OS becomes the program being fooled.</p></header>
+<div class="source"><b>Primary sources:</b> <a href="https://pages.cs.wisc.edu/~remzi/OSTEP/security-intro.pdf">Ch 53</a>, <a href="https://pages.cs.wisc.edu/~remzi/OSTEP/security-authentication.pdf">Ch 54</a>, <a href="https://pages.cs.wisc.edu/~remzi/OSTEP/security-access.pdf">Ch 55</a>, <a href="https://pages.cs.wisc.edu/~remzi/OSTEP/security-crypto.pdf">Ch 56</a>, <a href="https://pages.cs.wisc.edu/~remzi/OSTEP/security-distributed.pdf">Ch 57</a>, <a href="https://pages.cs.wisc.edu/~remzi/OSTEP/vmm-intro.pdf">Appendix B</a>. Classic papers: Saltzer &amp; Schroeder (1975); Bugnion et al., Disco (1997).</div>
+<h2>What you'll be able to do</h2><ul id="obj"></ul>
+
+<h2>Goals and principles (chapter 53)</h2>
+<div class="crux"><b>Crux: how to secure OS resources.</b> With many interacting processes on one machine, ensure each can access exactly the resources it should, in exactly the ways we intend. What primitives from the OS, what mechanisms from hardware?</div>
+<p>What are we protecting? Everything — the OS controls all hardware, so a compromised OS is a limitlessly compromised machine. Goals come in three classic flavours: <b>confidentiality</b> (secrets stay secret), <b>integrity</b> (data and components aren't improperly changed; <em>authenticity</em> is a cousin), <b>availability</b> (services stay usable). Each system turns these into specific <b>policies</b>, and, as everywhere in the book, the OS separates policy from <b>mechanism</b>. The chapter's design principles, from Saltzer and Schroeder — flip each:</p>
+<div id="prin"></div>
+<p>The OS's own basics: virtualization of processes and memory <em>is</em> protection; system calls are the mediated entry; and the OS must know <em>who</em> is asking — the next chapter.</p>
+
+<h2>Authentication (chapter 54)</h2>
+<div class="crux"><b>Crux: how to securely identify processes.</b> Each process must carry the right identity (a <em>principal</em> — usually a user id), new processes must get the right one, and nothing malicious may change it.</div>
+<p>Processes inherit identity from their parent, so the chain starts at boot with a system process whose job is to <b>log users in</b>: it authenticates a human and starts a shell owned by that user. Controlled exceptions change identity: <code>setuid</code> programs run with their owner's id (how <code>sudo</code> and <code>passwd</code> work). Three ways a human proves identity:</p>
+<div class="cry"><div><h4>What you know</h4>Passwords. Never store them; store a <b>cryptographic hash</b> (SHA-3 is the book's example). Add a per-user <b>salt</b> so identical passwords hash differently and precomputed <b>dictionary attacks</b> fail. Limit guesses; the hash makes online guessing slow, the salt makes offline guessing expensive.</div><div><h4>What you have</h4>A <b>smart card</b>, a phone, a hardware token — proof of possession, often via a <b>one-time</b> code. Weakness: it can be lost or stolen.</div><div><h4>What you are</h4><b>Biometrics</b>: fingerprints, face, voice. Matching is probabilistic, so tune between <b>false positives</b> (admitting the wrong person) and <b>false negatives</b> (rejecting the right one); and remote biometrics prove only that some bits arrived.</div></div>
+<p>Combine them: <b>multi-factor authentication</b> (password + a code texted to your phone). Non-human principals (servers, daemons) authenticate with keys and certificates — chapter 57.</p>
+
+<h2>Access control (chapter 55)</h2>
+<div class="crux"><b>Crux: how to determine if an access request should be granted.</b> Given a process, a user, an object and a moment, decide yes or no — and be able to encode the policies we want.</div>
+<p>The decider is a <b>reference monitor</b> that ideally achieves <b>complete mediation</b>. Conceptually, access is a matrix of subjects × objects; the two implementations slice it differently. Click a cell:</p>
+<div class="fig"><table class="matrix" id="mx"></table><div class="cap" id="mxmsg">Rows = subjects, columns = objects. An <b>ACL</b> stores a column with each object ("who may touch this file"); a <b>capability</b> list stores a row with each subject ("what this process may touch").</div></div>
+<div class="two"><div class="fig"><h4>Access control lists</h4><p>Per object. UNIX's 9 permission bits are a <em>condensed</em> ACL: owner / group / other × read / write / execute; the OS looks up the requester and checks the file's bits. Good for "who can access this file?", for revocation (edit the list), and it's what users see. Costly to answer "what can this user access?", and identities must be meaningful across machines (a Wisconsin ACL means nothing to a Berkeley user id).</p></div><div class="fig"><h4>Capabilities</h4><p>Per subject: an unforgeable token whose possession grants access, like a ticket or a key. The OS keeps them (a process must not fabricate one) — a UNIX <b>file descriptor</b> is a capability: checked at <code>open()</code>, then presented on every <code>read()</code>. Cheap to check, easy to delegate, natural for least privilege; hard to revoke or to audit who can reach an object. Most systems use ACLs at the user level and capabilities inside the kernel.</p></div></div>
+<p><b>Discretionary</b> access control lets owners set permissions; <b>mandatory</b> access control imposes system-wide rules owners can't override (classified-data systems). Helpers: <b>role-based access control</b> (grant permissions to roles like <em>administrator</em>, assign users to roles) and <b>type enforcement</b> (label subjects and objects with types and write rules between types). The chapter's warning: failures rarely come from broken mechanisms; they come from badly designed policies.</p>
+
+<h2>Cryptography (chapter 56)</h2>
+<div class="crux"><b>Crux: how to protect information outside the OS's domain</b> — on a stolen disk, on the network — so others can neither use nor alter it? What technologies, how to use them properly, and what can't they do?</div>
+<div class="cry f" id="cryp"><div class="on"><h4>Symmetric ciphers</h4>One shared secret key encrypts and decrypts (AES). Fast; the problem is <b>key distribution</b>.</div><div><h4>Public-key (asymmetric)</h4>A key pair: encrypt with the <b>public</b> key → only the <b>private</b> key decrypts (secrecy); encrypt with the private → anyone with the public key can verify who sent it (<b>authentication</b>, signatures). RSA. Slow, so used to exchange symmetric keys.</div><div><h4>Cryptographic hashes</h4>No key, not reversible: a fixed-size fingerprint (SHA-3; SHA-1 is broken). Any change to the input changes the hash unpredictably; used for passwords, integrity checks, signatures.</div></div>
+<div class="fig"><h4>Alice → Bob with two keys</h4><div id="ab"></div></div>
+<p><b>Cracking</b>: ciphers are public; security lives entirely in the <b>key</b>. Brute force scales with key length (exponentially), so use standard algorithms with long keys — and never invent your own cipher. <b>OS uses</b>: data in transit (next chapter) and <b>at-rest</b> encryption — <b>full-disk encryption</b> in hardware or software, decrypting as blocks enter the OS, protecting against a stolen laptop but not a running attacker (the key is in memory). Also <b>cryptographic capabilities</b>: tokens the system signs or MACs so users may hold them yet can't forge them — how distributed systems hand out access. Keep keys in as few places, for as short a time, as possible.</p>
+<div class="fig"><h4>Hash it yourself (SHA-256, in-browser)</h4><div class="controls"><input type="text" id="hin" value="password" style="width:260px"><button class="primary" id="hgo">hash</button><label>salt <input type="text" id="salt" value="" style="width:120px" placeholder="(none)"></label></div><div class="hash" id="hout"></div><div class="cap">Change one character: the whole digest changes. Add a salt: the same password gives a different stored value per user, defeating precomputed tables.</div></div>
+
+<h2>Distributed system security (chapter 57)</h2>
+<div class="crux"><b>Crux: how to protect distributed system operations.</b> The network is insecure; make sure it introduces no new problems: messages encrypted and authenticated, service available only to intended users.</div>
+<ul><li><b>Public keys across machines</b>: how do you know a public key is really Microsoft's? <b>Certificates</b> (X.509): a trusted <em>certificate authority</em> signs the binding of name to public key; you trust the CA's key (pre-installed in your browser), so you can verify anyone it vouches for. Self-made certificates prove nothing.</li><li><b>Passwords across machines</b>: only ever over an already-encrypted, authenticated channel — the server's identity must be established first, or you hand your password to an impostor.</li><li><b>SSL/TLS</b>: encrypted sockets. Use <b>TLS</b>; SSL itself is broken and only acceptable for ancient devices that support nothing else (and even early TLS versions had flaws). The handshake negotiates algorithms, verifies the server's certificate, and agrees a <b>symmetric session key</b>, typically via <b>Diffie-Hellman</b> — which must itself be authenticated, or a <b>man-in-the-middle</b> can run one exchange with each side.</li><li><b>Higher-level tools</b>: HTTPS (HTTP over TLS), SSH (remote login and tunnels), and enterprise systems such as Kerberos for authenticating users to many services. Build on these; building your own cryptography almost always fails.</li></ul>
+
+<h2>Appendix B: virtual machine monitors</h2>
+<div class="crux"><b>Crux: how to virtualize the machine underneath the OS</b>, transparently. The OS becomes the "application"; the VMM (hypervisor) does to it what the OS does to processes. Revived by Stanford's Disco (Rosenblum et al., → VMware) for server consolidation, testing, and running multiple OSes at once.</div>
+<div class="two"><div class="fig"><h4>Virtualizing the CPU: trap-and-emulate</h4><p>Run the guest OS in <em>user</em> mode (or a de-privileged "supervisor" mode as on MIPS). When it executes a privileged instruction it traps to the VMM, which emulates it (e.g. installing a trap table means the VMM records where the OS's handlers are; a guest system call traps to the VMM, which jumps to the OS's handler; the OS's return-from-trap traps again and the VMM returns to the user). A snag: some instructions (early x86's <code>popf</code>) behave differently in user mode without trapping — hence binary translation (VMware) and, later, hardware virtualization support.</p></div><div class="fig"><h4>Virtualizing memory: shadow page tables</h4><div class="vm"><div>virtual address<br><small>(process view)</small></div><div>physical address<br><small>(OS thinks it owns)</small></div><div>machine address<br><small>(the real DRAM)</small></div></div><p>Two translations per access is too slow, so the VMM keeps a <b>shadow page table</b> mapping virtual → machine directly, rebuilt whenever the OS changes its page table (which traps). Disco, on MIPS with a software TLB, instead intercepted the OS's TLB-miss handler and installed virtual→machine entries; it cached translations in a software "second-level TLB" and had to flush the TLB on every OS switch (no ASIDs to spare).</p></div></div>
+<p>The <b>information gap</b>: the VMM doesn't know what the OS is doing — an idle loop looks like real work; demand-zeroing a page the VMM just zeroed wastes time. <b>Para-virtualization</b> (Xen) modifies the guest OS slightly to cooperate. The appendix's closing thought: the same ideas — limited direct execution, address translation, laziness — apply one level down, and the VMM is just "another OS" in disguise.</p>
+
+<h2>Flash cards</h2><div id="cards"></div>
+<h2>Retrieval practice</h2><div id="quiz"></div>
+<p class="tip">You've reached the end of the book. Ask me in the chat for a mixed review quiz across all sixteen lessons, or to start a spaced-repetition schedule from your learning records.</p>
+</div>
+<script>
+/* OSTEP course — shared components. Every page loads this file (inlined by build.py). */
+window.OS = (function () {
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+  /* ---------- persistent storage (localStorage on a real site; in-memory fallback in sandboxes) ---------- */
+  const mem = {};
+  const store = {
+    get(k) { try { const v = localStorage.getItem('ostep:' + k); return v === null ? (mem[k] ?? null) : JSON.parse(v); } catch (e) { return mem[k] ?? null; } },
+    set(k, v) { mem[k] = v; try { localStorage.setItem('ostep:' + k, JSON.stringify(v)); } catch (e) {} },
+    del(k) { delete mem[k]; try { localStorage.removeItem('ostep:' + k); } catch (e) {} },
+    keys(prefix) { const out = new Set(Object.keys(mem).filter(k => k.startsWith(prefix))); try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith('ostep:' + prefix)) out.add(k.slice(6)); } } catch (e) {} return [...out]; },
+    available() { try { localStorage.setItem('ostep:test', '1'); localStorage.removeItem('ostep:test'); return true; } catch (e) { return false; } }
+  };
+
+  /* ---------- course structure ---------- */
+  const PIECES = [
+    ['intro', 'Introduction', [['0001-three-easy-pieces', 'Three easy pieces', 'ch 1–2']]],
+    ['virt', 'Virtualization', [
+      ['0002-processes', 'Processes & the process API', 'ch 4–5'],
+      ['0003-limited-direct-execution', 'Limited direct execution', 'ch 6'],
+      ['0004-scheduling', 'Scheduling', 'ch 7–10'],
+      ['0005-address-spaces', 'Address spaces & segments', 'ch 13–16'],
+      ['0006-paging-and-tlbs', 'Paging & TLBs', 'ch 17–20'],
+      ['0007-swapping', 'Swapping & policies', 'ch 21–23']]],
+    ['conc', 'Concurrency', [
+      ['0008-threads-and-locks', 'Threads & locks', 'ch 26–28'],
+      ['0009-cvs-and-semaphores', 'CVs & semaphores', 'ch 29–31'],
+      ['0010-bugs-and-events', 'Bugs & events', 'ch 32–33']]],
+    ['pers', 'Persistence', [
+      ['0011-devices-disks-raid', 'Devices, disks, RAID', 'ch 36–38'],
+      ['0012-files-and-vsfs', 'Files & a simple FS', 'ch 39–40'],
+      ['0013-ffs-journaling-lfs', 'FFS, journaling, LFS', 'ch 41–43'],
+      ['0014-ssd-and-integrity', 'SSDs & integrity', 'ch 44–45'],
+      ['0015-distributed-nfs-afs', 'Distributed FS', 'ch 48–50']]],
+    ['sec', 'Security', [['0016-security-and-vmms', 'Security & VMMs', 'ch 53–57, App B']]]
+  ];
+  const LESSONS = PIECES.flatMap(p => p[2].map(l => [l[0], l[1], p[0], l[2]]));
+  const title = id => (LESSONS.find(l => l[0] === id) || [])[1] || id;
+  let pageId = null, root = '../';
+
+  /* ---------- chrome: sticky header, slide-out directory, notes drawer, prev/next ---------- */
+  function chrome(id, rootPath) {
+    pageId = id; root = rootPath === undefined ? '../' : rootPath;
+    const i = LESSONS.findIndex(l => l[0] === id);
+    const isLesson = i >= 0;
+    const top = document.createElement('header'); top.className = 'topbar';
+    top.innerHTML = `<button class="menu" aria-label="Open directory" aria-expanded="false">☰<span>Directory</span></button>
+      <a class="brand" href="${root}index.html"><span class="dot"></span>OSTEP course</a>
+      <nav class="links"><a href="${root}reference/glossary.html">Glossary</a><a href="${root}reference/cheatsheets.html">Cheat sheets</a><a href="${root}notes.html">My notes</a></nav>
+      ${isLesson ? `<span class="where">${i+1} / ${LESSONS.length}</span>` : ''}`;
+    document.body.prepend(top);
+    // directory drawer
+    const drawer = document.createElement('aside'); drawer.className = 'drawer'; drawer.setAttribute('aria-label', 'Course directory');
+    const scores = Object.fromEntries(LESSONS.map(l => [l[0], store.get('quiz:' + l[0])]));
+    const notes = new Set(store.keys('notes:').map(k => k.slice(6)).filter(k => (store.get('notes:' + k) || {}).text));
+    drawer.innerHTML = `<div class="dhead"><b>Directory</b><button class="close" aria-label="Close">×</button></div>
+      <a class="ditem ${id === 'index' ? 'cur' : ''}" href="${root}index.html">Course hub</a>
+      ${PIECES.map(([cls, name, ls]) => `<div class="dgroup piece-${cls}"><div class="dname">${name}</div>${ls.map(l => {
+        const n = LESSONS.findIndex(x => x[0] === l[0]) + 1, s = scores[l[0]];
+        return `<a class="ditem ${l[0] === id ? 'cur' : ''}" href="${root}lessons/${l[0]}.html"><span class="n">${n}</span><span class="t">${l[1]}<small>${l[3]}</small></span><span class="badges">${notes.has(l[0]) ? '<i title="you have notes">✎</i>' : ''}${s ? `<em title="best quiz score">${s.score}/${s.total}</em>` : ''}</span></a>`; }).join('')}</div>`).join('')}
+      <div class="dgroup piece-intro"><div class="dname">Reference</div>
+        <a class="ditem ${id === 'glossary' ? 'cur' : ''}" href="${root}reference/glossary.html"><span class="t">Glossary</span></a>
+        <a class="ditem ${id === 'cheatsheets' ? 'cur' : ''}" href="${root}reference/cheatsheets.html"><span class="t">Cheat sheets</span></a>
+        <a class="ditem ${id === 'notes' ? 'cur' : ''}" href="${root}notes.html"><span class="t">My notes &amp; progress</span></a></div>
+      <div class="dfoot">${store.available() ? 'Notes and scores are saved in this browser.' : 'Notes and scores are kept for this session only (storage unavailable here).'}</div>`;
+    document.body.append(drawer);
+    const scrim = document.createElement('div'); scrim.className = 'scrim'; document.body.append(scrim);
+    const open = o => { document.body.classList.toggle('drawer-open', o); top.querySelector('.menu').setAttribute('aria-expanded', o); if (o) drawer.querySelector('.cur, .ditem')?.focus(); };
+    top.querySelector('.menu').onclick = () => open(!document.body.classList.contains('drawer-open'));
+    drawer.querySelector('.close').onclick = () => open(false); scrim.onclick = () => open(false);
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') { open(false); notesOpen(false); } });
+    // prev/next for lessons
+    if (isLesson) {
+      const nav = document.createElement('div'); nav.className = 'nav-bottom';
+      const prev = LESSONS[i-1], next = LESSONS[i+1];
+      nav.innerHTML = (prev ? `<a href="${prev[0]}.html">← ${i}. ${prev[1]}</a>` : '<span></span>') +
+                      (next ? `<a href="${next[0]}.html">${i+2}. ${next[1]} →</a>` : `<a href="${root}index.html">Back to course hub →</a>`);
+      document.querySelector('.wrap').append(nav);
+    }
+    // wrap tables so they scroll sideways on phones
+    document.querySelectorAll('.wrap table').forEach(t => { if (t.parentElement.classList.contains('tw')) return; const w = document.createElement('div'); w.className = 'tw'; t.replaceWith(w); w.append(t); });
+    // notes drawer (every page except the notes page itself)
+    if (id !== 'notes') notesUI(id, isLesson ? `${i+1}. ${LESSONS[i][1]}` : (document.title.split(' — ')[0]));
+  }
+
+  /* ---------- notes: floating button + bottom sheet, autosaved ---------- */
+  let notesOpen = () => {};
+  function notesUI(id, label) {
+    const btn = document.createElement('button'); btn.className = 'notes-fab'; btn.innerHTML = '✎ <span>Notes</span>'; btn.setAttribute('aria-label', 'Open notes');
+    const sheet = document.createElement('section'); sheet.className = 'notes-sheet'; sheet.setAttribute('aria-label', 'Notes for this page');
+    const saved = store.get('notes:' + id) || {};
+    sheet.innerHTML = `<div class="nhead"><b>Notes · ${esc(label)}</b><span class="nstatus"></span><button class="close" aria-label="Close notes">×</button></div>
+      <textarea placeholder="Your notes for this page. Markdown is fine. Saved automatically.">${esc(saved.text || '')}</textarea>
+      <div class="nfoot"><span class="ncount"></span><a href="${root}notes.html">All notes &amp; export →</a></div>`;
+    document.body.append(btn, sheet);
+    const ta = sheet.querySelector('textarea'), status = sheet.querySelector('.nstatus'), count = sheet.querySelector('.ncount');
+    const upd = () => { count.textContent = ta.value.trim() ? ta.value.trim().split(/\s+/).length + ' words' : ''; };
+    let t; ta.addEventListener('input', () => { status.textContent = 'saving…'; clearTimeout(t); t = setTimeout(() => { store.set('notes:' + id, { text: ta.value, title: label, updated: new Date().toISOString() }); status.textContent = 'saved'; upd(); }, 400); });
+    upd();
+    notesOpen = o => { document.body.classList.toggle('notes-open', o); if (o) ta.focus(); };
+    btn.onclick = () => notesOpen(!document.body.classList.contains('notes-open'));
+    sheet.querySelector('.close').onclick = () => notesOpen(false);
+  }
+
+  /* ---------- quiz: immediate feedback; best score persisted ---------- */
+  function quiz(el, qs) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('quiz');
+    let score = 0, answered = 0;
+    const best = pageId ? store.get('quiz:' + pageId) : null;
+    el.innerHTML = qs.map((q, i) => `<div class="q" data-i="${i}"><p>${i+1}. ${q.q}</p>
+      <div class="opts">${q.o.map((o, j) => `<button class="opt" data-j="${j}">${esc(o)}</button>`).join('')}</div>
+      <div class="why">${q.why}</div></div>`).join('') + `<div class="score">${best ? `Best so far: ${best.score}/${best.total} (${new Date(best.date).toLocaleDateString()})` : ''}</div>`;
+    el.querySelectorAll('.q').forEach(qd => {
+      const q = qs[+qd.dataset.i];
+      qd.querySelectorAll('.opt').forEach(b => b.addEventListener('click', () => {
+        if (qd.classList.contains('done')) return;
+        qd.classList.add('done'); answered++;
+        const j = +b.dataset.j;
+        if (j === q.a) { b.classList.add('right'); score++; }
+        else { b.classList.add('wrong'); qd.querySelectorAll('.opt')[q.a].classList.add('right'); }
+        const s = el.querySelector('.score');
+        s.textContent = `${score} / ${answered} correct`;
+        if (answered === qs.length) {
+          s.textContent += score === qs.length ? ' — all of them. Retry from memory in two days.' : ' — reread the sections you missed, then retry.';
+          if (pageId && (!best || score >= best.score)) store.set('quiz:' + pageId, { score, total: qs.length, date: new Date().toISOString() });
+        }
+      }));
+    });
+  }
+
+  /* ---------- flip cards ---------- */
+  function cards(el, list) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('cards');
+    el.innerHTML = list.map(([f, b]) => `<div class="card" tabindex="0" role="button" aria-label="flip card"><div class="inner"><div class="face front">${f}</div><div class="face back">${b}</div></div></div>`).join('');
+    el.querySelectorAll('.card').forEach(c => {
+      const t = () => c.classList.toggle('flipped');
+      c.addEventListener('click', t);
+      c.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); t(); } });
+    });
+  }
+
+  /* ---------- stepper ---------- */
+  function stepper(el, steps, render) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('stepper');
+    let i = 0;
+    el.innerHTML = `<div class="controls"><button class="prev">← Back</button><button class="next primary">Next step →</button><span class="idx"></span></div><div class="stage"></div><div class="extra"></div>`;
+    const stage = el.querySelector('.stage'), idx = el.querySelector('.idx'), extra = el.querySelector('.extra');
+    const draw = () => { stage.innerHTML = steps[i]; idx.textContent = `step ${i+1} / ${steps.length}`; if (render) render(i, extra); };
+    el.querySelector('.prev').onclick = () => { i = Math.max(0, i-1); draw(); };
+    el.querySelector('.next').onclick = () => { i = Math.min(steps.length-1, i+1); draw(); };
+    draw();
+  }
+
+  /* ---------- gantt ---------- */
+  function gantt(el, rows, total, colors) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('gantt');
+    const pal = colors || ['#e8b84a','#5bc8f5','#6bcb77','#f47fa0','#c9a8ff','#ffb86b'];
+    el.innerHTML = rows.map((r, i) => `<div class="row"><span>${esc(r.name)}</span><div class="track">${r.segs.map(s =>
+      `<div class="seg" style="left:${100*s.start/total}%;width:${100*(s.end-s.start)/total}%;background:${pal[i%pal.length]}" title="${s.start}–${s.end}">${(s.end-s.start)/total > .06 ? (s.end-s.start) : ''}</div>`).join('')}</div></div>`).join('') +
+      `<div class="row"><span></span><div style="display:flex;justify-content:space-between;font-size:.75rem;color:var(--muted)"><span>0</span><span>${total}</span></div></div>`;
+  }
+
+  /* ---------- objectives checklist (persisted) ---------- */
+  function objectives(el, items) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('objectives');
+    const saved = (pageId && store.get('obj:' + pageId)) || [];
+    el.innerHTML = items.map((t, i) => `<li><label><input type="checkbox" data-i="${i}" ${saved.includes(i) ? 'checked' : ''}>${t}</label></li>`).join('');
+    el.querySelectorAll('input').forEach(c => c.onchange = () => { const s = [...el.querySelectorAll('input:checked')].map(x => +x.dataset.i); if (pageId) store.set('obj:' + pageId, s); });
+  }
+
+  return { chrome, quiz, cards, stepper, gantt, objectives, esc, store, LESSONS, PIECES, title };
+})();
+
+</script>
+<script>
+OS.chrome('0016-security-and-vmms');
+OS.objectives('obj',['State the CIA goals and the eight Saltzer–Schroeder principles with an OS example each.','Explain how process identity is established and why passwords are salted and hashed.','Contrast ACLs and capabilities using the access matrix, and define DAC, MAC, RBAC and type enforcement.','Describe symmetric ciphers, public-key pairs (secrecy vs authentication) and cryptographic hashes.','Explain certificates, TLS session-key setup, man-in-the-middle, trap-and-emulate and shadow page tables.']);
+OS.cards('prin',[['1. Economy of mechanism','Keep it small and simple; security code is easier to get right when there is less of it.'],['2. Fail-safe defaults','Default to denying access; grant explicitly. If a check is missing, nothing should be permitted.'],['3. Complete mediation','Check every access to every object, every time — the reference monitor ideal.'],['4. Open design','Assume the adversary knows your design; security must not depend on secrecy of the mechanism (only of keys).'],['5. Separation of privilege','Require more than one party or credential for sensitive actions (two keys to launch).'],['6. Least privilege','Give each user or process the minimum privileges needed for the task, no more.'],['7. Least common mechanism','Don\'t share mechanisms between users/processes more than necessary; a shared component is a shared risk.'],['8. Acceptability','If it\'s too painful to use, people will bypass it. Usability is a security property.']]);
+/* access matrix */
+const subs=['alice','bob','httpd'],objs=['/etc/passwd','alice.txt','socket 80'];const M=[[1,1,0],[1,0,0],[1,0,1]];const mx=document.getElementById('mx');
+function mdraw(sel){let h='<tr><th></th>'+objs.map(o=>`<th class="colh">${o}</th>`).join('')+'</tr>';subs.forEach((s,i)=>{h+=`<tr><th class="rowh">${s}</th>`+objs.map((o,j)=>`<td class="${M[i][j]?'y':''} ${sel&&(sel.mode==='row'&&sel.i===i||sel.mode==='col'&&sel.j===j)?'hl':''}" data-i="${i}" data-j="${j}">${M[i][j]?'rw':'—'}</td>`).join('')+'</tr>';});mx.innerHTML=h;mx.querySelectorAll('td').forEach(td=>td.onclick=()=>{const i=+td.dataset.i,j=+td.dataset.j;const mode=(sel&&sel.mode==='col')?'row':'col';mdraw({mode,i,j});document.getElementById('mxmsg').innerHTML=mode==='col'?`<b>ACL view</b>: object <code>${objs[j]}</code> keeps the list {${subs.filter((s,k)=>M[k][j]).join(', ')}}. Easy: "who can access it?" and revocation. Click again for the capability view.`:`<b>Capability view</b>: subject <code>${subs[i]}</code> holds tokens for {${objs.filter((o,k)=>M[i][k]).join(', ')}}. Easy: "what can it access?", delegation, least privilege. Hard: revocation and auditing an object.`;});}
+mdraw(null);
+/* alice bob */
+OS.stepper('ab',['<b>Secrecy:</b> Alice encrypts with <em>Bob\'s public key</em>. Only Bob\'s private key can decrypt — but anyone could have sent it.','<b>Authentication:</b> Alice encrypts with <em>her own private key</em>. Anyone with her public key can decrypt and thus knows it came from Alice — but anyone can read it (this is the idea behind a digital <b>signature</b>, usually applied to a hash of the message).','<b>Both:</b> encrypt with Alice\'s private key, then with Bob\'s public key. Bob decrypts twice: with his private key (secrecy) then Alice\'s public key (authenticity). In practice public-key operations are slow, so real protocols use them once to agree a symmetric session key.']);
+/* crypto tabs */
+document.querySelectorAll('#cryp div').forEach(d=>d.onclick=()=>{document.querySelectorAll('#cryp div').forEach(x=>x.classList.remove('on'));d.classList.add('on');});
+/* hash */
+async function h(){const s=document.getElementById('salt').value,p=document.getElementById('hin').value;try{const data=new TextEncoder().encode(s+p);const buf=await crypto.subtle.digest('SHA-256',data);const hex=[...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');document.getElementById('hout').textContent=`SHA-256(${s?'salt + ':''}"${p}") = ${hex}`;}catch(e){document.getElementById('hout').textContent='Web Crypto unavailable in this context (needs https or localhost).';}}
+document.getElementById('hgo').onclick=h;document.getElementById('hin').oninput=h;document.getElementById('salt').oninput=h;h();
+OS.cards('cards',[['Principal','The identity (usually a user) on whose behalf a process runs; inherited from the parent process, set at login.'],['setuid','File permission that runs a program with its owner\'s identity rather than the invoker\'s; a controlled identity change.'],['Salt','Random per-user value hashed with the password so equal passwords produce different hashes and precomputed tables fail.'],['Reference monitor','The component that checks every access request against policy; complete mediation is its goal.'],['Capability','Unforgeable, OS-held token whose possession grants access; a file descriptor is one.'],['Mandatory access control','System-imposed rules owners cannot relax, as opposed to discretionary control set by owners.'],['Certificate','A CA-signed binding of a name to a public key (X.509); lets you trust keys of parties you\'ve never met.'],['Diffie-Hellman','Key-exchange protocol to agree a shared symmetric key over an open channel; must be authenticated to stop a man-in-the-middle.'],['Trap-and-emulate','VMM technique: run the guest OS de-privileged, trap its privileged instructions, and emulate them.'],['Shadow page table','VMM-maintained table mapping guest virtual addresses straight to machine addresses, avoiding two-level translation.']]);
+OS.quiz('quiz',[
+{q:'Which Saltzer–Schroeder principle says a missing check should deny rather than allow?',o:['economy of mechanism','fail-safe defaults','open design','least common mechanism'],a:1,why:'Fail-safe defaults: default to security, not insecurity — access is granted only when explicitly permitted.'},
+{q:'Why salt password hashes?',o:['to make the hash reversible','so equal passwords hash differently per user','to shorten the stored hash','to speed up login checks'],a:1,why:'A per-user salt defeats precomputed dictionary tables and prevents an attacker from spotting users who share a password.'},
+{q:'In access-matrix terms, an ACL corresponds to storing:',o:['a row with each subject','a column with each object','the whole matrix centrally','only the diagonal entries'],a:1,why:'An ACL lists, per object, which subjects may access it — a column. Capability lists are the rows, kept per subject.'},
+{q:'A UNIX file descriptor is best described as:',o:['an access control list entry','a capability held by the OS','a mandatory access label','a role in an RBAC system'],a:1,why:'Rights are checked at open(); afterwards possession of the descriptor (kept unforgeable in the kernel) suffices for each read().'},
+{q:'Alice wants only Bob to read a message. Which key does she encrypt with?',o:['her own private key','Bob\'s public key','her own public key','Bob\'s private key'],a:1,why:'Only Bob\'s private key can undo encryption with Bob\'s public key. Encrypting with her private key would authenticate, not hide.'},
+{q:'What does a certificate authority provide in TLS?',o:['the symmetric session key','a signed binding of name to public key','the Diffie-Hellman parameters','the client\'s password hash'],a:1,why:'You trust the CA\'s key; the CA\'s signature on the server\'s certificate lets you trust the server\'s public key, defeating impostors.'},
+{q:'Why does a VMM keep shadow page tables?',o:['to hide memory from the guest','to map virtual directly to machine addresses','to let the OS run in kernel mode','to emulate the TLB in hardware'],a:1,why:'Otherwise each access would need OS (virtual→physical) then VMM (physical→machine) translation; the shadow table collapses both into one.'},
+{q:'The "information gap" in virtualization refers to:',o:['lost interrupts under the VMM','the VMM not knowing what the guest OS is doing','missing page-table bits on x86','unencrypted VM images'],a:1,why:'An idle loop or redundant page zeroing looks like real work to the VMM; para-virtualization has the guest OS share such information.'}]);
+</script></body></html>

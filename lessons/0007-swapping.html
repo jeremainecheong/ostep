@@ -1,0 +1,444 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>7 · Swapping & policies — OSTEP course</title><style>
+/* OSTEP course — shared stylesheet. Three pieces, three hues. */
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+:root{
+  --ink:#151b2f; --ink-2:#1e2540; --ink-3:#28304f; --line:#3a4368;
+  --paper:#eef0f7; --muted:#a9b1cf; --faint:#6e779a;
+  --virt:#e8b84a; --conc:#5bc8f5; --pers:#6bcb77; --sec:#f47fa0; --intro:#c9a8ff;
+  --ok:#6bcb77; --bad:#ff6b6b;
+  --accent:var(--virt);
+  --radius:6px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--ink);color:var(--paper);font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:17px;line-height:1.6}
+a{color:var(--accent)}
+code,pre,kbd,.mono{font-family:'IBM Plex Mono',ui-monospace,monospace}
+code{background:var(--ink-3);padding:1px 5px;border-radius:4px;font-size:.9em}
+pre{background:#0f1424;border:1px solid var(--line);border-left:4px solid var(--accent);padding:14px 16px;overflow:auto;border-radius:var(--radius);font-size:.86em;line-height:1.5}
+pre code{background:none;padding:0;font-size:inherit}
+h1,h2,h3,h4{font-family:'Fraunces',Georgia,serif;font-weight:700;line-height:1.15;margin:0 0 .4em}
+h1{font-size:2.6rem;letter-spacing:-.01em}
+h2{font-size:1.9rem;margin-top:2.6rem;padding-top:1.2rem;border-top:1px solid var(--line)}
+h3{font-size:1.3rem;margin-top:1.8rem;color:var(--accent)}
+h4{font-size:1.05rem;margin-top:1.2rem}
+p,li{max-width:72ch}
+.wrap{max-width:1100px;margin:0 auto;padding:0 28px 96px}
+.hero{padding:44px 0 16px}
+.hero .chapters{color:var(--muted);font-size:.95rem;margin-bottom:6px}
+.lede{font-size:1.2rem;color:var(--muted);max-width:66ch}
+.piece-virt{--accent:var(--virt)} .piece-conc{--accent:var(--conc)} .piece-pers{--accent:var(--pers)} .piece-sec{--accent:var(--sec)} .piece-intro{--accent:var(--intro)}
+.fig{background:var(--ink-2);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;margin:22px 0}
+.fig figcaption,.cap{color:var(--muted);font-size:.9rem;margin-top:10px}
+.fig svg{max-width:100%;height:auto;display:block}
+svg text{font-family:'IBM Plex Sans',sans-serif}
+svg .mono{font-family:'IBM Plex Mono',monospace}
+.crux{border:1px solid var(--accent);border-radius:var(--radius);padding:14px 18px;margin:22px 0;background:color-mix(in srgb,var(--accent) 8%,transparent)}
+.crux b{color:var(--accent)}
+.tip{border-left:4px solid var(--muted);padding:6px 16px;margin:18px 0;color:var(--muted)}
+.tip b{color:var(--paper)}
+table{border-collapse:collapse;width:100%;margin:16px 0;font-size:.95rem}
+th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{color:var(--muted);font-weight:500}
+td.mono,th.mono{font-family:'IBM Plex Mono',monospace}
+button,.btn{font:inherit;font-size:.9rem;background:var(--ink-3);color:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:7px 13px;cursor:pointer}
+button:hover{border-color:var(--accent)}
+button.primary{background:var(--accent);color:#111;border-color:var(--accent);font-weight:600}
+button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+input[type=range]{accent-color:var(--accent)}
+input[type=text],input[type=number],select{font:inherit;background:#0f1424;color:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:6px 10px}
+.controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:10px 0}
+.controls label{font-size:.9rem;color:var(--muted)}
+details{border:1px solid var(--line);border-radius:var(--radius);margin:10px 0;background:var(--ink-2)}
+summary{cursor:pointer;padding:12px 16px;font-weight:600;list-style:none}
+summary::before{content:"+";display:inline-block;width:1.2em;color:var(--accent)}
+details[open] summary::before{content:"–"}
+details>div{padding:0 16px 14px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;margin:16px 0}
+.card{perspective:900px;min-height:140px;cursor:pointer}
+.card .inner{position:relative;width:100%;height:100%;min-height:140px;transition:transform .45s;transform-style:preserve-3d}
+.card.flipped .inner{transform:rotateY(180deg)}
+.card .face{position:absolute;inset:0;padding:14px;border-radius:var(--radius);border:1px solid var(--line);background:var(--ink-2);backface-visibility:hidden;display:flex;align-items:center;justify-content:center;text-align:center;font-size:.95rem}
+.card .back{transform:rotateY(180deg);background:var(--ink-3);border-color:var(--accent);font-size:.88rem;line-height:1.45}
+.card .front{font-weight:600}
+@media (prefers-reduced-motion:reduce){.card .inner{transition:none}}
+.quiz .q{border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin:12px 0;background:var(--ink-2)}
+.quiz .q p{margin:0 0 10px;font-weight:600}
+.quiz .opts{display:grid;gap:8px}
+.quiz .opt{text-align:left;background:var(--ink);width:100%}
+.quiz .opt.right{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 15%,var(--ink))}
+.quiz .opt.wrong{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 15%,var(--ink))}
+.quiz .why{margin-top:10px;color:var(--muted);font-size:.93rem;display:none}
+.quiz .q.done .why{display:block}
+.quiz .score{margin-top:12px;font-weight:600}
+.stepper .stage{min-height:60px;background:#0f1424;border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin:10px 0}
+.stepper .idx{color:var(--muted);font-size:.85rem}
+.gantt{display:grid;gap:6px;margin:10px 0}
+.gantt .row{display:grid;grid-template-columns:60px 1fr;align-items:center;gap:8px;font-size:.85rem}
+.gantt .track{position:relative;height:26px;background:#0f1424;border-radius:4px;overflow:hidden}
+.gantt .seg{position:absolute;top:0;bottom:0;display:flex;align-items:center;justify-content:center;font-size:.75rem;color:#111;font-weight:600;border-right:1px solid rgba(0,0,0,.3)}
+.cells{display:grid;gap:4px;margin:10px 0}
+.cell{background:#0f1424;border:1px solid var(--line);border-radius:4px;padding:6px;text-align:center;font-family:'IBM Plex Mono',monospace;font-size:.8rem;min-height:36px;display:flex;align-items:center;justify-content:center}
+.cell.hit{background:color-mix(in srgb,var(--ok) 35%,#0f1424);border-color:var(--ok)}
+.cell.miss{background:color-mix(in srgb,var(--bad) 35%,#0f1424);border-color:var(--bad)}
+.cell.active{outline:2px solid var(--accent)}
+.cell.free{opacity:.45}
+.hl{background:color-mix(in srgb,var(--accent) 30%,transparent);padding:1px 5px;border-radius:3px}
+.k{color:var(--accent);font-weight:600}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media (max-width:760px){.two{grid-template-columns:1fr}.topbar{gap:10px}h1{font-size:2rem}}
+.nav-bottom{display:flex;justify-content:space-between;gap:16px;margin-top:56px;padding-top:20px;border-top:1px solid var(--line)}
+.nav-bottom a{text-decoration:none;padding:12px 16px;border:1px solid var(--line);border-radius:var(--radius);color:var(--paper)}
+.source{background:var(--ink-2);border-radius:var(--radius);padding:14px 18px;margin:22px 0;font-size:.95rem}
+.source b{color:var(--accent)}
+.objectives li{list-style:none;margin:6px 0}
+.objectives input{margin-right:8px;accent-color:var(--accent)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.85rem;color:var(--muted)}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:5px;vertical-align:-2px}
+.tag{display:inline-block;font-size:.75rem;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted);margin-right:6px}
+.log{font-family:'IBM Plex Mono',monospace;font-size:.82rem;background:#0f1424;border:1px solid var(--line);border-radius:var(--radius);padding:10px 12px;max-height:220px;overflow:auto;white-space:pre-wrap}
+@media print{body{background:#fff;color:#111}.topbar,.nav-bottom,button{display:none}.fig,.crux,details,.source{border-color:#bbb;background:#fff}pre{background:#f5f5f5;color:#111}}
+
+/* ---------- site chrome: sticky header + directory drawer ---------- */
+.topbar{position:sticky;top:0;z-index:30;display:flex;gap:14px;align-items:center;padding:10px 16px;background:color-mix(in srgb,var(--ink) 92%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);font-size:.9rem}
+.topbar .menu{display:flex;align-items:center;gap:8px;padding:8px 12px;font-size:1rem}
+.topbar .menu span{font-size:.85rem}
+.topbar .brand{color:var(--paper);text-decoration:none;font-weight:600;display:flex;align-items:center;gap:8px}
+.topbar .dot{width:10px;height:10px;border-radius:50%;background:var(--accent);display:inline-block}
+.topbar .links{display:flex;gap:16px;margin-left:8px}
+.topbar .links a{color:var(--muted);text-decoration:none}
+.topbar .links a:hover{color:var(--paper)}
+.topbar .where{margin-left:auto;color:var(--faint);font-variant-numeric:tabular-nums}
+.drawer{position:fixed;top:0;left:0;bottom:0;width:min(340px,88vw);background:var(--ink-2);border-right:1px solid var(--line);z-index:50;transform:translateX(-102%);transition:transform .25s;overflow-y:auto;padding:0 0 24px;box-shadow:0 0 40px rgba(0,0,0,.5)}
+.drawer-open .drawer{transform:none}
+.scrim{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:40;opacity:0;pointer-events:none;transition:opacity .2s}
+.drawer-open .scrim{opacity:1;pointer-events:auto}
+.drawer .dhead{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--ink-2)}
+.drawer .close,.notes-sheet .close{font-size:1.3rem;line-height:1;padding:4px 10px}
+.drawer .dgroup{padding:8px 0 4px}
+.drawer .dname{padding:8px 16px 4px;color:var(--accent);font-family:'Fraunces',serif;font-weight:700}
+.drawer .ditem{display:flex;gap:10px;align-items:center;padding:9px 16px;color:var(--paper);text-decoration:none;border-left:3px solid transparent;font-size:.92rem}
+.drawer .ditem:hover{background:var(--ink-3)}
+.drawer .ditem.cur{border-left-color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
+.drawer .ditem .n{color:var(--faint);min-width:1.4em;font-variant-numeric:tabular-nums}
+.drawer .ditem .t{flex:1;line-height:1.25}
+.drawer .ditem .t small{display:block;color:var(--faint);font-size:.75rem}
+.drawer .badges{display:flex;gap:6px;align-items:center}
+.drawer .badges i{font-style:normal;color:var(--accent)}
+.drawer .badges em{font-style:normal;font-size:.75rem;padding:1px 6px;border-radius:999px;background:var(--ink-3);color:var(--muted);font-variant-numeric:tabular-nums}
+.drawer .dfoot{padding:16px;color:var(--faint);font-size:.8rem}
+/* ---------- notes: floating button + bottom sheet ---------- */
+.notes-fab{position:fixed;right:16px;bottom:16px;z-index:35;display:flex;gap:8px;align-items:center;padding:12px 16px;border-radius:999px;background:var(--accent);color:#111;border:none;font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,.4)}
+.notes-sheet{position:fixed;left:0;right:0;bottom:0;z-index:45;background:var(--ink-2);border-top:1px solid var(--line);border-radius:14px 14px 0 0;transform:translateY(105%);transition:transform .25s;box-shadow:0 -10px 40px rgba(0,0,0,.5);max-width:900px;margin:0 auto;padding-bottom:env(safe-area-inset-bottom)}
+.notes-open .notes-sheet{transform:none}
+.notes-open .notes-fab{display:none}
+.notes-sheet .nhead{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line)}
+.notes-sheet .nhead b{flex:1;font-size:.95rem}
+.notes-sheet .nstatus{color:var(--faint);font-size:.8rem}
+.notes-sheet textarea{display:block;width:100%;min-height:36vh;max-height:60vh;resize:vertical;border:none;background:#0f1424;color:var(--paper);font:inherit;font-size:1rem;line-height:1.5;padding:14px 16px;outline:none}
+.notes-sheet .nfoot{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;font-size:.85rem;color:var(--muted)}
+/* ---------- wide widgets scroll sideways instead of breaking the page ---------- */
+.tw{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:16px 0}
+.tw table{margin:0;min-width:520px}
+.fig{overflow-x:auto}
+@media (prefers-reduced-motion:reduce){.drawer,.notes-sheet,.scrim{transition:none}}
+/* ---------- phones ---------- */
+@media (max-width:760px){
+  body{font-size:16px}
+  .wrap{padding:0 16px 110px}
+  h1{font-size:1.85rem} h2{font-size:1.45rem;margin-top:2rem} h3{font-size:1.15rem}
+  .lede{font-size:1.05rem}
+  .topbar{padding:8px 12px;gap:10px}
+  .topbar .links{display:none}
+  .topbar .menu span{display:none}
+  .topbar .menu{padding:8px 11px}
+  .fig{padding:12px 12px;margin:16px -4px;border-radius:8px}
+  .crux,.source{padding:12px 14px}
+  pre{font-size:.8em;padding:12px 12px}
+  button,.btn{padding:10px 14px;font-size:.92rem}
+  .controls{gap:8px}
+  .controls label{display:flex;align-items:center;gap:6px}
+  input[type=number]{max-width:96px}
+  .cards{grid-template-columns:1fr 1fr;gap:8px}
+  .card,.card .inner{min-height:120px}
+  .card .face{font-size:.88rem;padding:10px}
+  .cells{min-width:420px}
+  .quiz .opt{padding:12px 12px;line-height:1.35}
+  .nav-bottom{flex-direction:column}
+  .nav-bottom a{text-align:center}
+  .notes-fab span{display:none}
+  .notes-fab{padding:14px;right:12px;bottom:12px}
+  .notes-sheet textarea{min-height:44vh}
+  .stepper .stage{padding:12px}
+  .gantt .row{grid-template-columns:44px 1fr;font-size:.75rem}
+  /* lesson-specific grids collapse */
+  .lde,.il,.two,.cry,.flash,.dl,.fdt,.how,.cards.wide,.vm{grid-template-columns:1fr}
+  .map{grid-template-columns:1fr}
+  .net{grid-template-columns:1fr}.net .arrow{padding:0;transform:rotate(90deg)}
+  .phil{grid-template-columns:repeat(2,1fr)}
+  .jobs{max-width:100%}
+  .trace{min-width:620px}.tl{min-width:720px}.disk{min-width:560px}
+}
+@media (max-width:420px){.cards{grid-template-columns:1fr}}
+
+</style>
+<style>.trace{display:grid;grid-template-columns:auto repeat(11,1fr);gap:3px;font-family:'IBM Plex Mono',monospace;font-size:.8rem;margin:10px 0}.trace div{background:#0f1424;border:1px solid var(--line);border-radius:3px;padding:4px;text-align:center;min-height:26px}.trace .lab{background:none;border:none;text-align:right;color:var(--muted)}.trace .h{border-color:var(--ok);color:var(--ok)}.trace .m{border-color:var(--bad);color:var(--bad)}.plot text{font-size:11px;fill:#a9b1cf}</style></head>
+<body class="piece-virt"><div class="wrap">
+<header class="hero"><div class="chapters">OSTEP chapters 21–23 · Beyond Physical Memory: Mechanisms · Policies · Complete VM Systems</div>
+<h1>Beyond physical memory: swapping, and deciding what to evict</h1>
+<p class="lede">The last piece of the memory illusion: address spaces bigger than RAM. A present bit and a page-fault handler let the OS park pages on disk transparently. Then the policy question that dominated a decade of research: when memory is full, which page goes? The answer is "approximately LRU", and understanding why takes a few plots.</p></header>
+<div class="source"><b>Primary sources:</b> <a href="https://pages.cs.wisc.edu/~remzi/OSTEP/vm-beyondphys.pdf">Ch 21</a>, <a href="https://pages.cs.wisc.edu/~remzi/OSTEP/vm-beyondphys-policy.pdf">Ch 22</a>, <a href="https://pages.cs.wisc.edu/~remzi/OSTEP/vm-complete.pdf">Ch 23</a>. Homework: <code>paging-policy.py</code>. The classic paper behind ch 23 is Levy &amp; Lipman on VAX/VMS (short, worth reading).</div>
+<h2>What you'll be able to do</h2><ul id="obj"></ul>
+
+<h2>Mechanisms (chapter 21)</h2>
+<div class="crux"><b>Crux: how to go beyond physical memory.</b> Use a larger, slower device (disk/SSD) to transparently provide the illusion of a large virtual address space. Why? Convenience: programmers needn't manage <em>memory overlays</em> by hand, and many large processes can coexist.</div>
+<ul><li><b>Swap space</b>: a disk region the OS reads/writes in page-sized units, remembering a <em>disk address</em> for each swapped page. (Code pages can be dropped and re-read from the executable on disk instead.)</li>
+<li><b>Present bit</b> in the PTE: 1 = in memory; 0 = on disk. An access to a non-present page is a <b>page fault</b>.</li>
+<li><b>Page-fault handler</b> (always OS software, even with a hardware-managed TLB): find the disk address in the PTE, issue the disk read, block the process, and when it completes update the PTE (present = 1, PFN) and retry the instruction — which may now TLB-miss, then hit.</li>
+<li><b>Replacement</b>: if memory is full, evict a page first (write it out if dirty). In practice a background <b>swap daemon</b> keeps free frames between a <b>low watermark</b> and a <b>high watermark</b>, evicting in <b>clusters</b> for disk efficiency.</li></ul>
+<div class="fig"><h4>Page-fault control flow, hardware and software</h4><div id="pf"></div></div>
+<div class="tip"><b>Why not let hardware handle page faults?</b> Disk I/O is slow (milliseconds) and the OS must block the process and run something else anyway; the extra software overhead is negligible. So hardware just traps.</div>
+
+<h2>Policies (chapter 22)</h2>
+<div class="crux"><b>Crux: how to decide which page to evict.</b> Memory is a cache for virtual pages; minimize misses. Average memory access time:</div>
+<p class="mono">AMAT = T<sub>M</sub> + (P<sub>Miss</sub> × T<sub>D</sub>)</p>
+<div class="controls"><label>hit rate %: <input type="range" id="hr" min="0" max="100" value="90"></label><span id="amat" class="cap"></span></div>
+<p>With memory ≈ 100 ns and disk ≈ 10 ms, a 90% hit rate gives ~1 ms per access — 10,000× slower than memory. Even 99.9% is ~10 µs. The disk cost dominates unless misses are very rare.</p>
+
+<h3>Simulator: the book's reference stream, cache of 3 pages</h3>
+<div class="fig"><div class="controls"><button class="primary" data-pol="OPT">Optimal (Belady's MIN)</button><button data-pol="FIFO">FIFO</button><button data-pol="RAND">Random</button><button data-pol="LRU">LRU</button><button data-pol="CLOCK">Clock</button><label>cache size <input type="number" id="csz" value="3" min="1" max="5" style="width:60px"></label></div><div id="trace"></div><div class="cap" id="tres"></div></div>
+<ul><li><b>Optimal</b>: evict the page used <em>furthest in the future</em>. Not buildable (needs the future), but the yardstick: "80% vs OPT's 82%" is meaningful, "80%" alone is not. On the stream above: 6 hits, 5 misses; 3 of the misses are <em>compulsory</em> (first touch, "cold-start") so hit rate excluding them is 85.7%.</li>
+<li><b>FIFO</b>: evict the oldest. Simple, blind to popularity: 4/11 hits here. Suffers <b>Belady's anomaly</b> — a bigger cache can get <em>worse</em> (the book's stream 1,2,3,4,1,2,5,1,2,3,4,5 with 3 vs 4 frames). LRU has the <em>stack property</em> (a cache of N+1 contains the cache of N) so it never does.</li>
+<li><b>Random</b>: sometimes as good as OPT, sometimes awful; no pathological cases.</li>
+<li><b>LRU</b> (and LFU): use <em>history</em> — recency (or frequency) predicts the future via locality. Matches OPT on the stream above.</li></ul>
+
+<h3>Workloads: run them live</h3>
+<p>The book compares policies on 10,000 references to 100 pages across cache sizes. This reproduces the experiments in your browser (5,000 references). Watch how the curves change shape.</p>
+<div class="fig"><div class="controls"><button class="primary" data-wl="none">No locality</button><button data-wl="8020">80-20 (hot/cold)</button><button data-wl="loop">Looping sequential (50 pages)</button><span class="cap" id="wlmsg"></span></div><svg class="plot" id="plot" viewBox="0 0 640 300"></svg><div class="legend"><span><i style="background:#eef0f7"></i>OPT</span><span><i style="background:#e8b84a"></i>LRU</span><span><i style="background:#5bc8f5"></i>FIFO</span><span><i style="background:#f47fa0"></i>RAND</span><span><i style="background:#6bcb77"></i>Clock</span></div></div>
+<ul><li><b>No locality</b>: nothing helps; hit rate = cache size / 100 for every policy except OPT.</li><li><b>80-20</b>: LRU beats FIFO/random because it holds the hot 20% — the gain is modest, but each miss is so expensive that it matters.</li><li><b>Looping sequential</b>: LRU and FIFO score <b>zero</b> with 49 frames for a 50-page loop — the worst case. Random has no such cliff. This motivates <b>scan-resistant</b> algorithms (ARC, Linux's 2Q).</li></ul>
+
+<h3>Implementing LRU: approximate it</h3>
+<div class="crux"><b>Crux: how to implement an LRU replacement policy</b> without updating a data structure on every memory access? Perfect LRU is too expensive; approximate it with the hardware <b>use bit</b> (reference bit), set by hardware on any access to the page (first built in the Atlas one-level store).</div>
+<p>The <b>clock algorithm</b>: pages on a circular list with a clock hand. On replacement, look at the page under the hand: if its use bit is 1, clear it and advance; if 0, evict it. Try <em>Clock</em> in the simulator above. Prefer evicting <b>clean</b> pages (dirty ones must be written back first) by also inspecting the <b>dirty bit</b>. Other policies: <b>demand paging</b> vs <b>prefetching</b> (bring in page P+1 when P faults), <b>clustering</b> of writes. And <b>thrashing</b>: when demand exceeds memory, early systems used <b>admission control</b> (run fewer processes); Linux runs an <b>out-of-memory killer</b>. Or, as the book admits, buy more memory — though fast SSDs have revived replacement research.</p>
+
+<h2>Complete systems: VAX/VMS and Linux (chapter 23)</h2>
+<div class="two"><div class="fig"><h4>VAX/VMS (1970s, still instructive)</h4><ul><li>32-bit address space, tiny 512-byte pages (→ big linear tables). Fix: split into <b>P0</b> (code + heap) and <b>P1</b> (stack) with a base/bounds pair each, and put the page tables themselves in <b>kernel virtual memory</b> so they can be swapped.</li><li><b>Page 0 is invalid</b> — that's why NULL-pointer dereferences crash instead of silently reading memory.</li><li>Kernel mapped into every address space (protected by mode bits) so kernel code can touch user buffers easily.</li><li><b>Segmented FIFO</b>: each process has a resident-set-size limit and a per-process FIFO; evicted pages go to global <b>clean-page</b> and <b>dirty-page second-chance lists</b>, from which a re-fault can reclaim them cheaply. Big lists ≈ LRU. Plus write <b>clustering</b>.</li><li>Laziness: <b>demand zeroing</b> (map a zero page only when touched) and <b>copy-on-write</b> (share pages read-only, copy on first write — makes <code>fork()</code> cheap).</li></ul></div>
+<div class="fig"><h4>Linux (32-bit x86 view)</h4><ul><li>User portion 0–3 GB, kernel from <code>0xC0000000</code>. <b>Kernel logical</b> addresses (via <code>kmalloc</code>) map contiguously to physical memory (logical − 0xC0000000), can't be swapped, and give physically contiguous buffers for DMA; <b>kernel virtual</b> (<code>vmalloc</code>) need not be contiguous. x86-64 uses four-level (now up to five-level) tables with the top 16 bits unused.</li><li><b>Huge pages</b> (2 MB, some systems 1 GB): far more TLB coverage, shorter table walks; first via <code>mmap</code>/<code>shmget</code> flags, now <b>transparent huge pages</b> automatically. Cost: internal fragmentation, slower zeroing.</li><li><b>Page cache</b> unifies file, anonymous and memory-mapped pages; dirty pages flushed by background <code>pdflush</code> threads. Replacement is a modified <b>2Q</b>: an <em>inactive</em> and an <em>active</em> list (active ≈ ⅔), first reference goes inactive, a second promotes — scan-resistant, so a big sequential read can't flush the working set.</li><li>Security hardening: <b>NX</b> bit against stack-injected code; <b>ASLR</b> (randomize stack/heap/code) against return-oriented programming; <b>kernel page-table isolation (KPTI)</b> after Meltdown/Spectre — unmap most of the kernel from user page tables, at some context-switch cost.</li></ul></div></div>
+
+<h2>Flash cards</h2><div id="cards"></div>
+<h2>Retrieval practice</h2><div id="quiz"></div>
+<p class="tip">Want to see Belady's anomaly traced step by step, or a clock-with-dirty-bit variant simulated? Ask me in the chat.</p>
+</div>
+<script>
+/* OSTEP course — shared components. Every page loads this file (inlined by build.py). */
+window.OS = (function () {
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+  /* ---------- persistent storage (localStorage on a real site; in-memory fallback in sandboxes) ---------- */
+  const mem = {};
+  const store = {
+    get(k) { try { const v = localStorage.getItem('ostep:' + k); return v === null ? (mem[k] ?? null) : JSON.parse(v); } catch (e) { return mem[k] ?? null; } },
+    set(k, v) { mem[k] = v; try { localStorage.setItem('ostep:' + k, JSON.stringify(v)); } catch (e) {} },
+    del(k) { delete mem[k]; try { localStorage.removeItem('ostep:' + k); } catch (e) {} },
+    keys(prefix) { const out = new Set(Object.keys(mem).filter(k => k.startsWith(prefix))); try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith('ostep:' + prefix)) out.add(k.slice(6)); } } catch (e) {} return [...out]; },
+    available() { try { localStorage.setItem('ostep:test', '1'); localStorage.removeItem('ostep:test'); return true; } catch (e) { return false; } }
+  };
+
+  /* ---------- course structure ---------- */
+  const PIECES = [
+    ['intro', 'Introduction', [['0001-three-easy-pieces', 'Three easy pieces', 'ch 1–2']]],
+    ['virt', 'Virtualization', [
+      ['0002-processes', 'Processes & the process API', 'ch 4–5'],
+      ['0003-limited-direct-execution', 'Limited direct execution', 'ch 6'],
+      ['0004-scheduling', 'Scheduling', 'ch 7–10'],
+      ['0005-address-spaces', 'Address spaces & segments', 'ch 13–16'],
+      ['0006-paging-and-tlbs', 'Paging & TLBs', 'ch 17–20'],
+      ['0007-swapping', 'Swapping & policies', 'ch 21–23']]],
+    ['conc', 'Concurrency', [
+      ['0008-threads-and-locks', 'Threads & locks', 'ch 26–28'],
+      ['0009-cvs-and-semaphores', 'CVs & semaphores', 'ch 29–31'],
+      ['0010-bugs-and-events', 'Bugs & events', 'ch 32–33']]],
+    ['pers', 'Persistence', [
+      ['0011-devices-disks-raid', 'Devices, disks, RAID', 'ch 36–38'],
+      ['0012-files-and-vsfs', 'Files & a simple FS', 'ch 39–40'],
+      ['0013-ffs-journaling-lfs', 'FFS, journaling, LFS', 'ch 41–43'],
+      ['0014-ssd-and-integrity', 'SSDs & integrity', 'ch 44–45'],
+      ['0015-distributed-nfs-afs', 'Distributed FS', 'ch 48–50']]],
+    ['sec', 'Security', [['0016-security-and-vmms', 'Security & VMMs', 'ch 53–57, App B']]]
+  ];
+  const LESSONS = PIECES.flatMap(p => p[2].map(l => [l[0], l[1], p[0], l[2]]));
+  const title = id => (LESSONS.find(l => l[0] === id) || [])[1] || id;
+  let pageId = null, root = '../';
+
+  /* ---------- chrome: sticky header, slide-out directory, notes drawer, prev/next ---------- */
+  function chrome(id, rootPath) {
+    pageId = id; root = rootPath === undefined ? '../' : rootPath;
+    const i = LESSONS.findIndex(l => l[0] === id);
+    const isLesson = i >= 0;
+    const top = document.createElement('header'); top.className = 'topbar';
+    top.innerHTML = `<button class="menu" aria-label="Open directory" aria-expanded="false">☰<span>Directory</span></button>
+      <a class="brand" href="${root}index.html"><span class="dot"></span>OSTEP course</a>
+      <nav class="links"><a href="${root}reference/glossary.html">Glossary</a><a href="${root}reference/cheatsheets.html">Cheat sheets</a><a href="${root}notes.html">My notes</a></nav>
+      ${isLesson ? `<span class="where">${i+1} / ${LESSONS.length}</span>` : ''}`;
+    document.body.prepend(top);
+    // directory drawer
+    const drawer = document.createElement('aside'); drawer.className = 'drawer'; drawer.setAttribute('aria-label', 'Course directory');
+    const scores = Object.fromEntries(LESSONS.map(l => [l[0], store.get('quiz:' + l[0])]));
+    const notes = new Set(store.keys('notes:').map(k => k.slice(6)).filter(k => (store.get('notes:' + k) || {}).text));
+    drawer.innerHTML = `<div class="dhead"><b>Directory</b><button class="close" aria-label="Close">×</button></div>
+      <a class="ditem ${id === 'index' ? 'cur' : ''}" href="${root}index.html">Course hub</a>
+      ${PIECES.map(([cls, name, ls]) => `<div class="dgroup piece-${cls}"><div class="dname">${name}</div>${ls.map(l => {
+        const n = LESSONS.findIndex(x => x[0] === l[0]) + 1, s = scores[l[0]];
+        return `<a class="ditem ${l[0] === id ? 'cur' : ''}" href="${root}lessons/${l[0]}.html"><span class="n">${n}</span><span class="t">${l[1]}<small>${l[3]}</small></span><span class="badges">${notes.has(l[0]) ? '<i title="you have notes">✎</i>' : ''}${s ? `<em title="best quiz score">${s.score}/${s.total}</em>` : ''}</span></a>`; }).join('')}</div>`).join('')}
+      <div class="dgroup piece-intro"><div class="dname">Reference</div>
+        <a class="ditem ${id === 'glossary' ? 'cur' : ''}" href="${root}reference/glossary.html"><span class="t">Glossary</span></a>
+        <a class="ditem ${id === 'cheatsheets' ? 'cur' : ''}" href="${root}reference/cheatsheets.html"><span class="t">Cheat sheets</span></a>
+        <a class="ditem ${id === 'notes' ? 'cur' : ''}" href="${root}notes.html"><span class="t">My notes &amp; progress</span></a></div>
+      <div class="dfoot">${store.available() ? 'Notes and scores are saved in this browser.' : 'Notes and scores are kept for this session only (storage unavailable here).'}</div>`;
+    document.body.append(drawer);
+    const scrim = document.createElement('div'); scrim.className = 'scrim'; document.body.append(scrim);
+    const open = o => { document.body.classList.toggle('drawer-open', o); top.querySelector('.menu').setAttribute('aria-expanded', o); if (o) drawer.querySelector('.cur, .ditem')?.focus(); };
+    top.querySelector('.menu').onclick = () => open(!document.body.classList.contains('drawer-open'));
+    drawer.querySelector('.close').onclick = () => open(false); scrim.onclick = () => open(false);
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') { open(false); notesOpen(false); } });
+    // prev/next for lessons
+    if (isLesson) {
+      const nav = document.createElement('div'); nav.className = 'nav-bottom';
+      const prev = LESSONS[i-1], next = LESSONS[i+1];
+      nav.innerHTML = (prev ? `<a href="${prev[0]}.html">← ${i}. ${prev[1]}</a>` : '<span></span>') +
+                      (next ? `<a href="${next[0]}.html">${i+2}. ${next[1]} →</a>` : `<a href="${root}index.html">Back to course hub →</a>`);
+      document.querySelector('.wrap').append(nav);
+    }
+    // wrap tables so they scroll sideways on phones
+    document.querySelectorAll('.wrap table').forEach(t => { if (t.parentElement.classList.contains('tw')) return; const w = document.createElement('div'); w.className = 'tw'; t.replaceWith(w); w.append(t); });
+    // notes drawer (every page except the notes page itself)
+    if (id !== 'notes') notesUI(id, isLesson ? `${i+1}. ${LESSONS[i][1]}` : (document.title.split(' — ')[0]));
+  }
+
+  /* ---------- notes: floating button + bottom sheet, autosaved ---------- */
+  let notesOpen = () => {};
+  function notesUI(id, label) {
+    const btn = document.createElement('button'); btn.className = 'notes-fab'; btn.innerHTML = '✎ <span>Notes</span>'; btn.setAttribute('aria-label', 'Open notes');
+    const sheet = document.createElement('section'); sheet.className = 'notes-sheet'; sheet.setAttribute('aria-label', 'Notes for this page');
+    const saved = store.get('notes:' + id) || {};
+    sheet.innerHTML = `<div class="nhead"><b>Notes · ${esc(label)}</b><span class="nstatus"></span><button class="close" aria-label="Close notes">×</button></div>
+      <textarea placeholder="Your notes for this page. Markdown is fine. Saved automatically.">${esc(saved.text || '')}</textarea>
+      <div class="nfoot"><span class="ncount"></span><a href="${root}notes.html">All notes &amp; export →</a></div>`;
+    document.body.append(btn, sheet);
+    const ta = sheet.querySelector('textarea'), status = sheet.querySelector('.nstatus'), count = sheet.querySelector('.ncount');
+    const upd = () => { count.textContent = ta.value.trim() ? ta.value.trim().split(/\s+/).length + ' words' : ''; };
+    let t; ta.addEventListener('input', () => { status.textContent = 'saving…'; clearTimeout(t); t = setTimeout(() => { store.set('notes:' + id, { text: ta.value, title: label, updated: new Date().toISOString() }); status.textContent = 'saved'; upd(); }, 400); });
+    upd();
+    notesOpen = o => { document.body.classList.toggle('notes-open', o); if (o) ta.focus(); };
+    btn.onclick = () => notesOpen(!document.body.classList.contains('notes-open'));
+    sheet.querySelector('.close').onclick = () => notesOpen(false);
+  }
+
+  /* ---------- quiz: immediate feedback; best score persisted ---------- */
+  function quiz(el, qs) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('quiz');
+    let score = 0, answered = 0;
+    const best = pageId ? store.get('quiz:' + pageId) : null;
+    el.innerHTML = qs.map((q, i) => `<div class="q" data-i="${i}"><p>${i+1}. ${q.q}</p>
+      <div class="opts">${q.o.map((o, j) => `<button class="opt" data-j="${j}">${esc(o)}</button>`).join('')}</div>
+      <div class="why">${q.why}</div></div>`).join('') + `<div class="score">${best ? `Best so far: ${best.score}/${best.total} (${new Date(best.date).toLocaleDateString()})` : ''}</div>`;
+    el.querySelectorAll('.q').forEach(qd => {
+      const q = qs[+qd.dataset.i];
+      qd.querySelectorAll('.opt').forEach(b => b.addEventListener('click', () => {
+        if (qd.classList.contains('done')) return;
+        qd.classList.add('done'); answered++;
+        const j = +b.dataset.j;
+        if (j === q.a) { b.classList.add('right'); score++; }
+        else { b.classList.add('wrong'); qd.querySelectorAll('.opt')[q.a].classList.add('right'); }
+        const s = el.querySelector('.score');
+        s.textContent = `${score} / ${answered} correct`;
+        if (answered === qs.length) {
+          s.textContent += score === qs.length ? ' — all of them. Retry from memory in two days.' : ' — reread the sections you missed, then retry.';
+          if (pageId && (!best || score >= best.score)) store.set('quiz:' + pageId, { score, total: qs.length, date: new Date().toISOString() });
+        }
+      }));
+    });
+  }
+
+  /* ---------- flip cards ---------- */
+  function cards(el, list) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('cards');
+    el.innerHTML = list.map(([f, b]) => `<div class="card" tabindex="0" role="button" aria-label="flip card"><div class="inner"><div class="face front">${f}</div><div class="face back">${b}</div></div></div>`).join('');
+    el.querySelectorAll('.card').forEach(c => {
+      const t = () => c.classList.toggle('flipped');
+      c.addEventListener('click', t);
+      c.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); t(); } });
+    });
+  }
+
+  /* ---------- stepper ---------- */
+  function stepper(el, steps, render) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('stepper');
+    let i = 0;
+    el.innerHTML = `<div class="controls"><button class="prev">← Back</button><button class="next primary">Next step →</button><span class="idx"></span></div><div class="stage"></div><div class="extra"></div>`;
+    const stage = el.querySelector('.stage'), idx = el.querySelector('.idx'), extra = el.querySelector('.extra');
+    const draw = () => { stage.innerHTML = steps[i]; idx.textContent = `step ${i+1} / ${steps.length}`; if (render) render(i, extra); };
+    el.querySelector('.prev').onclick = () => { i = Math.max(0, i-1); draw(); };
+    el.querySelector('.next').onclick = () => { i = Math.min(steps.length-1, i+1); draw(); };
+    draw();
+  }
+
+  /* ---------- gantt ---------- */
+  function gantt(el, rows, total, colors) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('gantt');
+    const pal = colors || ['#e8b84a','#5bc8f5','#6bcb77','#f47fa0','#c9a8ff','#ffb86b'];
+    el.innerHTML = rows.map((r, i) => `<div class="row"><span>${esc(r.name)}</span><div class="track">${r.segs.map(s =>
+      `<div class="seg" style="left:${100*s.start/total}%;width:${100*(s.end-s.start)/total}%;background:${pal[i%pal.length]}" title="${s.start}–${s.end}">${(s.end-s.start)/total > .06 ? (s.end-s.start) : ''}</div>`).join('')}</div></div>`).join('') +
+      `<div class="row"><span></span><div style="display:flex;justify-content:space-between;font-size:.75rem;color:var(--muted)"><span>0</span><span>${total}</span></div></div>`;
+  }
+
+  /* ---------- objectives checklist (persisted) ---------- */
+  function objectives(el, items) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('objectives');
+    const saved = (pageId && store.get('obj:' + pageId)) || [];
+    el.innerHTML = items.map((t, i) => `<li><label><input type="checkbox" data-i="${i}" ${saved.includes(i) ? 'checked' : ''}>${t}</label></li>`).join('');
+    el.querySelectorAll('input').forEach(c => c.onchange = () => { const s = [...el.querySelectorAll('input:checked')].map(x => +x.dataset.i); if (pageId) store.set('obj:' + pageId, s); });
+  }
+
+  return { chrome, quiz, cards, stepper, gantt, objectives, esc, store, LESSONS, PIECES, title };
+})();
+
+</script>
+<script>
+OS.chrome('0007-swapping');
+OS.objectives('obj',['Trace a page fault end to end: present bit, handler, disk read, PTE update, retry.','Compute AMAT and explain why hit rates must be extremely high.','Run OPT, FIFO, LRU and clock by hand on a small reference stream.','Predict which workloads favour LRU, which defeat it, and why scan resistance matters.','Explain demand zeroing, copy-on-write, huge pages, 2Q, NX, ASLR and KPTI in one sentence each.']);
+OS.stepper('pf',[
+'<b>Hardware, on every access:</b> extract VPN; TLB lookup. Hit → check protection, form physical address, access memory. Done in the common case.',
+'<b>TLB miss:</b> hardware walks the page table. PTE.Valid == 0 → <code>SEGMENTATION_FAULT</code>. Protection violated → <code>PROTECTION_FAULT</code>. PTE.Present == 0 → <code>PAGE_FAULT</code>, trap to the OS.',
+'<b>OS page-fault handler:</b> find a free physical frame (<code>PFN = FindFreePhysicalPage()</code>). None free? <code>PFN = EvictPage()</code> — the replacement <em>policy</em> chooses; a dirty victim is written to swap first.',
+'<b>Disk read:</b> <code>DiskRead(PTE.DiskAddr, PFN)</code>. The process is <b>blocked</b>; the OS runs another process meanwhile. Milliseconds pass.',
+'<b>Completion:</b> update PTE: <code>PTE.present = True; PTE.PFN = PFN</code>. <code>RetryInstruction()</code>. The retry TLB-misses, finds a present PTE, fills the TLB, retries again and hits.']);
+const hr=document.getElementById('hr');const amat=()=>{const p=+hr.value/100,m=1-p;const t=100e-9+m*10e-3;document.getElementById('amat').textContent=`hit ${hr.value}% → AMAT = 100 ns + ${(m).toFixed(3)} × 10 ms = ${t>=1e-3?(t*1e3).toFixed(2)+' ms':t>=1e-6?(t*1e6).toFixed(1)+' µs':(t*1e9).toFixed(0)+' ns'}`;};hr.oninput=amat;amat();
+/* trace sim */
+const REF=[0,1,2,0,1,3,0,3,1,2,1];
+function runPol(pol,ref,C){let cache=[],use=[],hand=0,fifo=[],hits=0,rows=[];const seed=1;let r=seed;const rnd=()=>{r=(r*1103515245+12345)&0x7fffffff;return r/0x7fffffff;};
+for(let i=0;i<ref.length;i++){const p=ref[i];let hit=cache.includes(p);if(hit){hits++;if(pol==='LRU'){cache.splice(cache.indexOf(p),1);cache.push(p);}if(pol==='CLOCK')use[cache.indexOf(p)]=1;}else{if(cache.length<C){cache.push(p);use[cache.length-1]=1;}else{let vi;if(pol==='OPT'){let best=-1,bv=-1;cache.forEach((c,ci)=>{const nx=ref.slice(i+1).indexOf(c);const d=nx<0?1e9:nx;if(d>bv){bv=d;best=ci;}});vi=best;}else if(pol==='FIFO'||pol==='LRU')vi=0;else if(pol==='RAND')vi=Math.floor(rnd()*C);else{while(use[hand]===1){use[hand]=0;hand=(hand+1)%C;}vi=hand;hand=(hand+1)%C;}if(pol==='CLOCK'){cache[vi]=p;use[vi]=1;}else{cache.splice(vi,1);cache.push(p);}}}rows.push({hit,state:[...cache]});}return {hits,rows};}
+function drawTrace(pol){const C=+document.getElementById('csz').value;const {hits,rows}=runPol(pol,REF,C);let h=`<div class="trace"><div class="lab">access</div>${REF.map(r=>`<div>${r}</div>`).join('')}<div class="lab">hit?</div>${rows.map(r=>`<div class="${r.hit?'h':'m'}">${r.hit?'hit':'miss'}</div>`).join('')}<div class="lab">cache</div>${rows.map(r=>`<div>${r.state.join(',')}</div>`).join('')}</div>`;document.getElementById('trace').innerHTML=h;const notes={OPT:'Book: 6 hits / 5 misses = 54.5% (85.7% ignoring the 3 compulsory misses). At the first eviction (access 3) page 2 is furthest away, so it goes.',FIFO:'Book: 4 hits = 36.4%. FIFO evicts page 0 on access 3 although 0 is about to be reused — it only knows arrival order.',RAND:'Book: over 10,000 random trials, ~40% of runs get 6 hits (as good as OPT) and some get as few as 1. Luck, not knowledge.',LRU:'Book: 6 hits = 54.5%, same as OPT here. History (recency) predicts the future when there is locality.',CLOCK:'Approximates LRU using only a use bit set by the hardware and a rotating hand. Cheap; close to LRU on the 80-20 workload.'};document.getElementById('tres').textContent=`${pol}: ${hits} hits / ${REF.length-hits} misses with ${C} frames. ${notes[pol]}`;}
+document.querySelectorAll('[data-pol]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-pol]').forEach(x=>x.classList.remove('primary'));b.classList.add('primary');drawTrace(b.dataset.pol);});document.getElementById('csz').onchange=()=>drawTrace(document.querySelector('[data-pol].primary').dataset.pol);drawTrace('OPT');
+/* workload plots */
+function gen(kind,n){const out=[];let r=42;const rnd=()=>{r=(r*1103515245+12345)&0x7fffffff;return r/0x7fffffff;};for(let i=0;i<n;i++){if(kind==='none')out.push(Math.floor(rnd()*100));else if(kind==='8020')out.push(rnd()<.8?Math.floor(rnd()*20):20+Math.floor(rnd()*80));else out.push(i%50);}return out;}
+function hitRate(pol,ref,C){return runPol(pol,ref,C).hits/ref.length;}
+function plot(kind){const ref=gen(kind,kind==='loop'?2000:5000);const sizes=[];for(let c=5;c<=100;c+=5)sizes.push(c);const pols=[['OPT','#eef0f7'],['LRU','#e8b84a'],['FIFO','#5bc8f5'],['RAND','#f47fa0'],['CLOCK','#6bcb77']];const W=640,H=300,L=50,B=40;const x=c=>L+(c/100)*(W-L-20),y=v=>H-B-v*(H-B-20);let s=`<line x1="${L}" y1="${H-B}" x2="${W-20}" y2="${H-B}" stroke="#3a4368"/><line x1="${L}" y1="20" x2="${L}" y2="${H-B}" stroke="#3a4368"/>`;[0,.25,.5,.75,1].forEach(v=>s+=`<text x="${L-8}" y="${y(v)+4}" text-anchor="end">${v*100}%</text><line x1="${L}" x2="${W-20}" y1="${y(v)}" y2="${y(v)}" stroke="#28304f"/>`);[20,40,60,80,100].forEach(c=>s+=`<text x="${x(c)}" y="${H-B+16}" text-anchor="middle">${c}</text>`);s+=`<text x="${(L+W)/2}" y="${H-8}" text-anchor="middle">cache size (pages)</text><text transform="rotate(-90)" x="${-(H/2)}" y="14" text-anchor="middle">hit rate</text>`;pols.forEach(([p,col])=>{const pts=sizes.map(c=>`${x(c)},${y(hitRate(p,ref,c))}`).join(' ');s+=`<polyline points="${pts}" fill="none" stroke="${col}" stroke-width="2"/>`;});document.getElementById('plot').innerHTML=s;document.getElementById('wlmsg').textContent={none:'every policy is a straight line: hit rate = size/100',8020:'LRU/clock hold the hot pages; FIFO and random do not',loop:'LRU and FIFO are 0% until the whole 50-page loop fits; random degrades gracefully'}[kind];}
+document.querySelectorAll('[data-wl]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-wl]').forEach(x=>x.classList.remove('primary'));b.classList.add('primary');plot(b.dataset.wl);});plot('none');
+OS.cards('cards',[['Present bit','PTE bit: 1 = page in physical memory, 0 = on disk (swap). Access to a non-present page raises a page fault.'],['Page fault','Trap to the OS on access to a valid but non-present page; the handler brings the page in and retries the instruction.'],['Watermarks','Swap daemon keeps free frames between low (start evicting) and high (stop) thresholds, evicting in clusters.'],['AMAT','Average memory access time = T_M + P_miss × T_D; disk misses dominate unless hit rate is ~99.9%+.'],['Belady\'s anomaly','With FIFO, a larger cache can yield more misses; LRU/OPT have the stack property and are immune.'],['Clock algorithm','Circular list + hand; use bit 1 → clear and advance, 0 → evict. Cheap LRU approximation.'],['Scan resistance','Property of algorithms (2Q, ARC) that a one-time sequential scan cannot evict the working set.'],['Demand zeroing','Map a new page lazily: mark it inaccessible, zero it only when first touched.'],['Copy-on-write','Share a page read-only between processes; on first write, trap, copy, remap privately. Makes fork() cheap.'],['KPTI','Kernel page-table isolation: unmap most kernel memory from user page tables to defeat Meltdown-style leaks.']]);
+OS.quiz('quiz',[
+{q:'A process touches a page whose PTE is valid but not present. What happens first?',o:['the hardware fetches it from disk','the OS page-fault handler runs','the process is killed at once','the TLB entry is written back'],a:1,why:'Hardware traps; the OS handler finds the disk address in the PTE, allocates/evicts a frame, issues the disk read and blocks the process.'},
+{q:'With T_M = 100 ns and T_D = 10 ms, what is AMAT at a 99% hit rate?',o:['about 1 µs','about 100 µs','about 1 ms','about 10 ms'],a:1,why:'100 ns + 0.01 × 10 ms = 100 ns + 100 µs ≈ 100 µs. Even 1% misses makes memory 1000× slower.'},
+{q:'On the stream 0,1,2,0,1,3,0,3,1,2,1 with 3 frames, OPT evicts which page at the first miss-with-full-cache (access 3)?',o:['page 0','page 2','page 1','page 3'],a:1,why:'After 0,1,2,0,1 the cache is {0,1,2}. Future: 0 and 1 are needed soon; 2 is furthest away, so OPT evicts 2. Result: 6 hits.'},
+{q:'Which policy can perform worse when you add memory (Belady\'s anomaly)?',o:['LRU','FIFO','OPT','LFU'],a:1,why:'FIFO lacks the stack property. LRU and OPT with N+1 frames always contain what they held with N frames, so more memory never hurts them.'},
+{q:'A program loops over 50 pages; the cache holds 49. Hit rate under LRU?',o:['98%','0%','50%','49%'],a:1,why:'Each access evicts exactly the page needed next. FIFO too. Random degrades gracefully — the motivation for scan-resistant algorithms.'},
+{q:'What hardware support does the clock algorithm rely on?',o:['a per-page timestamp','a per-page use bit','a hardware LRU stack','a dirty-page counter'],a:1,why:'The reference (use) bit is set by hardware on access; software clears it as the hand sweeps. No per-access data-structure update needed.'},
+{q:'Why did VAX/VMS mark page 0 of every address space inaccessible?',o:['to store the kernel there','to catch NULL dereferences','to speed up context switches','to hold the page directory'],a:1,why:'A NULL pointer is virtual address 0; with page 0 invalid such bugs trap immediately rather than silently reading garbage.'},
+{q:'How does Linux\'s 2Q page cache avoid LRU\'s looping-scan weakness?',o:['it doubles the cache on scans','first touches stay on an inactive list','it never caches file data','it uses FIFO for all pages'],a:1,why:'A page enters the inactive list on first reference and is promoted to the active list only on a second; a one-pass scan cycles through inactive without evicting active (hot) pages.'}]);
+</script></body></html>

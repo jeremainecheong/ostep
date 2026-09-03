@@ -1,0 +1,457 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>9 · CVs & semaphores — OSTEP course</title><style>
+/* OSTEP course — shared stylesheet. Three pieces, three hues. */
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+:root{
+  --ink:#151b2f; --ink-2:#1e2540; --ink-3:#28304f; --line:#3a4368;
+  --paper:#eef0f7; --muted:#a9b1cf; --faint:#6e779a;
+  --virt:#e8b84a; --conc:#5bc8f5; --pers:#6bcb77; --sec:#f47fa0; --intro:#c9a8ff;
+  --ok:#6bcb77; --bad:#ff6b6b;
+  --accent:var(--virt);
+  --radius:6px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--ink);color:var(--paper);font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:17px;line-height:1.6}
+a{color:var(--accent)}
+code,pre,kbd,.mono{font-family:'IBM Plex Mono',ui-monospace,monospace}
+code{background:var(--ink-3);padding:1px 5px;border-radius:4px;font-size:.9em}
+pre{background:#0f1424;border:1px solid var(--line);border-left:4px solid var(--accent);padding:14px 16px;overflow:auto;border-radius:var(--radius);font-size:.86em;line-height:1.5}
+pre code{background:none;padding:0;font-size:inherit}
+h1,h2,h3,h4{font-family:'Fraunces',Georgia,serif;font-weight:700;line-height:1.15;margin:0 0 .4em}
+h1{font-size:2.6rem;letter-spacing:-.01em}
+h2{font-size:1.9rem;margin-top:2.6rem;padding-top:1.2rem;border-top:1px solid var(--line)}
+h3{font-size:1.3rem;margin-top:1.8rem;color:var(--accent)}
+h4{font-size:1.05rem;margin-top:1.2rem}
+p,li{max-width:72ch}
+.wrap{max-width:1100px;margin:0 auto;padding:0 28px 96px}
+.hero{padding:44px 0 16px}
+.hero .chapters{color:var(--muted);font-size:.95rem;margin-bottom:6px}
+.lede{font-size:1.2rem;color:var(--muted);max-width:66ch}
+.piece-virt{--accent:var(--virt)} .piece-conc{--accent:var(--conc)} .piece-pers{--accent:var(--pers)} .piece-sec{--accent:var(--sec)} .piece-intro{--accent:var(--intro)}
+.fig{background:var(--ink-2);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;margin:22px 0}
+.fig figcaption,.cap{color:var(--muted);font-size:.9rem;margin-top:10px}
+.fig svg{max-width:100%;height:auto;display:block}
+svg text{font-family:'IBM Plex Sans',sans-serif}
+svg .mono{font-family:'IBM Plex Mono',monospace}
+.crux{border:1px solid var(--accent);border-radius:var(--radius);padding:14px 18px;margin:22px 0;background:color-mix(in srgb,var(--accent) 8%,transparent)}
+.crux b{color:var(--accent)}
+.tip{border-left:4px solid var(--muted);padding:6px 16px;margin:18px 0;color:var(--muted)}
+.tip b{color:var(--paper)}
+table{border-collapse:collapse;width:100%;margin:16px 0;font-size:.95rem}
+th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{color:var(--muted);font-weight:500}
+td.mono,th.mono{font-family:'IBM Plex Mono',monospace}
+button,.btn{font:inherit;font-size:.9rem;background:var(--ink-3);color:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:7px 13px;cursor:pointer}
+button:hover{border-color:var(--accent)}
+button.primary{background:var(--accent);color:#111;border-color:var(--accent);font-weight:600}
+button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+input[type=range]{accent-color:var(--accent)}
+input[type=text],input[type=number],select{font:inherit;background:#0f1424;color:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:6px 10px}
+.controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:10px 0}
+.controls label{font-size:.9rem;color:var(--muted)}
+details{border:1px solid var(--line);border-radius:var(--radius);margin:10px 0;background:var(--ink-2)}
+summary{cursor:pointer;padding:12px 16px;font-weight:600;list-style:none}
+summary::before{content:"+";display:inline-block;width:1.2em;color:var(--accent)}
+details[open] summary::before{content:"–"}
+details>div{padding:0 16px 14px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;margin:16px 0}
+.card{perspective:900px;min-height:140px;cursor:pointer}
+.card .inner{position:relative;width:100%;height:100%;min-height:140px;transition:transform .45s;transform-style:preserve-3d}
+.card.flipped .inner{transform:rotateY(180deg)}
+.card .face{position:absolute;inset:0;padding:14px;border-radius:var(--radius);border:1px solid var(--line);background:var(--ink-2);backface-visibility:hidden;display:flex;align-items:center;justify-content:center;text-align:center;font-size:.95rem}
+.card .back{transform:rotateY(180deg);background:var(--ink-3);border-color:var(--accent);font-size:.88rem;line-height:1.45}
+.card .front{font-weight:600}
+@media (prefers-reduced-motion:reduce){.card .inner{transition:none}}
+.quiz .q{border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin:12px 0;background:var(--ink-2)}
+.quiz .q p{margin:0 0 10px;font-weight:600}
+.quiz .opts{display:grid;gap:8px}
+.quiz .opt{text-align:left;background:var(--ink);width:100%}
+.quiz .opt.right{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 15%,var(--ink))}
+.quiz .opt.wrong{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 15%,var(--ink))}
+.quiz .why{margin-top:10px;color:var(--muted);font-size:.93rem;display:none}
+.quiz .q.done .why{display:block}
+.quiz .score{margin-top:12px;font-weight:600}
+.stepper .stage{min-height:60px;background:#0f1424;border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin:10px 0}
+.stepper .idx{color:var(--muted);font-size:.85rem}
+.gantt{display:grid;gap:6px;margin:10px 0}
+.gantt .row{display:grid;grid-template-columns:60px 1fr;align-items:center;gap:8px;font-size:.85rem}
+.gantt .track{position:relative;height:26px;background:#0f1424;border-radius:4px;overflow:hidden}
+.gantt .seg{position:absolute;top:0;bottom:0;display:flex;align-items:center;justify-content:center;font-size:.75rem;color:#111;font-weight:600;border-right:1px solid rgba(0,0,0,.3)}
+.cells{display:grid;gap:4px;margin:10px 0}
+.cell{background:#0f1424;border:1px solid var(--line);border-radius:4px;padding:6px;text-align:center;font-family:'IBM Plex Mono',monospace;font-size:.8rem;min-height:36px;display:flex;align-items:center;justify-content:center}
+.cell.hit{background:color-mix(in srgb,var(--ok) 35%,#0f1424);border-color:var(--ok)}
+.cell.miss{background:color-mix(in srgb,var(--bad) 35%,#0f1424);border-color:var(--bad)}
+.cell.active{outline:2px solid var(--accent)}
+.cell.free{opacity:.45}
+.hl{background:color-mix(in srgb,var(--accent) 30%,transparent);padding:1px 5px;border-radius:3px}
+.k{color:var(--accent);font-weight:600}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media (max-width:760px){.two{grid-template-columns:1fr}.topbar{gap:10px}h1{font-size:2rem}}
+.nav-bottom{display:flex;justify-content:space-between;gap:16px;margin-top:56px;padding-top:20px;border-top:1px solid var(--line)}
+.nav-bottom a{text-decoration:none;padding:12px 16px;border:1px solid var(--line);border-radius:var(--radius);color:var(--paper)}
+.source{background:var(--ink-2);border-radius:var(--radius);padding:14px 18px;margin:22px 0;font-size:.95rem}
+.source b{color:var(--accent)}
+.objectives li{list-style:none;margin:6px 0}
+.objectives input{margin-right:8px;accent-color:var(--accent)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.85rem;color:var(--muted)}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:5px;vertical-align:-2px}
+.tag{display:inline-block;font-size:.75rem;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted);margin-right:6px}
+.log{font-family:'IBM Plex Mono',monospace;font-size:.82rem;background:#0f1424;border:1px solid var(--line);border-radius:var(--radius);padding:10px 12px;max-height:220px;overflow:auto;white-space:pre-wrap}
+@media print{body{background:#fff;color:#111}.topbar,.nav-bottom,button{display:none}.fig,.crux,details,.source{border-color:#bbb;background:#fff}pre{background:#f5f5f5;color:#111}}
+
+/* ---------- site chrome: sticky header + directory drawer ---------- */
+.topbar{position:sticky;top:0;z-index:30;display:flex;gap:14px;align-items:center;padding:10px 16px;background:color-mix(in srgb,var(--ink) 92%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);font-size:.9rem}
+.topbar .menu{display:flex;align-items:center;gap:8px;padding:8px 12px;font-size:1rem}
+.topbar .menu span{font-size:.85rem}
+.topbar .brand{color:var(--paper);text-decoration:none;font-weight:600;display:flex;align-items:center;gap:8px}
+.topbar .dot{width:10px;height:10px;border-radius:50%;background:var(--accent);display:inline-block}
+.topbar .links{display:flex;gap:16px;margin-left:8px}
+.topbar .links a{color:var(--muted);text-decoration:none}
+.topbar .links a:hover{color:var(--paper)}
+.topbar .where{margin-left:auto;color:var(--faint);font-variant-numeric:tabular-nums}
+.drawer{position:fixed;top:0;left:0;bottom:0;width:min(340px,88vw);background:var(--ink-2);border-right:1px solid var(--line);z-index:50;transform:translateX(-102%);transition:transform .25s;overflow-y:auto;padding:0 0 24px;box-shadow:0 0 40px rgba(0,0,0,.5)}
+.drawer-open .drawer{transform:none}
+.scrim{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:40;opacity:0;pointer-events:none;transition:opacity .2s}
+.drawer-open .scrim{opacity:1;pointer-events:auto}
+.drawer .dhead{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--ink-2)}
+.drawer .close,.notes-sheet .close{font-size:1.3rem;line-height:1;padding:4px 10px}
+.drawer .dgroup{padding:8px 0 4px}
+.drawer .dname{padding:8px 16px 4px;color:var(--accent);font-family:'Fraunces',serif;font-weight:700}
+.drawer .ditem{display:flex;gap:10px;align-items:center;padding:9px 16px;color:var(--paper);text-decoration:none;border-left:3px solid transparent;font-size:.92rem}
+.drawer .ditem:hover{background:var(--ink-3)}
+.drawer .ditem.cur{border-left-color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
+.drawer .ditem .n{color:var(--faint);min-width:1.4em;font-variant-numeric:tabular-nums}
+.drawer .ditem .t{flex:1;line-height:1.25}
+.drawer .ditem .t small{display:block;color:var(--faint);font-size:.75rem}
+.drawer .badges{display:flex;gap:6px;align-items:center}
+.drawer .badges i{font-style:normal;color:var(--accent)}
+.drawer .badges em{font-style:normal;font-size:.75rem;padding:1px 6px;border-radius:999px;background:var(--ink-3);color:var(--muted);font-variant-numeric:tabular-nums}
+.drawer .dfoot{padding:16px;color:var(--faint);font-size:.8rem}
+/* ---------- notes: floating button + bottom sheet ---------- */
+.notes-fab{position:fixed;right:16px;bottom:16px;z-index:35;display:flex;gap:8px;align-items:center;padding:12px 16px;border-radius:999px;background:var(--accent);color:#111;border:none;font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,.4)}
+.notes-sheet{position:fixed;left:0;right:0;bottom:0;z-index:45;background:var(--ink-2);border-top:1px solid var(--line);border-radius:14px 14px 0 0;transform:translateY(105%);transition:transform .25s;box-shadow:0 -10px 40px rgba(0,0,0,.5);max-width:900px;margin:0 auto;padding-bottom:env(safe-area-inset-bottom)}
+.notes-open .notes-sheet{transform:none}
+.notes-open .notes-fab{display:none}
+.notes-sheet .nhead{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line)}
+.notes-sheet .nhead b{flex:1;font-size:.95rem}
+.notes-sheet .nstatus{color:var(--faint);font-size:.8rem}
+.notes-sheet textarea{display:block;width:100%;min-height:36vh;max-height:60vh;resize:vertical;border:none;background:#0f1424;color:var(--paper);font:inherit;font-size:1rem;line-height:1.5;padding:14px 16px;outline:none}
+.notes-sheet .nfoot{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;font-size:.85rem;color:var(--muted)}
+/* ---------- wide widgets scroll sideways instead of breaking the page ---------- */
+.tw{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:16px 0}
+.tw table{margin:0;min-width:520px}
+.fig{overflow-x:auto}
+@media (prefers-reduced-motion:reduce){.drawer,.notes-sheet,.scrim{transition:none}}
+/* ---------- phones ---------- */
+@media (max-width:760px){
+  body{font-size:16px}
+  .wrap{padding:0 16px 110px}
+  h1{font-size:1.85rem} h2{font-size:1.45rem;margin-top:2rem} h3{font-size:1.15rem}
+  .lede{font-size:1.05rem}
+  .topbar{padding:8px 12px;gap:10px}
+  .topbar .links{display:none}
+  .topbar .menu span{display:none}
+  .topbar .menu{padding:8px 11px}
+  .fig{padding:12px 12px;margin:16px -4px;border-radius:8px}
+  .crux,.source{padding:12px 14px}
+  pre{font-size:.8em;padding:12px 12px}
+  button,.btn{padding:10px 14px;font-size:.92rem}
+  .controls{gap:8px}
+  .controls label{display:flex;align-items:center;gap:6px}
+  input[type=number]{max-width:96px}
+  .cards{grid-template-columns:1fr 1fr;gap:8px}
+  .card,.card .inner{min-height:120px}
+  .card .face{font-size:.88rem;padding:10px}
+  .cells{min-width:420px}
+  .quiz .opt{padding:12px 12px;line-height:1.35}
+  .nav-bottom{flex-direction:column}
+  .nav-bottom a{text-align:center}
+  .notes-fab span{display:none}
+  .notes-fab{padding:14px;right:12px;bottom:12px}
+  .notes-sheet textarea{min-height:44vh}
+  .stepper .stage{padding:12px}
+  .gantt .row{grid-template-columns:44px 1fr;font-size:.75rem}
+  /* lesson-specific grids collapse */
+  .lde,.il,.two,.cry,.flash,.dl,.fdt,.how,.cards.wide,.vm{grid-template-columns:1fr}
+  .map{grid-template-columns:1fr}
+  .net{grid-template-columns:1fr}.net .arrow{padding:0;transform:rotate(90deg)}
+  .phil{grid-template-columns:repeat(2,1fr)}
+  .jobs{max-width:100%}
+  .trace{min-width:620px}.tl{min-width:720px}.disk{min-width:560px}
+}
+@media (max-width:420px){.cards{grid-template-columns:1fr}}
+
+</style>
+<style>.buf{display:flex;gap:6px;margin:8px 0}.buf div{width:52px;height:40px;border:1px solid var(--line);border-radius:4px;display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono',monospace;background:#0f1424}.buf div.full{background:#5bc8f5;color:#111;font-weight:600}.sem{display:flex;gap:20px;font-family:'IBM Plex Mono',monospace;font-size:.9rem;margin:8px 0;flex-wrap:wrap}.sem b{color:var(--accent)}.thr{display:flex;gap:8px;flex-wrap:wrap}.thr span{padding:4px 10px;border-radius:999px;border:1px solid var(--line);font-size:.85rem}.thr span.sleep{opacity:.5;border-style:dashed}.phil{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}.phil div{background:#0f1424;border:1px solid var(--line);border-radius:4px;padding:8px;text-align:center;font-size:.82rem}.phil div.eat{border-color:var(--ok)}.phil div.wait{border-color:var(--bad)}</style></head>
+<body class="piece-conc"><div class="wrap">
+<header class="hero"><div class="chapters">OSTEP chapters 29–31 · Lock-based Concurrent Data Structures · Condition Variables · Semaphores</div>
+<h1>Locking real data, waiting for conditions, and the semaphore that does both</h1>
+<p class="lede">Locks give mutual exclusion; they don't let a thread <em>wait</em> for something to happen. Condition variables do, and the producer/consumer problem shows every way to get them wrong. Then Dijkstra's semaphore: one integer that can act as a lock, an ordering primitive, or a counter of resources.</p></header>
+<div class="source"><b>Primary sources:</b> <a href="https://pages.cs.wisc.edu/~remzi/OSTEP/threads-locks-usage.pdf">Ch 29</a>, <a href="https://pages.cs.wisc.edu/~remzi/OSTEP/threads-cv.pdf">Ch 30</a>, <a href="https://pages.cs.wisc.edu/~remzi/OSTEP/threads-sema.pdf">Ch 31</a>. Code: <a href="https://github.com/remzi-arpacidusseau/ostep-code/tree/master/threads-cv">threads-cv</a>, <a href="https://github.com/remzi-arpacidusseau/ostep-code/tree/master/threads-sema">threads-sema</a>. For more puzzles the book recommends Downey's free <em>Little Book of Semaphores</em>.</div>
+<h2>What you'll be able to do</h2><ul id="obj"></ul>
+
+<h2>Lock-based data structures (chapter 29)</h2>
+<div class="crux"><b>Crux: how to add locks to data structures</b> so they are correct <em>and</em> allow many threads to use them at once (they <em>scale</em>)?</div>
+<div class="two"><div class="fig"><h4>Counters: precise vs approximate</h4><p>A single lock around <code>counter++</code> is correct but scales terribly — the book measured one thread ~0.03 s for a million updates, and much worse with more threads on more CPUs. <b>Approximate counter</b>: one local counter (and lock) per CPU, plus a global; every <b>S</b> local increments, transfer the local value to the global. Bigger S → more scalable, less accurate; the book's plot shows near-perfect scaling with S = 1024.</p><table><tr><th>Time</th><th>L1</th><th>L2</th><th>L3</th><th>L4</th><th>Global</th></tr><tr><td>5</td><td>5→0</td><td>1</td><td>3</td><td>4</td><td>5 (from L1)</td></tr><tr><td>6</td><td>0</td><td>2</td><td>4</td><td>5→0</td><td>10 (from L4)</td></tr><tr><td>7</td><td>0</td><td>2</td><td>4</td><td>0</td><td>10</td></tr></table><p class="cap">Threshold S = 5: a local counter that reaches 5 flushes into the global and resets.</p></div>
+<div class="fig"><h4>Lists, queues, hash tables</h4><ul><li><b>Linked list</b>: one lock; keep lock/unlock around the whole insert but arrange the code so there's a single exit path (allocate outside the lock). <b>Hand-over-hand</b> locking (one lock per node, grab next before releasing previous) allows concurrency in theory but the per-node cost makes it slower in practice.</li><li><b>Queue</b> (Michael &amp; Scott): a <em>head</em> lock and a <em>tail</em> lock, with a dummy node separating them, so enqueue and dequeue proceed concurrently.</li><li><b>Hash table</b>: a lock per bucket → scales beautifully (the book's chart: near-flat time vs inserts, versus a linearly-rising single-locked list).</li></ul><p><b>Knuth's law</b>, the chapter's tip: start with one big lock (correct first), measure, and refine only if it's actually slow. Linux began with a single <em>big kernel lock</em>.</p></div></div>
+<div class="tip"><b>Be wary of control flow around locks.</b> Every early return inside a critical section is a chance to forget the unlock. Restructure so the lock is released in one place.</div>
+
+<h2>Condition variables (chapter 30)</h2>
+<div class="crux"><b>Crux: how to wait for a condition.</b> Spinning on a flag wastes CPU and can even be incorrect. A <b>condition variable</b> is an explicit queue threads join when a condition isn't true; another thread that changes the state wakes one (<code>signal</code>) or all (<code>broadcast</code>).</div>
+<pre><code>// join(): parent waits for child. Three parts: a lock, a CV, and a <b>state variable</b> (done).
+int done = 0; pthread_mutex_t m = PTHREAD_MUTEX_INITIALIZER; pthread_cond_t c = PTHREAD_COND_INITIALIZER;
+void thr_exit() { Pthread_mutex_lock(&amp;m); done = 1; Pthread_cond_signal(&amp;c); Pthread_mutex_unlock(&amp;m); }
+void thr_join() { Pthread_mutex_lock(&amp;m); while (done == 0) Pthread_cond_wait(&amp;c, &amp;m); Pthread_mutex_unlock(&amp;m); }</code></pre>
+<p><code>wait(cond, mutex)</code> atomically releases the mutex and sleeps; on wakeup it re-acquires the mutex before returning. Drop the state variable and a child that exits first signals nobody, so the parent sleeps forever. Drop the lock and the parent can check <code>done</code>, be interrupted before waiting, miss the signal, and sleep forever. <b>Rule: hold the lock when signalling <em>and</em> when waiting.</b></p>
+
+<h3>The producer/consumer (bounded buffer) problem — find the bugs</h3>
+<p>Producers put items in a buffer; consumers take them out (a shell pipe, a web server's request queue). Step through the three versions the book examines. The buffer has one slot; P is a producer, C1 and C2 consumers.</p>
+<div class="fig"><div class="controls"><button class="primary" data-v="v1">v1: if + one CV</button><button data-v="v2">v2: while + one CV</button><button data-v="v3">v3: while + two CVs (correct)</button></div><div id="pc"></div></div>
+<ul><li><b>Mesa semantics</b> (every real system): a signal is a <em>hint</em> that state changed; by the time the woken thread runs, another thread may have changed it back. So <b>always re-check in a <code>while</code></b>. (Hoare semantics, in which the woken thread runs immediately, is harder to build.) A <code>while</code> also handles <b>spurious wakeups</b>.</li><li>One CV for two conditions lets a consumer wake a consumer; then everyone sleeps. <b>Two CVs</b> (<code>empty</code>, <code>fill</code>) direct signals to the right kind of thread. Then generalize to a ring buffer with <code>count</code>, <code>fill_ptr</code>, <code>use_ptr</code>.</li></ul>
+<pre><code>// the final, correct solution (single lock, two CVs, while loops)
+void *producer(void *arg) {
+    for (int i = 0; i &lt; loops; i++) {
+        Pthread_mutex_lock(&amp;mutex);
+        while (count == MAX) Pthread_cond_wait(&amp;empty, &amp;mutex);
+        put(i);
+        Pthread_cond_signal(&amp;fill);
+        Pthread_mutex_unlock(&amp;mutex);
+    }
+}
+void *consumer(void *arg) {
+    for (int i = 0; i &lt; loops; i++) {
+        Pthread_mutex_lock(&amp;mutex);
+        while (count == 0) Pthread_cond_wait(&amp;fill, &amp;mutex);
+        int tmp = get();
+        Pthread_cond_signal(&amp;empty);
+        Pthread_mutex_unlock(&amp;mutex);
+        printf("%d\n", tmp);
+    }
+}</code></pre>
+<div class="tip"><b>Covering conditions.</b> A memory allocator where threads wait for "enough" free bytes: a <code>free(50)</code> may wake a thread wanting 100 instead of one wanting 10 — so use <code>pthread_cond_broadcast()</code> and let each waiter re-check. Costs some needless wakeups; Lampson &amp; Redell used it in Pilot. If your program only works with broadcast, you probably have a bug — unless it's this case.</div>
+
+<h2>Semaphores (chapter 31)</h2>
+<div class="crux"><b>Crux: how to use semaphores</b> instead of locks and CVs? What's a binary semaphore? Can you build one from the other?</div>
+<pre><code>#include &lt;semaphore.h&gt;
+sem_t s; sem_init(&amp;s, 0, 1);          // value 1; second arg 0 = shared among threads of this process
+int sem_wait(sem_t *s) { /* decrement; if value now negative, wait */ }      // Dijkstra's P()
+int sem_post(sem_t *s) { /* increment; if a thread is waiting, wake one */ } // Dijkstra's V()
+// invariant: when negative, the value equals the number of waiting threads</code></pre>
+<div class="two"><div class="fig"><h4>Binary semaphore = lock</h4><p>Initial value <b>1</b>. First <code>wait</code> makes it 0 and proceeds; a second thread makes it −1 and sleeps; <code>post</code> makes it 0 and wakes the sleeper.</p><h4>Semaphore for ordering = CV-like</h4><p>Initial value <b>0</b>. Parent <code>wait</code>s; child <code>post</code>s when done. Works whichever runs first: if the child finishes first the value is 1 and the parent's wait returns immediately. Rule of thumb for the initial value: <em>how many resources can be handed out right away?</em></p></div>
+<div class="fig"><h4>Bounded buffer with semaphores — try it</h4><div class="sem"><span>empty = <b id="se">3</b></span><span>full = <b id="sf">0</b></span><span>mutex = <b id="sm">1</b></span></div><div class="buf" id="sbuf"></div><div class="controls"><button class="primary" id="prod">producer: wait(empty); lock; put; unlock; post(full)</button><button class="primary" id="cons">consumer: wait(full); lock; get; unlock; post(empty)</button></div><div class="thr" id="sleepers"></div><div class="cap" id="smsg">MAX = 3. Watch counts go negative: that's how many threads are asleep. The book's first attempt put the mutex <em>outside</em> the empty/full waits — a producer then sleeps holding the mutex and the consumer that would free a slot can't get in: <b>deadlock</b>. Scope the lock tightly.</div></div></div>
+<h3>Two classics</h3>
+<div class="two"><div class="fig"><h4>Reader-writer lock</h4><p>Many readers may hold it at once; a writer needs exclusivity. Implementation: a <code>lock</code> semaphore protects <code>readers</code>; the first reader in acquires <code>writelock</code>, the last reader out releases it; writers just take <code>writelock</code>. Flaw: readers can <b>starve</b> writers. Extra bookkeeping often makes these slower than a plain lock — <b>Hill's law</b>: simple and dumb can be better.</p></div>
+<div class="fig"><h4>Dining philosophers (Dijkstra)</h4><p>Five philosophers, five forks, each needs both neighbours' forks to eat. Naive "left then right" deadlocks if all grab left at once. Fix: <b>break the dependency</b> — one philosopher grabs right first.</p><div class="phil" id="phil"></div><div class="controls"><button class="primary" id="ph-naive">all grab left fork</button><button id="ph-fix">philosopher 4 grabs right first</button></div><div class="cap" id="phmsg"></div></div></div>
+<p><b>Thread throttling</b>: a semaphore initialized to the number of threads allowed in a memory-hungry region — <em>admission control</em> against thrashing. And <b>implementing a semaphore</b> ("Zemaphore") from a lock and a CV is easy: <code>wait</code> does <code>while (value &lt;= 0) cond_wait; value--</code>; <code>post</code> does <code>value++; cond_signal</code> (this variant never goes negative). Building CVs from semaphores, however, is surprisingly tricky — the book's warning about generalization: "Don't generalize; generalizations are generally wrong" (Lampson).</p>
+
+<h2>Flash cards</h2><div id="cards"></div>
+<h2>Retrieval practice</h2><div id="quiz"></div>
+<p class="tip">Want to trace the reader-writer lock with a specific arrival order, or solve a Downey-style semaphore puzzle together? Ask me in the chat.</p>
+</div>
+<script>
+/* OSTEP course — shared components. Every page loads this file (inlined by build.py). */
+window.OS = (function () {
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+  /* ---------- persistent storage (localStorage on a real site; in-memory fallback in sandboxes) ---------- */
+  const mem = {};
+  const store = {
+    get(k) { try { const v = localStorage.getItem('ostep:' + k); return v === null ? (mem[k] ?? null) : JSON.parse(v); } catch (e) { return mem[k] ?? null; } },
+    set(k, v) { mem[k] = v; try { localStorage.setItem('ostep:' + k, JSON.stringify(v)); } catch (e) {} },
+    del(k) { delete mem[k]; try { localStorage.removeItem('ostep:' + k); } catch (e) {} },
+    keys(prefix) { const out = new Set(Object.keys(mem).filter(k => k.startsWith(prefix))); try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith('ostep:' + prefix)) out.add(k.slice(6)); } } catch (e) {} return [...out]; },
+    available() { try { localStorage.setItem('ostep:test', '1'); localStorage.removeItem('ostep:test'); return true; } catch (e) { return false; } }
+  };
+
+  /* ---------- course structure ---------- */
+  const PIECES = [
+    ['intro', 'Introduction', [['0001-three-easy-pieces', 'Three easy pieces', 'ch 1–2']]],
+    ['virt', 'Virtualization', [
+      ['0002-processes', 'Processes & the process API', 'ch 4–5'],
+      ['0003-limited-direct-execution', 'Limited direct execution', 'ch 6'],
+      ['0004-scheduling', 'Scheduling', 'ch 7–10'],
+      ['0005-address-spaces', 'Address spaces & segments', 'ch 13–16'],
+      ['0006-paging-and-tlbs', 'Paging & TLBs', 'ch 17–20'],
+      ['0007-swapping', 'Swapping & policies', 'ch 21–23']]],
+    ['conc', 'Concurrency', [
+      ['0008-threads-and-locks', 'Threads & locks', 'ch 26–28'],
+      ['0009-cvs-and-semaphores', 'CVs & semaphores', 'ch 29–31'],
+      ['0010-bugs-and-events', 'Bugs & events', 'ch 32–33']]],
+    ['pers', 'Persistence', [
+      ['0011-devices-disks-raid', 'Devices, disks, RAID', 'ch 36–38'],
+      ['0012-files-and-vsfs', 'Files & a simple FS', 'ch 39–40'],
+      ['0013-ffs-journaling-lfs', 'FFS, journaling, LFS', 'ch 41–43'],
+      ['0014-ssd-and-integrity', 'SSDs & integrity', 'ch 44–45'],
+      ['0015-distributed-nfs-afs', 'Distributed FS', 'ch 48–50']]],
+    ['sec', 'Security', [['0016-security-and-vmms', 'Security & VMMs', 'ch 53–57, App B']]]
+  ];
+  const LESSONS = PIECES.flatMap(p => p[2].map(l => [l[0], l[1], p[0], l[2]]));
+  const title = id => (LESSONS.find(l => l[0] === id) || [])[1] || id;
+  let pageId = null, root = '../';
+
+  /* ---------- chrome: sticky header, slide-out directory, notes drawer, prev/next ---------- */
+  function chrome(id, rootPath) {
+    pageId = id; root = rootPath === undefined ? '../' : rootPath;
+    const i = LESSONS.findIndex(l => l[0] === id);
+    const isLesson = i >= 0;
+    const top = document.createElement('header'); top.className = 'topbar';
+    top.innerHTML = `<button class="menu" aria-label="Open directory" aria-expanded="false">☰<span>Directory</span></button>
+      <a class="brand" href="${root}index.html"><span class="dot"></span>OSTEP course</a>
+      <nav class="links"><a href="${root}reference/glossary.html">Glossary</a><a href="${root}reference/cheatsheets.html">Cheat sheets</a><a href="${root}notes.html">My notes</a></nav>
+      ${isLesson ? `<span class="where">${i+1} / ${LESSONS.length}</span>` : ''}`;
+    document.body.prepend(top);
+    // directory drawer
+    const drawer = document.createElement('aside'); drawer.className = 'drawer'; drawer.setAttribute('aria-label', 'Course directory');
+    const scores = Object.fromEntries(LESSONS.map(l => [l[0], store.get('quiz:' + l[0])]));
+    const notes = new Set(store.keys('notes:').map(k => k.slice(6)).filter(k => (store.get('notes:' + k) || {}).text));
+    drawer.innerHTML = `<div class="dhead"><b>Directory</b><button class="close" aria-label="Close">×</button></div>
+      <a class="ditem ${id === 'index' ? 'cur' : ''}" href="${root}index.html">Course hub</a>
+      ${PIECES.map(([cls, name, ls]) => `<div class="dgroup piece-${cls}"><div class="dname">${name}</div>${ls.map(l => {
+        const n = LESSONS.findIndex(x => x[0] === l[0]) + 1, s = scores[l[0]];
+        return `<a class="ditem ${l[0] === id ? 'cur' : ''}" href="${root}lessons/${l[0]}.html"><span class="n">${n}</span><span class="t">${l[1]}<small>${l[3]}</small></span><span class="badges">${notes.has(l[0]) ? '<i title="you have notes">✎</i>' : ''}${s ? `<em title="best quiz score">${s.score}/${s.total}</em>` : ''}</span></a>`; }).join('')}</div>`).join('')}
+      <div class="dgroup piece-intro"><div class="dname">Reference</div>
+        <a class="ditem ${id === 'glossary' ? 'cur' : ''}" href="${root}reference/glossary.html"><span class="t">Glossary</span></a>
+        <a class="ditem ${id === 'cheatsheets' ? 'cur' : ''}" href="${root}reference/cheatsheets.html"><span class="t">Cheat sheets</span></a>
+        <a class="ditem ${id === 'notes' ? 'cur' : ''}" href="${root}notes.html"><span class="t">My notes &amp; progress</span></a></div>
+      <div class="dfoot">${store.available() ? 'Notes and scores are saved in this browser.' : 'Notes and scores are kept for this session only (storage unavailable here).'}</div>`;
+    document.body.append(drawer);
+    const scrim = document.createElement('div'); scrim.className = 'scrim'; document.body.append(scrim);
+    const open = o => { document.body.classList.toggle('drawer-open', o); top.querySelector('.menu').setAttribute('aria-expanded', o); if (o) drawer.querySelector('.cur, .ditem')?.focus(); };
+    top.querySelector('.menu').onclick = () => open(!document.body.classList.contains('drawer-open'));
+    drawer.querySelector('.close').onclick = () => open(false); scrim.onclick = () => open(false);
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') { open(false); notesOpen(false); } });
+    // prev/next for lessons
+    if (isLesson) {
+      const nav = document.createElement('div'); nav.className = 'nav-bottom';
+      const prev = LESSONS[i-1], next = LESSONS[i+1];
+      nav.innerHTML = (prev ? `<a href="${prev[0]}.html">← ${i}. ${prev[1]}</a>` : '<span></span>') +
+                      (next ? `<a href="${next[0]}.html">${i+2}. ${next[1]} →</a>` : `<a href="${root}index.html">Back to course hub →</a>`);
+      document.querySelector('.wrap').append(nav);
+    }
+    // wrap tables so they scroll sideways on phones
+    document.querySelectorAll('.wrap table').forEach(t => { if (t.parentElement.classList.contains('tw')) return; const w = document.createElement('div'); w.className = 'tw'; t.replaceWith(w); w.append(t); });
+    // notes drawer (every page except the notes page itself)
+    if (id !== 'notes') notesUI(id, isLesson ? `${i+1}. ${LESSONS[i][1]}` : (document.title.split(' — ')[0]));
+  }
+
+  /* ---------- notes: floating button + bottom sheet, autosaved ---------- */
+  let notesOpen = () => {};
+  function notesUI(id, label) {
+    const btn = document.createElement('button'); btn.className = 'notes-fab'; btn.innerHTML = '✎ <span>Notes</span>'; btn.setAttribute('aria-label', 'Open notes');
+    const sheet = document.createElement('section'); sheet.className = 'notes-sheet'; sheet.setAttribute('aria-label', 'Notes for this page');
+    const saved = store.get('notes:' + id) || {};
+    sheet.innerHTML = `<div class="nhead"><b>Notes · ${esc(label)}</b><span class="nstatus"></span><button class="close" aria-label="Close notes">×</button></div>
+      <textarea placeholder="Your notes for this page. Markdown is fine. Saved automatically.">${esc(saved.text || '')}</textarea>
+      <div class="nfoot"><span class="ncount"></span><a href="${root}notes.html">All notes &amp; export →</a></div>`;
+    document.body.append(btn, sheet);
+    const ta = sheet.querySelector('textarea'), status = sheet.querySelector('.nstatus'), count = sheet.querySelector('.ncount');
+    const upd = () => { count.textContent = ta.value.trim() ? ta.value.trim().split(/\s+/).length + ' words' : ''; };
+    let t; ta.addEventListener('input', () => { status.textContent = 'saving…'; clearTimeout(t); t = setTimeout(() => { store.set('notes:' + id, { text: ta.value, title: label, updated: new Date().toISOString() }); status.textContent = 'saved'; upd(); }, 400); });
+    upd();
+    notesOpen = o => { document.body.classList.toggle('notes-open', o); if (o) ta.focus(); };
+    btn.onclick = () => notesOpen(!document.body.classList.contains('notes-open'));
+    sheet.querySelector('.close').onclick = () => notesOpen(false);
+  }
+
+  /* ---------- quiz: immediate feedback; best score persisted ---------- */
+  function quiz(el, qs) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('quiz');
+    let score = 0, answered = 0;
+    const best = pageId ? store.get('quiz:' + pageId) : null;
+    el.innerHTML = qs.map((q, i) => `<div class="q" data-i="${i}"><p>${i+1}. ${q.q}</p>
+      <div class="opts">${q.o.map((o, j) => `<button class="opt" data-j="${j}">${esc(o)}</button>`).join('')}</div>
+      <div class="why">${q.why}</div></div>`).join('') + `<div class="score">${best ? `Best so far: ${best.score}/${best.total} (${new Date(best.date).toLocaleDateString()})` : ''}</div>`;
+    el.querySelectorAll('.q').forEach(qd => {
+      const q = qs[+qd.dataset.i];
+      qd.querySelectorAll('.opt').forEach(b => b.addEventListener('click', () => {
+        if (qd.classList.contains('done')) return;
+        qd.classList.add('done'); answered++;
+        const j = +b.dataset.j;
+        if (j === q.a) { b.classList.add('right'); score++; }
+        else { b.classList.add('wrong'); qd.querySelectorAll('.opt')[q.a].classList.add('right'); }
+        const s = el.querySelector('.score');
+        s.textContent = `${score} / ${answered} correct`;
+        if (answered === qs.length) {
+          s.textContent += score === qs.length ? ' — all of them. Retry from memory in two days.' : ' — reread the sections you missed, then retry.';
+          if (pageId && (!best || score >= best.score)) store.set('quiz:' + pageId, { score, total: qs.length, date: new Date().toISOString() });
+        }
+      }));
+    });
+  }
+
+  /* ---------- flip cards ---------- */
+  function cards(el, list) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('cards');
+    el.innerHTML = list.map(([f, b]) => `<div class="card" tabindex="0" role="button" aria-label="flip card"><div class="inner"><div class="face front">${f}</div><div class="face back">${b}</div></div></div>`).join('');
+    el.querySelectorAll('.card').forEach(c => {
+      const t = () => c.classList.toggle('flipped');
+      c.addEventListener('click', t);
+      c.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); t(); } });
+    });
+  }
+
+  /* ---------- stepper ---------- */
+  function stepper(el, steps, render) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('stepper');
+    let i = 0;
+    el.innerHTML = `<div class="controls"><button class="prev">← Back</button><button class="next primary">Next step →</button><span class="idx"></span></div><div class="stage"></div><div class="extra"></div>`;
+    const stage = el.querySelector('.stage'), idx = el.querySelector('.idx'), extra = el.querySelector('.extra');
+    const draw = () => { stage.innerHTML = steps[i]; idx.textContent = `step ${i+1} / ${steps.length}`; if (render) render(i, extra); };
+    el.querySelector('.prev').onclick = () => { i = Math.max(0, i-1); draw(); };
+    el.querySelector('.next').onclick = () => { i = Math.min(steps.length-1, i+1); draw(); };
+    draw();
+  }
+
+  /* ---------- gantt ---------- */
+  function gantt(el, rows, total, colors) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('gantt');
+    const pal = colors || ['#e8b84a','#5bc8f5','#6bcb77','#f47fa0','#c9a8ff','#ffb86b'];
+    el.innerHTML = rows.map((r, i) => `<div class="row"><span>${esc(r.name)}</span><div class="track">${r.segs.map(s =>
+      `<div class="seg" style="left:${100*s.start/total}%;width:${100*(s.end-s.start)/total}%;background:${pal[i%pal.length]}" title="${s.start}–${s.end}">${(s.end-s.start)/total > .06 ? (s.end-s.start) : ''}</div>`).join('')}</div></div>`).join('') +
+      `<div class="row"><span></span><div style="display:flex;justify-content:space-between;font-size:.75rem;color:var(--muted)"><span>0</span><span>${total}</span></div></div>`;
+  }
+
+  /* ---------- objectives checklist (persisted) ---------- */
+  function objectives(el, items) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('objectives');
+    const saved = (pageId && store.get('obj:' + pageId)) || [];
+    el.innerHTML = items.map((t, i) => `<li><label><input type="checkbox" data-i="${i}" ${saved.includes(i) ? 'checked' : ''}>${t}</label></li>`).join('');
+    el.querySelectorAll('input').forEach(c => c.onchange = () => { const s = [...el.querySelectorAll('input:checked')].map(x => +x.dataset.i); if (pageId) store.set('obj:' + pageId, s); });
+  }
+
+  return { chrome, quiz, cards, stepper, gantt, objectives, esc, store, LESSONS, PIECES, title };
+})();
+
+</script>
+<script>
+OS.chrome('0009-cvs-and-semaphores');
+OS.objectives('obj',['Explain the approximate counter and why per-bucket hash-table locks scale.','State the two rules of CV use (state variable + hold the lock; always while) and why Mesa semantics demand them.','Diagnose the three producer/consumer bugs and write the correct two-CV solution.','Define semaphores by initial value: lock (1), ordering (0), resource count (N).','Explain reader-writer starvation and how the dining-philosophers deadlock is broken.']);
+const PC={v1:['<b>v1 (if, one CV):</b> C1 runs, buffer empty → <code>if (count==0) wait()</code>. C1 sleeps.','P runs: puts a value, signals cond (C1 becomes <em>ready</em>, not running), loops: buffer full → P waits.','<b>C2 sneaks in</b> before C1 gets the CPU: buffer full, takes the value, signals cond (P ready), returns.','C1 finally runs from <em>after</em> its wait. Because it used <code>if</code> it does not re-check — it calls <code>get()</code> on an <b>empty buffer</b>. Assertion fails. <b>Bug: Mesa semantics; use while.</b>'],
+v2:['<b>v2 (while, one CV):</b> C1 waits (empty). P puts, signals (C1 ready), waits (full).','C2 runs first, gets the value, signals cond, then loops and waits (empty). Who did C2\'s signal wake? Either P (fine) or… <b>C1</b>.','Say it woke C1. C1 re-checks with <code>while</code>: buffer empty → waits again. Correct behaviour, but now <b>C1, C2 and P are all asleep</b>.','Nobody is left to signal. <b>Bug: one CV lets a consumer wake a consumer.</b> Use two CVs: producers wait on <code>empty</code> and signal <code>fill</code>; consumers wait on <code>fill</code> and signal <code>empty</code>.'],
+v3:['<b>v3 (while, two CVs):</b> consumers can only wake producers and vice-versa; every wakeup is re-checked.','C1 waits on fill. P puts, signals fill (C1 ready), then waits on <b>empty</b> (full buffer).','C2 grabs the value first, signals <b>empty</b> — that can only be P. P wakes, re-checks: buffer empty, puts.','C1 wakes, re-checks with while: buffer has an item, gets it. <b>Correct.</b> Generalize with a ring buffer (MAX slots, fill_ptr/use_ptr/count) so producers and consumers overlap more.']};
+let cur='v1';const pcEl=document.getElementById('pc');function showPC(){OS.stepper(pcEl,PC[cur]);}document.querySelectorAll('[data-v]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-v]').forEach(x=>x.classList.remove('primary'));b.classList.add('primary');cur=b.dataset.v;showPC();});showPC();
+/* semaphores */
+let S={e:3,f:0,m:1,buf:[],sl:[],n:0};
+function sdraw(){document.getElementById('se').textContent=S.e;document.getElementById('sf').textContent=S.f;document.getElementById('sm').textContent=S.m;document.getElementById('sbuf').innerHTML=[0,1,2].map(i=>`<div class="${S.buf[i]!==undefined?'full':''}">${S.buf[i]??''}</div>`).join('');document.getElementById('sleepers').innerHTML=S.sl.map(s=>`<span class="sleep">${s} asleep</span>`).join('')||'<span>no threads waiting</span>';}
+function wake(kind){const i=S.sl.findIndex(s=>s.startsWith(kind));if(i>=0){S.sl.splice(i,1);return true;}return false;}
+document.getElementById('prod').onclick=()=>{S.e--;if(S.e<0){S.sl.push('producer');document.getElementById('smsg').textContent='empty went negative: producer sleeps in sem_wait(empty) until a consumer posts.';sdraw();return;}S.buf.push(++S.n);S.f++;if(S.f<=0){/*someone waiting*/}if(wake('consumer')){S.buf.length&&S.buf.shift();S.e++;document.getElementById('smsg').textContent='post(full) woke a sleeping consumer, which took the item and posted empty.';}else document.getElementById('smsg').textContent='produced; post(full) — nobody waiting, so full just increments.';sdraw();};
+document.getElementById('cons').onclick=()=>{S.f--;if(S.f<0){S.sl.push('consumer');document.getElementById('smsg').textContent='full went negative: consumer sleeps in sem_wait(full) until a producer posts.';sdraw();return;}S.buf.shift();S.e++;if(wake('producer')){S.buf.push(++S.n);S.f++;document.getElementById('smsg').textContent='post(empty) woke a sleeping producer, which put an item and posted full.';}else document.getElementById('smsg').textContent='consumed; post(empty) — nobody waiting, so empty just increments.';sdraw();};sdraw();
+/* philosophers */
+function phil(fix){const el=document.getElementById('phil');if(!fix){el.innerHTML=[0,1,2,3,4].map(i=>`<div class="wait">P${i}<br>holds fork ${i}<br>waits for ${(i+1)%5}</div>`).join('');document.getElementById('phmsg').textContent='Every philosopher holds their left fork and waits for the right one: a cycle of waiting — deadlock.';}else{el.innerHTML=[0,1,2,3,4].map(i=>i===4?`<div class="wait">P4<br>tries fork 0 first<br>(taken by P0) — waits</div>`:i===3?`<div class="eat">P3<br>holds 3 and 4<br>eats</div>`:`<div class="wait">P${i}<br>holds fork ${i}<br>waits for ${(i+1)%5}</div>`).join('');document.getElementById('phmsg').textContent='P4 reaches for the right fork first, fails, so fork 4 stays free: P3 gets both and eats; then others follow. No cycle, no deadlock.';}}
+document.getElementById('ph-naive').onclick=()=>phil(false);document.getElementById('ph-fix').onclick=()=>phil(true);phil(false);
+OS.cards('cards',[['Approximate counter','Per-CPU local counters flushed to a global every S increments. Trades exactness for scalability.'],['Hand-over-hand locking','Per-node locks acquired in order along a list; more concurrency in theory, slower in practice.'],['Condition variable','Queue of threads waiting for a condition; wait() releases the lock and sleeps, signal()/broadcast() wake.'],['Mesa semantics','A signal only hints that state changed; the woken thread must re-check the condition (hence while loops).'],['Covering condition','Use broadcast when a signal might wake the wrong waiter; each waiter re-checks its own condition.'],['Semaphore','Integer with atomic wait (decrement, sleep if negative) and post (increment, wake one). Initial value defines its role.'],['Binary semaphore','Semaphore initialized to 1, used as a lock.'],['Reader-writer lock','Multiple readers or one writer; first reader takes the write lock, last reader releases it. Can starve writers.'],['Dining philosophers','Five threads, five shared forks; naive acquisition deadlocks; fixed by breaking the circular wait.'],['Thread throttling','Semaphore initialized to N to cap threads inside a resource-heavy region (admission control).']]);
+OS.quiz('quiz',[
+{q:'In the approximate counter with threshold S, what does increasing S do?',o:['makes the global value exact','improves scalability, reduces accuracy','reduces the number of local locks','forces more frequent transfers'],a:1,why:'A larger S means fewer transfers to the global counter (less contention) but the global lags further behind the true total.'},
+{q:'Why must a condition-variable wait always be inside a while loop?',o:['because the mutex might be unlocked','because a woken thread must re-check state','because signal() may fail silently','because wait() returns an error code'],a:1,why:'Under Mesa semantics the signal is only a hint; another thread can consume the state before the woken one runs. Re-checking is mandatory (and handles spurious wakeups).'},
+{q:'With a while loop but a single CV, the producer/consumer code can still fail because:',o:['the buffer overflows silently','a consumer may wake another consumer','the lock is released too early','signals are delivered twice'],a:1,why:'A consumer\'s signal might wake a consumer instead of the producer; that consumer re-checks, finds the buffer empty, sleeps, and now all threads are asleep. Two CVs fix it.'},
+{q:'A semaphore used for ordering (parent waits for child) is initialized to:',o:['1','0','the child count','−1'],a:1,why:'Initially nothing can be handed out: the parent must block until the child posts. If the child posts first, the value becomes 1 and the parent proceeds immediately.'},
+{q:'In the semaphore bounded buffer, placing the mutex around the whole body (outside wait(empty)) causes:',o:['lost items','deadlock','starvation','a data race'],a:1,why:'A producer sleeping in wait(empty) while holding the mutex blocks the consumer that would free a slot. Lock only around put()/get().'},
+{q:'The chapter\'s reader-writer lock has which known weakness?',o:['writers can corrupt reader counts','readers can starve writers','it allows two writers at once','it needs a hardware CAS'],a:1,why:'As long as readers keep arriving, the last reader never leaves and the writer never gets writelock. Fairer versions exist but add overhead.'},
+{q:'How does the book break the dining-philosophers deadlock?',o:['adding a sixth fork','one philosopher grabs right first','letting only one eat at a time','using a timeout on wait'],a:1,why:'Changing the acquisition order for one philosopher removes the possibility of every philosopher holding one fork and waiting for the next — no circular wait.'}]);
+</script></body></html>

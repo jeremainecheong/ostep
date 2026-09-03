@@ -1,0 +1,435 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>10 · Bugs & events — OSTEP course</title><style>
+/* OSTEP course — shared stylesheet. Three pieces, three hues. */
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+:root{
+  --ink:#151b2f; --ink-2:#1e2540; --ink-3:#28304f; --line:#3a4368;
+  --paper:#eef0f7; --muted:#a9b1cf; --faint:#6e779a;
+  --virt:#e8b84a; --conc:#5bc8f5; --pers:#6bcb77; --sec:#f47fa0; --intro:#c9a8ff;
+  --ok:#6bcb77; --bad:#ff6b6b;
+  --accent:var(--virt);
+  --radius:6px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--ink);color:var(--paper);font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:17px;line-height:1.6}
+a{color:var(--accent)}
+code,pre,kbd,.mono{font-family:'IBM Plex Mono',ui-monospace,monospace}
+code{background:var(--ink-3);padding:1px 5px;border-radius:4px;font-size:.9em}
+pre{background:#0f1424;border:1px solid var(--line);border-left:4px solid var(--accent);padding:14px 16px;overflow:auto;border-radius:var(--radius);font-size:.86em;line-height:1.5}
+pre code{background:none;padding:0;font-size:inherit}
+h1,h2,h3,h4{font-family:'Fraunces',Georgia,serif;font-weight:700;line-height:1.15;margin:0 0 .4em}
+h1{font-size:2.6rem;letter-spacing:-.01em}
+h2{font-size:1.9rem;margin-top:2.6rem;padding-top:1.2rem;border-top:1px solid var(--line)}
+h3{font-size:1.3rem;margin-top:1.8rem;color:var(--accent)}
+h4{font-size:1.05rem;margin-top:1.2rem}
+p,li{max-width:72ch}
+.wrap{max-width:1100px;margin:0 auto;padding:0 28px 96px}
+.hero{padding:44px 0 16px}
+.hero .chapters{color:var(--muted);font-size:.95rem;margin-bottom:6px}
+.lede{font-size:1.2rem;color:var(--muted);max-width:66ch}
+.piece-virt{--accent:var(--virt)} .piece-conc{--accent:var(--conc)} .piece-pers{--accent:var(--pers)} .piece-sec{--accent:var(--sec)} .piece-intro{--accent:var(--intro)}
+.fig{background:var(--ink-2);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;margin:22px 0}
+.fig figcaption,.cap{color:var(--muted);font-size:.9rem;margin-top:10px}
+.fig svg{max-width:100%;height:auto;display:block}
+svg text{font-family:'IBM Plex Sans',sans-serif}
+svg .mono{font-family:'IBM Plex Mono',monospace}
+.crux{border:1px solid var(--accent);border-radius:var(--radius);padding:14px 18px;margin:22px 0;background:color-mix(in srgb,var(--accent) 8%,transparent)}
+.crux b{color:var(--accent)}
+.tip{border-left:4px solid var(--muted);padding:6px 16px;margin:18px 0;color:var(--muted)}
+.tip b{color:var(--paper)}
+table{border-collapse:collapse;width:100%;margin:16px 0;font-size:.95rem}
+th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{color:var(--muted);font-weight:500}
+td.mono,th.mono{font-family:'IBM Plex Mono',monospace}
+button,.btn{font:inherit;font-size:.9rem;background:var(--ink-3);color:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:7px 13px;cursor:pointer}
+button:hover{border-color:var(--accent)}
+button.primary{background:var(--accent);color:#111;border-color:var(--accent);font-weight:600}
+button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+input[type=range]{accent-color:var(--accent)}
+input[type=text],input[type=number],select{font:inherit;background:#0f1424;color:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:6px 10px}
+.controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:10px 0}
+.controls label{font-size:.9rem;color:var(--muted)}
+details{border:1px solid var(--line);border-radius:var(--radius);margin:10px 0;background:var(--ink-2)}
+summary{cursor:pointer;padding:12px 16px;font-weight:600;list-style:none}
+summary::before{content:"+";display:inline-block;width:1.2em;color:var(--accent)}
+details[open] summary::before{content:"–"}
+details>div{padding:0 16px 14px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;margin:16px 0}
+.card{perspective:900px;min-height:140px;cursor:pointer}
+.card .inner{position:relative;width:100%;height:100%;min-height:140px;transition:transform .45s;transform-style:preserve-3d}
+.card.flipped .inner{transform:rotateY(180deg)}
+.card .face{position:absolute;inset:0;padding:14px;border-radius:var(--radius);border:1px solid var(--line);background:var(--ink-2);backface-visibility:hidden;display:flex;align-items:center;justify-content:center;text-align:center;font-size:.95rem}
+.card .back{transform:rotateY(180deg);background:var(--ink-3);border-color:var(--accent);font-size:.88rem;line-height:1.45}
+.card .front{font-weight:600}
+@media (prefers-reduced-motion:reduce){.card .inner{transition:none}}
+.quiz .q{border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin:12px 0;background:var(--ink-2)}
+.quiz .q p{margin:0 0 10px;font-weight:600}
+.quiz .opts{display:grid;gap:8px}
+.quiz .opt{text-align:left;background:var(--ink);width:100%}
+.quiz .opt.right{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 15%,var(--ink))}
+.quiz .opt.wrong{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 15%,var(--ink))}
+.quiz .why{margin-top:10px;color:var(--muted);font-size:.93rem;display:none}
+.quiz .q.done .why{display:block}
+.quiz .score{margin-top:12px;font-weight:600}
+.stepper .stage{min-height:60px;background:#0f1424;border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin:10px 0}
+.stepper .idx{color:var(--muted);font-size:.85rem}
+.gantt{display:grid;gap:6px;margin:10px 0}
+.gantt .row{display:grid;grid-template-columns:60px 1fr;align-items:center;gap:8px;font-size:.85rem}
+.gantt .track{position:relative;height:26px;background:#0f1424;border-radius:4px;overflow:hidden}
+.gantt .seg{position:absolute;top:0;bottom:0;display:flex;align-items:center;justify-content:center;font-size:.75rem;color:#111;font-weight:600;border-right:1px solid rgba(0,0,0,.3)}
+.cells{display:grid;gap:4px;margin:10px 0}
+.cell{background:#0f1424;border:1px solid var(--line);border-radius:4px;padding:6px;text-align:center;font-family:'IBM Plex Mono',monospace;font-size:.8rem;min-height:36px;display:flex;align-items:center;justify-content:center}
+.cell.hit{background:color-mix(in srgb,var(--ok) 35%,#0f1424);border-color:var(--ok)}
+.cell.miss{background:color-mix(in srgb,var(--bad) 35%,#0f1424);border-color:var(--bad)}
+.cell.active{outline:2px solid var(--accent)}
+.cell.free{opacity:.45}
+.hl{background:color-mix(in srgb,var(--accent) 30%,transparent);padding:1px 5px;border-radius:3px}
+.k{color:var(--accent);font-weight:600}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media (max-width:760px){.two{grid-template-columns:1fr}.topbar{gap:10px}h1{font-size:2rem}}
+.nav-bottom{display:flex;justify-content:space-between;gap:16px;margin-top:56px;padding-top:20px;border-top:1px solid var(--line)}
+.nav-bottom a{text-decoration:none;padding:12px 16px;border:1px solid var(--line);border-radius:var(--radius);color:var(--paper)}
+.source{background:var(--ink-2);border-radius:var(--radius);padding:14px 18px;margin:22px 0;font-size:.95rem}
+.source b{color:var(--accent)}
+.objectives li{list-style:none;margin:6px 0}
+.objectives input{margin-right:8px;accent-color:var(--accent)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.85rem;color:var(--muted)}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:5px;vertical-align:-2px}
+.tag{display:inline-block;font-size:.75rem;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted);margin-right:6px}
+.log{font-family:'IBM Plex Mono',monospace;font-size:.82rem;background:#0f1424;border:1px solid var(--line);border-radius:var(--radius);padding:10px 12px;max-height:220px;overflow:auto;white-space:pre-wrap}
+@media print{body{background:#fff;color:#111}.topbar,.nav-bottom,button{display:none}.fig,.crux,details,.source{border-color:#bbb;background:#fff}pre{background:#f5f5f5;color:#111}}
+
+/* ---------- site chrome: sticky header + directory drawer ---------- */
+.topbar{position:sticky;top:0;z-index:30;display:flex;gap:14px;align-items:center;padding:10px 16px;background:color-mix(in srgb,var(--ink) 92%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);font-size:.9rem}
+.topbar .menu{display:flex;align-items:center;gap:8px;padding:8px 12px;font-size:1rem}
+.topbar .menu span{font-size:.85rem}
+.topbar .brand{color:var(--paper);text-decoration:none;font-weight:600;display:flex;align-items:center;gap:8px}
+.topbar .dot{width:10px;height:10px;border-radius:50%;background:var(--accent);display:inline-block}
+.topbar .links{display:flex;gap:16px;margin-left:8px}
+.topbar .links a{color:var(--muted);text-decoration:none}
+.topbar .links a:hover{color:var(--paper)}
+.topbar .where{margin-left:auto;color:var(--faint);font-variant-numeric:tabular-nums}
+.drawer{position:fixed;top:0;left:0;bottom:0;width:min(340px,88vw);background:var(--ink-2);border-right:1px solid var(--line);z-index:50;transform:translateX(-102%);transition:transform .25s;overflow-y:auto;padding:0 0 24px;box-shadow:0 0 40px rgba(0,0,0,.5)}
+.drawer-open .drawer{transform:none}
+.scrim{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:40;opacity:0;pointer-events:none;transition:opacity .2s}
+.drawer-open .scrim{opacity:1;pointer-events:auto}
+.drawer .dhead{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--ink-2)}
+.drawer .close,.notes-sheet .close{font-size:1.3rem;line-height:1;padding:4px 10px}
+.drawer .dgroup{padding:8px 0 4px}
+.drawer .dname{padding:8px 16px 4px;color:var(--accent);font-family:'Fraunces',serif;font-weight:700}
+.drawer .ditem{display:flex;gap:10px;align-items:center;padding:9px 16px;color:var(--paper);text-decoration:none;border-left:3px solid transparent;font-size:.92rem}
+.drawer .ditem:hover{background:var(--ink-3)}
+.drawer .ditem.cur{border-left-color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
+.drawer .ditem .n{color:var(--faint);min-width:1.4em;font-variant-numeric:tabular-nums}
+.drawer .ditem .t{flex:1;line-height:1.25}
+.drawer .ditem .t small{display:block;color:var(--faint);font-size:.75rem}
+.drawer .badges{display:flex;gap:6px;align-items:center}
+.drawer .badges i{font-style:normal;color:var(--accent)}
+.drawer .badges em{font-style:normal;font-size:.75rem;padding:1px 6px;border-radius:999px;background:var(--ink-3);color:var(--muted);font-variant-numeric:tabular-nums}
+.drawer .dfoot{padding:16px;color:var(--faint);font-size:.8rem}
+/* ---------- notes: floating button + bottom sheet ---------- */
+.notes-fab{position:fixed;right:16px;bottom:16px;z-index:35;display:flex;gap:8px;align-items:center;padding:12px 16px;border-radius:999px;background:var(--accent);color:#111;border:none;font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,.4)}
+.notes-sheet{position:fixed;left:0;right:0;bottom:0;z-index:45;background:var(--ink-2);border-top:1px solid var(--line);border-radius:14px 14px 0 0;transform:translateY(105%);transition:transform .25s;box-shadow:0 -10px 40px rgba(0,0,0,.5);max-width:900px;margin:0 auto;padding-bottom:env(safe-area-inset-bottom)}
+.notes-open .notes-sheet{transform:none}
+.notes-open .notes-fab{display:none}
+.notes-sheet .nhead{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line)}
+.notes-sheet .nhead b{flex:1;font-size:.95rem}
+.notes-sheet .nstatus{color:var(--faint);font-size:.8rem}
+.notes-sheet textarea{display:block;width:100%;min-height:36vh;max-height:60vh;resize:vertical;border:none;background:#0f1424;color:var(--paper);font:inherit;font-size:1rem;line-height:1.5;padding:14px 16px;outline:none}
+.notes-sheet .nfoot{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;font-size:.85rem;color:var(--muted)}
+/* ---------- wide widgets scroll sideways instead of breaking the page ---------- */
+.tw{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:16px 0}
+.tw table{margin:0;min-width:520px}
+.fig{overflow-x:auto}
+@media (prefers-reduced-motion:reduce){.drawer,.notes-sheet,.scrim{transition:none}}
+/* ---------- phones ---------- */
+@media (max-width:760px){
+  body{font-size:16px}
+  .wrap{padding:0 16px 110px}
+  h1{font-size:1.85rem} h2{font-size:1.45rem;margin-top:2rem} h3{font-size:1.15rem}
+  .lede{font-size:1.05rem}
+  .topbar{padding:8px 12px;gap:10px}
+  .topbar .links{display:none}
+  .topbar .menu span{display:none}
+  .topbar .menu{padding:8px 11px}
+  .fig{padding:12px 12px;margin:16px -4px;border-radius:8px}
+  .crux,.source{padding:12px 14px}
+  pre{font-size:.8em;padding:12px 12px}
+  button,.btn{padding:10px 14px;font-size:.92rem}
+  .controls{gap:8px}
+  .controls label{display:flex;align-items:center;gap:6px}
+  input[type=number]{max-width:96px}
+  .cards{grid-template-columns:1fr 1fr;gap:8px}
+  .card,.card .inner{min-height:120px}
+  .card .face{font-size:.88rem;padding:10px}
+  .cells{min-width:420px}
+  .quiz .opt{padding:12px 12px;line-height:1.35}
+  .nav-bottom{flex-direction:column}
+  .nav-bottom a{text-align:center}
+  .notes-fab span{display:none}
+  .notes-fab{padding:14px;right:12px;bottom:12px}
+  .notes-sheet textarea{min-height:44vh}
+  .stepper .stage{padding:12px}
+  .gantt .row{grid-template-columns:44px 1fr;font-size:.75rem}
+  /* lesson-specific grids collapse */
+  .lde,.il,.two,.cry,.flash,.dl,.fdt,.how,.cards.wide,.vm{grid-template-columns:1fr}
+  .map{grid-template-columns:1fr}
+  .net{grid-template-columns:1fr}.net .arrow{padding:0;transform:rotate(90deg)}
+  .phil{grid-template-columns:repeat(2,1fr)}
+  .jobs{max-width:100%}
+  .trace{min-width:620px}.tl{min-width:720px}.disk{min-width:560px}
+}
+@media (max-width:420px){.cards{grid-template-columns:1fr}}
+
+</style>
+<style>.bar{display:flex;height:28px;border-radius:4px;overflow:hidden;font-size:.8rem;margin:6px 0}.bar div{display:flex;align-items:center;justify-content:center;color:#111;font-weight:600}.dl{display:grid;grid-template-columns:1fr 1fr;gap:12px}.dl .c{background:#0f1424;border:1px solid var(--line);border-radius:6px;padding:12px}.dl .c.on{border-color:var(--bad)}.dl .c.off{border-color:var(--ok)}.dl h4{margin:0 0 6px;font-family:inherit;font-size:.9rem}.evloop{display:flex;gap:8px;flex-wrap:wrap}.evloop div{padding:8px 12px;border:1px solid var(--line);border-radius:6px;background:#0f1424;font-size:.85rem}.evloop div.on{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 20%,#0f1424)}</style></head>
+<body class="piece-conc"><div class="wrap">
+<header class="hero"><div class="chapters">OSTEP chapters 32–33 · Common Concurrency Problems · Event-based Concurrency</div>
+<h1>The bugs concurrency actually produces — and the alternative that avoids threads</h1>
+<p class="lede">A study of real code found that most concurrency bugs aren't deadlocks at all, and that nearly every non-deadlock bug is one of two patterns. Deadlock itself has four necessary conditions, each a lever. Then a different answer to the whole problem: don't use threads; write an event loop.</p></header>
+<div class="source"><b>Primary sources:</b> <a href="https://pages.cs.wisc.edu/~remzi/OSTEP/threads-bugs.pdf">Ch 32</a>, <a href="https://pages.cs.wisc.edu/~remzi/OSTEP/threads-events.pdf">Ch 33</a>. The bug study is Lu et al., "Learning from Mistakes" (ASPLOS '08), which the book calls excellent and readable. Event-based servers: Pai et al. (Flash), Welsh et al. (SEDA), Ousterhout's "Why Threads Are a Bad Idea".</div>
+<h2>What you'll be able to do</h2><ul id="obj"></ul>
+
+<h2>What kinds of bugs exist? (chapter 32)</h2>
+<div class="crux"><b>Crux: how to handle common concurrency bugs.</b> They come in a few patterns; knowing them is the first step to writing robust code.</div>
+<p>Lu et al. studied 105 concurrency bugs in MySQL, Apache, Mozilla and OpenOffice: <b>74 non-deadlock</b>, <b>31 deadlock</b>. Of the non-deadlock bugs, <b>97%</b> were one of two kinds.</p>
+<div class="fig"><div class="bar"><div style="width:70%;background:#5bc8f5">74 non-deadlock</div><div style="width:30%;background:#f47fa0">31 deadlock</div></div><table><tr><th>Application</th><th>What it does</th><th>Non-deadlock</th><th>Deadlock</th></tr><tr><td>MySQL</td><td>database server</td><td>14</td><td>9</td></tr><tr><td>Apache</td><td>web server</td><td>13</td><td>4</td></tr><tr><td>Mozilla</td><td>web browser</td><td>41</td><td>16</td></tr><tr><td>OpenOffice</td><td>office suite</td><td>6</td><td>2</td></tr></table></div>
+<div class="two"><div class="fig"><h4>Atomicity violation (from MySQL)</h4><pre><code>Thread 1::
+if (thd-&gt;proc_info) {
+    ...
+    fputs(thd-&gt;proc_info, ...);   // T2 may have NULLed it here
+}
+Thread 2::
+thd-&gt;proc_info = NULL;</code></pre><p>"The desired serializability among multiple memory accesses is violated": the check and the use were meant to be atomic. <b>Fix</b>: a lock around both accesses in both threads (<code>proc_info_lock</code>).</p></div>
+<div class="fig"><h4>Order violation (from Mozilla)</h4><pre><code>Thread 1::  mThread = PR_CreateThread(mMain, ...);
+Thread 2::  void mMain(...) { mState = mThread-&gt;State; }  // mThread may still be NULL</code></pre><p>"The desired order between two memory accesses is flipped": T2 assumed T1 had already run. <b>Fix</b>: enforce ordering with a condition variable (or semaphore) — a state variable <code>mtInit</code>, a lock, and <code>while (mtInit == 0) wait</code>.</p></div></div>
+
+<h2>Deadlock</h2>
+<div class="crux"><b>Crux: how to deal with deadlock.</b> Prevent, avoid, or detect and recover? Is it a real problem? (Yes: 31 of 105.)</div>
+<p>Why do deadlocks happen in big systems? <b>Complex dependencies</b> (the VM system calls the file system to page in; the file system calls the VM for a buffer) and <b>encapsulation</b> (Java's <code>Vector.AddAll(v1, v2)</code> locks both — two threads calling it with the arguments swapped deadlock, and neither caller can see why). Four conditions must <em>all</em> hold. Click one to see the prevention technique that removes it.</p>
+<div class="fig"><div class="dl" id="dl"></div><div class="cap" id="dlmsg" style="margin-top:12px">Click a condition.</div></div>
+<div class="tip"><b>Trylock and livelock.</b> <code>pthread_mutex_trylock(L2)</code> lets a thread release L1 and retry instead of waiting — but two threads can retry in lockstep forever (livelock). Add a random delay. Also beware: if code between the acquisitions allocated memory, "back off" must undo it too.</div>
+<div class="tip"><b>Lock-free with compare-and-swap.</b> <code>do { old = *v; } while (CAS(v, old, old + amount) == 0);</code> — no lock, so no deadlock; a list insert does the same by retrying <code>CAS(&amp;head, n-&gt;next, n)</code>. Powerful but hard to generalize (the book: building a general wait-free structure is an entire field).</div>
+<h3>Beyond prevention</h3>
+<ul><li><b>Avoidance via scheduling</b>: if you know which locks each thread may take, never run two threads that could conflict at the same time (Dijkstra's Banker's Algorithm). Conservative, costs concurrency; fine for embedded systems.</li><li><b>Detect and recover</b>: let it happen occasionally, detect a cycle in the resource graph, restart. Databases do this; and, per Tom West's law, "not everything worth doing is worth doing well" — a once-a-year freeze may just be rebooted.</li><li>The chapter's best advice: a <b>lock ordering</b> discipline prevents deadlock before it happens. Its long-term hope: models like MapReduce that avoid locks entirely.</li></ul>
+
+<h2>Event-based concurrency (chapter 33)</h2>
+<div class="crux"><b>Crux: how to build concurrent servers without threads</b>, keeping control over scheduling and avoiding the bugs above? Node.js and many GUI toolkits do exactly this.</div>
+<div class="fig"><div class="evloop" id="ev"></div><div class="controls" style="margin-top:10px"><button class="primary" id="evstep">advance the loop</button><span class="cap" id="evmsg"></span></div></div>
+<pre><code>while (1) {
+    events = getEvents();
+    for (e in events) processEvent(e);       // the <b>event handler</b>; it must never block
+}
+int select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds, struct timeval *timeout);
+// checks descriptors 0..nfds-1 for readiness; timeout NULL = block, 0 = poll and return at once
+// each iteration: FD_ZERO, FD_SET each socket, select(), then FD_ISSET to find the ready ones</code></pre>
+<ul><li><b>Why simpler: no locks.</b> One thread, one handler at a time, so no interleaving inside a handler — the concurrency bugs above simply cannot happen. The application, not the OS, decides what runs next.</li><li><b>Problem: blocking calls.</b> A handler that calls <code>read()</code> on a file blocks the whole server. The rule: <em>no blocking calls in handlers</em>. Solution: <b>asynchronous I/O</b> — <code>aio_read(struct aiocb*)</code> returns immediately; poll with <code>aio_error()</code> or get a UNIX <b>signal</b> on completion. (Early systems lacked async disk I/O, so Flash used a hybrid: events for the network, worker threads for disk.)</li><li><b>Problem: state management.</b> With threads, local variables survive across a blocking call; with events, the handler that issues the I/O is not the one that finishes it — <b>manual stack management</b>. Record what's needed (e.g., the socket descriptor) in a <b>continuation</b> indexed by the request and look it up when the completion event arrives.</li><li><b>Still hard:</b> multiple CPUs bring back locking across event handlers; paging can block a handler implicitly; APIs change from blocking to non-blocking over time and force restructuring; async network and disk I/O don't always integrate neatly.</li></ul>
+<p>The book's verdict: neither model has won; both will persist.</p>
+
+<h2>Flash cards</h2><div id="cards"></div>
+<h2>Retrieval practice</h2><div id="quiz"></div>
+<p class="tip">Want to practice spotting atomicity vs order violations in code snippets, or design a lock ordering for a small system? Ask me in the chat.</p>
+</div>
+<script>
+/* OSTEP course — shared components. Every page loads this file (inlined by build.py). */
+window.OS = (function () {
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+  /* ---------- persistent storage (localStorage on a real site; in-memory fallback in sandboxes) ---------- */
+  const mem = {};
+  const store = {
+    get(k) { try { const v = localStorage.getItem('ostep:' + k); return v === null ? (mem[k] ?? null) : JSON.parse(v); } catch (e) { return mem[k] ?? null; } },
+    set(k, v) { mem[k] = v; try { localStorage.setItem('ostep:' + k, JSON.stringify(v)); } catch (e) {} },
+    del(k) { delete mem[k]; try { localStorage.removeItem('ostep:' + k); } catch (e) {} },
+    keys(prefix) { const out = new Set(Object.keys(mem).filter(k => k.startsWith(prefix))); try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith('ostep:' + prefix)) out.add(k.slice(6)); } } catch (e) {} return [...out]; },
+    available() { try { localStorage.setItem('ostep:test', '1'); localStorage.removeItem('ostep:test'); return true; } catch (e) { return false; } }
+  };
+
+  /* ---------- course structure ---------- */
+  const PIECES = [
+    ['intro', 'Introduction', [['0001-three-easy-pieces', 'Three easy pieces', 'ch 1–2']]],
+    ['virt', 'Virtualization', [
+      ['0002-processes', 'Processes & the process API', 'ch 4–5'],
+      ['0003-limited-direct-execution', 'Limited direct execution', 'ch 6'],
+      ['0004-scheduling', 'Scheduling', 'ch 7–10'],
+      ['0005-address-spaces', 'Address spaces & segments', 'ch 13–16'],
+      ['0006-paging-and-tlbs', 'Paging & TLBs', 'ch 17–20'],
+      ['0007-swapping', 'Swapping & policies', 'ch 21–23']]],
+    ['conc', 'Concurrency', [
+      ['0008-threads-and-locks', 'Threads & locks', 'ch 26–28'],
+      ['0009-cvs-and-semaphores', 'CVs & semaphores', 'ch 29–31'],
+      ['0010-bugs-and-events', 'Bugs & events', 'ch 32–33']]],
+    ['pers', 'Persistence', [
+      ['0011-devices-disks-raid', 'Devices, disks, RAID', 'ch 36–38'],
+      ['0012-files-and-vsfs', 'Files & a simple FS', 'ch 39–40'],
+      ['0013-ffs-journaling-lfs', 'FFS, journaling, LFS', 'ch 41–43'],
+      ['0014-ssd-and-integrity', 'SSDs & integrity', 'ch 44–45'],
+      ['0015-distributed-nfs-afs', 'Distributed FS', 'ch 48–50']]],
+    ['sec', 'Security', [['0016-security-and-vmms', 'Security & VMMs', 'ch 53–57, App B']]]
+  ];
+  const LESSONS = PIECES.flatMap(p => p[2].map(l => [l[0], l[1], p[0], l[2]]));
+  const title = id => (LESSONS.find(l => l[0] === id) || [])[1] || id;
+  let pageId = null, root = '../';
+
+  /* ---------- chrome: sticky header, slide-out directory, notes drawer, prev/next ---------- */
+  function chrome(id, rootPath) {
+    pageId = id; root = rootPath === undefined ? '../' : rootPath;
+    const i = LESSONS.findIndex(l => l[0] === id);
+    const isLesson = i >= 0;
+    const top = document.createElement('header'); top.className = 'topbar';
+    top.innerHTML = `<button class="menu" aria-label="Open directory" aria-expanded="false">☰<span>Directory</span></button>
+      <a class="brand" href="${root}index.html"><span class="dot"></span>OSTEP course</a>
+      <nav class="links"><a href="${root}reference/glossary.html">Glossary</a><a href="${root}reference/cheatsheets.html">Cheat sheets</a><a href="${root}notes.html">My notes</a></nav>
+      ${isLesson ? `<span class="where">${i+1} / ${LESSONS.length}</span>` : ''}`;
+    document.body.prepend(top);
+    // directory drawer
+    const drawer = document.createElement('aside'); drawer.className = 'drawer'; drawer.setAttribute('aria-label', 'Course directory');
+    const scores = Object.fromEntries(LESSONS.map(l => [l[0], store.get('quiz:' + l[0])]));
+    const notes = new Set(store.keys('notes:').map(k => k.slice(6)).filter(k => (store.get('notes:' + k) || {}).text));
+    drawer.innerHTML = `<div class="dhead"><b>Directory</b><button class="close" aria-label="Close">×</button></div>
+      <a class="ditem ${id === 'index' ? 'cur' : ''}" href="${root}index.html">Course hub</a>
+      ${PIECES.map(([cls, name, ls]) => `<div class="dgroup piece-${cls}"><div class="dname">${name}</div>${ls.map(l => {
+        const n = LESSONS.findIndex(x => x[0] === l[0]) + 1, s = scores[l[0]];
+        return `<a class="ditem ${l[0] === id ? 'cur' : ''}" href="${root}lessons/${l[0]}.html"><span class="n">${n}</span><span class="t">${l[1]}<small>${l[3]}</small></span><span class="badges">${notes.has(l[0]) ? '<i title="you have notes">✎</i>' : ''}${s ? `<em title="best quiz score">${s.score}/${s.total}</em>` : ''}</span></a>`; }).join('')}</div>`).join('')}
+      <div class="dgroup piece-intro"><div class="dname">Reference</div>
+        <a class="ditem ${id === 'glossary' ? 'cur' : ''}" href="${root}reference/glossary.html"><span class="t">Glossary</span></a>
+        <a class="ditem ${id === 'cheatsheets' ? 'cur' : ''}" href="${root}reference/cheatsheets.html"><span class="t">Cheat sheets</span></a>
+        <a class="ditem ${id === 'notes' ? 'cur' : ''}" href="${root}notes.html"><span class="t">My notes &amp; progress</span></a></div>
+      <div class="dfoot">${store.available() ? 'Notes and scores are saved in this browser.' : 'Notes and scores are kept for this session only (storage unavailable here).'}</div>`;
+    document.body.append(drawer);
+    const scrim = document.createElement('div'); scrim.className = 'scrim'; document.body.append(scrim);
+    const open = o => { document.body.classList.toggle('drawer-open', o); top.querySelector('.menu').setAttribute('aria-expanded', o); if (o) drawer.querySelector('.cur, .ditem')?.focus(); };
+    top.querySelector('.menu').onclick = () => open(!document.body.classList.contains('drawer-open'));
+    drawer.querySelector('.close').onclick = () => open(false); scrim.onclick = () => open(false);
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') { open(false); notesOpen(false); } });
+    // prev/next for lessons
+    if (isLesson) {
+      const nav = document.createElement('div'); nav.className = 'nav-bottom';
+      const prev = LESSONS[i-1], next = LESSONS[i+1];
+      nav.innerHTML = (prev ? `<a href="${prev[0]}.html">← ${i}. ${prev[1]}</a>` : '<span></span>') +
+                      (next ? `<a href="${next[0]}.html">${i+2}. ${next[1]} →</a>` : `<a href="${root}index.html">Back to course hub →</a>`);
+      document.querySelector('.wrap').append(nav);
+    }
+    // wrap tables so they scroll sideways on phones
+    document.querySelectorAll('.wrap table').forEach(t => { if (t.parentElement.classList.contains('tw')) return; const w = document.createElement('div'); w.className = 'tw'; t.replaceWith(w); w.append(t); });
+    // notes drawer (every page except the notes page itself)
+    if (id !== 'notes') notesUI(id, isLesson ? `${i+1}. ${LESSONS[i][1]}` : (document.title.split(' — ')[0]));
+  }
+
+  /* ---------- notes: floating button + bottom sheet, autosaved ---------- */
+  let notesOpen = () => {};
+  function notesUI(id, label) {
+    const btn = document.createElement('button'); btn.className = 'notes-fab'; btn.innerHTML = '✎ <span>Notes</span>'; btn.setAttribute('aria-label', 'Open notes');
+    const sheet = document.createElement('section'); sheet.className = 'notes-sheet'; sheet.setAttribute('aria-label', 'Notes for this page');
+    const saved = store.get('notes:' + id) || {};
+    sheet.innerHTML = `<div class="nhead"><b>Notes · ${esc(label)}</b><span class="nstatus"></span><button class="close" aria-label="Close notes">×</button></div>
+      <textarea placeholder="Your notes for this page. Markdown is fine. Saved automatically.">${esc(saved.text || '')}</textarea>
+      <div class="nfoot"><span class="ncount"></span><a href="${root}notes.html">All notes &amp; export →</a></div>`;
+    document.body.append(btn, sheet);
+    const ta = sheet.querySelector('textarea'), status = sheet.querySelector('.nstatus'), count = sheet.querySelector('.ncount');
+    const upd = () => { count.textContent = ta.value.trim() ? ta.value.trim().split(/\s+/).length + ' words' : ''; };
+    let t; ta.addEventListener('input', () => { status.textContent = 'saving…'; clearTimeout(t); t = setTimeout(() => { store.set('notes:' + id, { text: ta.value, title: label, updated: new Date().toISOString() }); status.textContent = 'saved'; upd(); }, 400); });
+    upd();
+    notesOpen = o => { document.body.classList.toggle('notes-open', o); if (o) ta.focus(); };
+    btn.onclick = () => notesOpen(!document.body.classList.contains('notes-open'));
+    sheet.querySelector('.close').onclick = () => notesOpen(false);
+  }
+
+  /* ---------- quiz: immediate feedback; best score persisted ---------- */
+  function quiz(el, qs) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('quiz');
+    let score = 0, answered = 0;
+    const best = pageId ? store.get('quiz:' + pageId) : null;
+    el.innerHTML = qs.map((q, i) => `<div class="q" data-i="${i}"><p>${i+1}. ${q.q}</p>
+      <div class="opts">${q.o.map((o, j) => `<button class="opt" data-j="${j}">${esc(o)}</button>`).join('')}</div>
+      <div class="why">${q.why}</div></div>`).join('') + `<div class="score">${best ? `Best so far: ${best.score}/${best.total} (${new Date(best.date).toLocaleDateString()})` : ''}</div>`;
+    el.querySelectorAll('.q').forEach(qd => {
+      const q = qs[+qd.dataset.i];
+      qd.querySelectorAll('.opt').forEach(b => b.addEventListener('click', () => {
+        if (qd.classList.contains('done')) return;
+        qd.classList.add('done'); answered++;
+        const j = +b.dataset.j;
+        if (j === q.a) { b.classList.add('right'); score++; }
+        else { b.classList.add('wrong'); qd.querySelectorAll('.opt')[q.a].classList.add('right'); }
+        const s = el.querySelector('.score');
+        s.textContent = `${score} / ${answered} correct`;
+        if (answered === qs.length) {
+          s.textContent += score === qs.length ? ' — all of them. Retry from memory in two days.' : ' — reread the sections you missed, then retry.';
+          if (pageId && (!best || score >= best.score)) store.set('quiz:' + pageId, { score, total: qs.length, date: new Date().toISOString() });
+        }
+      }));
+    });
+  }
+
+  /* ---------- flip cards ---------- */
+  function cards(el, list) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('cards');
+    el.innerHTML = list.map(([f, b]) => `<div class="card" tabindex="0" role="button" aria-label="flip card"><div class="inner"><div class="face front">${f}</div><div class="face back">${b}</div></div></div>`).join('');
+    el.querySelectorAll('.card').forEach(c => {
+      const t = () => c.classList.toggle('flipped');
+      c.addEventListener('click', t);
+      c.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); t(); } });
+    });
+  }
+
+  /* ---------- stepper ---------- */
+  function stepper(el, steps, render) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('stepper');
+    let i = 0;
+    el.innerHTML = `<div class="controls"><button class="prev">← Back</button><button class="next primary">Next step →</button><span class="idx"></span></div><div class="stage"></div><div class="extra"></div>`;
+    const stage = el.querySelector('.stage'), idx = el.querySelector('.idx'), extra = el.querySelector('.extra');
+    const draw = () => { stage.innerHTML = steps[i]; idx.textContent = `step ${i+1} / ${steps.length}`; if (render) render(i, extra); };
+    el.querySelector('.prev').onclick = () => { i = Math.max(0, i-1); draw(); };
+    el.querySelector('.next').onclick = () => { i = Math.min(steps.length-1, i+1); draw(); };
+    draw();
+  }
+
+  /* ---------- gantt ---------- */
+  function gantt(el, rows, total, colors) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('gantt');
+    const pal = colors || ['#e8b84a','#5bc8f5','#6bcb77','#f47fa0','#c9a8ff','#ffb86b'];
+    el.innerHTML = rows.map((r, i) => `<div class="row"><span>${esc(r.name)}</span><div class="track">${r.segs.map(s =>
+      `<div class="seg" style="left:${100*s.start/total}%;width:${100*(s.end-s.start)/total}%;background:${pal[i%pal.length]}" title="${s.start}–${s.end}">${(s.end-s.start)/total > .06 ? (s.end-s.start) : ''}</div>`).join('')}</div></div>`).join('') +
+      `<div class="row"><span></span><div style="display:flex;justify-content:space-between;font-size:.75rem;color:var(--muted)"><span>0</span><span>${total}</span></div></div>`;
+  }
+
+  /* ---------- objectives checklist (persisted) ---------- */
+  function objectives(el, items) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('objectives');
+    const saved = (pageId && store.get('obj:' + pageId)) || [];
+    el.innerHTML = items.map((t, i) => `<li><label><input type="checkbox" data-i="${i}" ${saved.includes(i) ? 'checked' : ''}>${t}</label></li>`).join('');
+    el.querySelectorAll('input').forEach(c => c.onchange = () => { const s = [...el.querySelectorAll('input:checked')].map(x => +x.dataset.i); if (pageId) store.set('obj:' + pageId, s); });
+  }
+
+  return { chrome, quiz, cards, stepper, gantt, objectives, esc, store, LESSONS, PIECES, title };
+})();
+
+</script>
+<script>
+OS.chrome('0010-bugs-and-events');
+OS.objectives('obj',['Classify a concurrency bug as atomicity violation, order violation, or deadlock and name the standard fix.','List the four deadlock conditions and match a prevention technique to each.','Explain trylock/livelock, lock-free CAS updates, Banker\'s-style avoidance, and detect-and-recover.','Describe an event loop with select()/poll() and why it needs no locks.','Explain why blocking calls break event servers and how async I/O and continuations address it.']);
+const D=[['Mutual exclusion','Threads claim exclusive control of resources (locks).','Avoid it with <b>lock-free / wait-free</b> structures using CAS: retry the update until it applies, no lock held. Powerful, but building general structures is hard.'],
+['Hold-and-wait','Threads hold resources while waiting for more.','Acquire all locks at once, atomically, under a global <b>prevention lock</b>. Works, but hurts concurrency and requires knowing every lock in advance — encapsulation suffers.'],
+['No preemption','Locks cannot be forcibly taken away.','Use <b>trylock</b>: if L2 is unavailable, release L1 and retry. Beware <b>livelock</b> (add random back-off) and undoing side effects done between acquisitions.'],
+['Circular wait','A cycle: each thread holds a lock the next one wants.','<b>Lock ordering</b>: total order (always L1 before L2) or partial order (Linux mm: "i_mutex before i_mmap_rwsem…"). Trick for symmetric code: acquire by <b>address order</b>, <code>if (m1 &gt; m2) {lock(m1);lock(m2)} else {lock(m2);lock(m1)}</code>. The most practical technique.']];
+const dl=document.getElementById('dl');dl.innerHTML=D.map((d,i)=>`<div class="c on" data-i="${i}"><h4>${d[0]}</h4><div style="font-size:.88rem;color:var(--muted)">${d[1]}</div></div>`).join('');
+dl.querySelectorAll('.c').forEach(c=>c.onclick=()=>{dl.querySelectorAll('.c').forEach(x=>x.classList.replace('off','on'));c.classList.replace('on','off');document.getElementById('dlmsg').innerHTML=`Remove <b>${D[+c.dataset.i][0]}</b> → ${D[+c.dataset.i][2]} With any one condition gone, deadlock is impossible.`;});
+const EV=['getEvents(): select() blocks until a descriptor is ready','event: socket 4 readable → handler parses request','handler needs a disk block → issues aio_read(), records continuation {fd:4}, returns','getEvents(): select() again (signal/aio_error reports completion)','event: disk read done → look up continuation, write response to fd 4'];let ei=0;const ev=document.getElementById('ev');
+function evd(){ev.innerHTML=EV.map((e,i)=>`<div class="${i===ei?'on':''}">${i+1}. ${e}</div>`).join('');document.getElementById('evmsg').textContent=['Single thread; nothing else runs while a handler runs.','No lock needed: no other handler can touch shared state now.','The handler must not block — the loop would stall for every client.','Meanwhile other clients\' events are processed.','Manual stack management: the state a thread would keep on its stack lives in the continuation.'][ei];}
+document.getElementById('evstep').onclick=()=>{ei=(ei+1)%EV.length;evd();};evd();
+OS.cards('cards',[['Atomicity violation','A sequence of accesses meant to be indivisible is interleaved by another thread; fix with a lock around the whole sequence.'],['Order violation','Code assumes A happens before B but nothing enforces it; fix with a CV/semaphore and a state variable.'],['Four deadlock conditions','Mutual exclusion, hold-and-wait, no preemption, circular wait — all must hold.'],['Lock ordering','Acquire locks in a fixed global (or partial) order; breaks circular wait. Address-order trick for symmetric code.'],['Livelock','Threads keep running (retrying trylock) but make no progress; mitigate with random back-off.'],['Banker\'s algorithm','Dijkstra\'s deadlock-avoidance scheduling: only run combinations of tasks that cannot deadlock given known lock demands.'],['Event loop','while(1){events=getEvents(); for each: processEvent}. One thread, no locks, app controls scheduling.'],['select()/poll()','System calls that report which of a set of descriptors are ready for read/write, optionally with a timeout.'],['Asynchronous I/O','aio_read() returns immediately; completion via polling aio_error() or a signal. Lets handlers avoid blocking.'],['Continuation','Saved state (e.g., the socket fd) recorded when issuing async work and looked up when its completion event arrives.']]);
+OS.quiz('quiz',[
+{q:'In Lu et al.\'s study, what fraction of non-deadlock bugs were atomicity or order violations?',o:['about half','ninety-seven percent','about a third','roughly ten percent'],a:1,why:'97% of the 74 non-deadlock bugs. Knowing these two patterns covers most of what you will meet.'},
+{q:'The MySQL proc_info bug (check pointer, then use it, while another thread NULLs it) is a(n):',o:['order violation','atomicity violation','deadlock','livelock'],a:1,why:'The test and the use were meant to be one indivisible step. Fix: hold a lock across both, in both threads.'},
+{q:'Which deadlock condition does lock ordering eliminate?',o:['hold-and-wait','circular wait','no preemption','mutual exclusion'],a:1,why:'If every thread acquires locks in the same order, there can be no cycle in who-waits-for-whom.'},
+{q:'What new problem can pthread_mutex_trylock-based back-off introduce?',o:['priority inversion','livelock','starvation of readers','double unlocking'],a:1,why:'Two threads may repeatedly grab their first lock, fail on the second, release, and retry in lockstep, running forever without progress.'},
+{q:'Why do event-based servers not need locks?',o:['select() takes locks internally','only one handler runs at a time','all data is copied per event','the kernel serializes sockets'],a:1,why:'With a single thread processing one event to completion, no other handler can interleave. This holds only until you add multiple CPUs.'},
+{q:'What must an event handler never do, and why?',o:['allocate memory: fragmentation','block: it stalls every client','write to sockets: races','call select(): recursion'],a:1,why:'A blocking read() stops the only thread, so no other events get processed. Use asynchronous I/O and return immediately.'},
+{q:'"Manual stack management" in event servers refers to:',o:['growing the stack by hand','saving request state in continuations','using recursion instead of loops','allocating one stack per socket'],a:1,why:'The handler that issues async I/O returns; a later handler completes it, so the needed state (like the socket fd) must be recorded explicitly rather than living in stack variables.'}]);
+</script></body></html>

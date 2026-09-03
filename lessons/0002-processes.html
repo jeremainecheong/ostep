@@ -1,0 +1,534 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>2 · Processes — OSTEP course</title><style>
+/* OSTEP course — shared stylesheet. Three pieces, three hues. */
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+:root{
+  --ink:#151b2f; --ink-2:#1e2540; --ink-3:#28304f; --line:#3a4368;
+  --paper:#eef0f7; --muted:#a9b1cf; --faint:#6e779a;
+  --virt:#e8b84a; --conc:#5bc8f5; --pers:#6bcb77; --sec:#f47fa0; --intro:#c9a8ff;
+  --ok:#6bcb77; --bad:#ff6b6b;
+  --accent:var(--virt);
+  --radius:6px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--ink);color:var(--paper);font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:17px;line-height:1.6}
+a{color:var(--accent)}
+code,pre,kbd,.mono{font-family:'IBM Plex Mono',ui-monospace,monospace}
+code{background:var(--ink-3);padding:1px 5px;border-radius:4px;font-size:.9em}
+pre{background:#0f1424;border:1px solid var(--line);border-left:4px solid var(--accent);padding:14px 16px;overflow:auto;border-radius:var(--radius);font-size:.86em;line-height:1.5}
+pre code{background:none;padding:0;font-size:inherit}
+h1,h2,h3,h4{font-family:'Fraunces',Georgia,serif;font-weight:700;line-height:1.15;margin:0 0 .4em}
+h1{font-size:2.6rem;letter-spacing:-.01em}
+h2{font-size:1.9rem;margin-top:2.6rem;padding-top:1.2rem;border-top:1px solid var(--line)}
+h3{font-size:1.3rem;margin-top:1.8rem;color:var(--accent)}
+h4{font-size:1.05rem;margin-top:1.2rem}
+p,li{max-width:72ch}
+.wrap{max-width:1100px;margin:0 auto;padding:0 28px 96px}
+.hero{padding:44px 0 16px}
+.hero .chapters{color:var(--muted);font-size:.95rem;margin-bottom:6px}
+.lede{font-size:1.2rem;color:var(--muted);max-width:66ch}
+.piece-virt{--accent:var(--virt)} .piece-conc{--accent:var(--conc)} .piece-pers{--accent:var(--pers)} .piece-sec{--accent:var(--sec)} .piece-intro{--accent:var(--intro)}
+.fig{background:var(--ink-2);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;margin:22px 0}
+.fig figcaption,.cap{color:var(--muted);font-size:.9rem;margin-top:10px}
+.fig svg{max-width:100%;height:auto;display:block}
+svg text{font-family:'IBM Plex Sans',sans-serif}
+svg .mono{font-family:'IBM Plex Mono',monospace}
+.crux{border:1px solid var(--accent);border-radius:var(--radius);padding:14px 18px;margin:22px 0;background:color-mix(in srgb,var(--accent) 8%,transparent)}
+.crux b{color:var(--accent)}
+.tip{border-left:4px solid var(--muted);padding:6px 16px;margin:18px 0;color:var(--muted)}
+.tip b{color:var(--paper)}
+table{border-collapse:collapse;width:100%;margin:16px 0;font-size:.95rem}
+th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{color:var(--muted);font-weight:500}
+td.mono,th.mono{font-family:'IBM Plex Mono',monospace}
+button,.btn{font:inherit;font-size:.9rem;background:var(--ink-3);color:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:7px 13px;cursor:pointer}
+button:hover{border-color:var(--accent)}
+button.primary{background:var(--accent);color:#111;border-color:var(--accent);font-weight:600}
+button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+input[type=range]{accent-color:var(--accent)}
+input[type=text],input[type=number],select{font:inherit;background:#0f1424;color:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:6px 10px}
+.controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:10px 0}
+.controls label{font-size:.9rem;color:var(--muted)}
+details{border:1px solid var(--line);border-radius:var(--radius);margin:10px 0;background:var(--ink-2)}
+summary{cursor:pointer;padding:12px 16px;font-weight:600;list-style:none}
+summary::before{content:"+";display:inline-block;width:1.2em;color:var(--accent)}
+details[open] summary::before{content:"–"}
+details>div{padding:0 16px 14px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;margin:16px 0}
+.card{perspective:900px;min-height:140px;cursor:pointer}
+.card .inner{position:relative;width:100%;height:100%;min-height:140px;transition:transform .45s;transform-style:preserve-3d}
+.card.flipped .inner{transform:rotateY(180deg)}
+.card .face{position:absolute;inset:0;padding:14px;border-radius:var(--radius);border:1px solid var(--line);background:var(--ink-2);backface-visibility:hidden;display:flex;align-items:center;justify-content:center;text-align:center;font-size:.95rem}
+.card .back{transform:rotateY(180deg);background:var(--ink-3);border-color:var(--accent);font-size:.88rem;line-height:1.45}
+.card .front{font-weight:600}
+@media (prefers-reduced-motion:reduce){.card .inner{transition:none}}
+.quiz .q{border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin:12px 0;background:var(--ink-2)}
+.quiz .q p{margin:0 0 10px;font-weight:600}
+.quiz .opts{display:grid;gap:8px}
+.quiz .opt{text-align:left;background:var(--ink);width:100%}
+.quiz .opt.right{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 15%,var(--ink))}
+.quiz .opt.wrong{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 15%,var(--ink))}
+.quiz .why{margin-top:10px;color:var(--muted);font-size:.93rem;display:none}
+.quiz .q.done .why{display:block}
+.quiz .score{margin-top:12px;font-weight:600}
+.stepper .stage{min-height:60px;background:#0f1424;border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin:10px 0}
+.stepper .idx{color:var(--muted);font-size:.85rem}
+.gantt{display:grid;gap:6px;margin:10px 0}
+.gantt .row{display:grid;grid-template-columns:60px 1fr;align-items:center;gap:8px;font-size:.85rem}
+.gantt .track{position:relative;height:26px;background:#0f1424;border-radius:4px;overflow:hidden}
+.gantt .seg{position:absolute;top:0;bottom:0;display:flex;align-items:center;justify-content:center;font-size:.75rem;color:#111;font-weight:600;border-right:1px solid rgba(0,0,0,.3)}
+.cells{display:grid;gap:4px;margin:10px 0}
+.cell{background:#0f1424;border:1px solid var(--line);border-radius:4px;padding:6px;text-align:center;font-family:'IBM Plex Mono',monospace;font-size:.8rem;min-height:36px;display:flex;align-items:center;justify-content:center}
+.cell.hit{background:color-mix(in srgb,var(--ok) 35%,#0f1424);border-color:var(--ok)}
+.cell.miss{background:color-mix(in srgb,var(--bad) 35%,#0f1424);border-color:var(--bad)}
+.cell.active{outline:2px solid var(--accent)}
+.cell.free{opacity:.45}
+.hl{background:color-mix(in srgb,var(--accent) 30%,transparent);padding:1px 5px;border-radius:3px}
+.k{color:var(--accent);font-weight:600}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media (max-width:760px){.two{grid-template-columns:1fr}.topbar{gap:10px}h1{font-size:2rem}}
+.nav-bottom{display:flex;justify-content:space-between;gap:16px;margin-top:56px;padding-top:20px;border-top:1px solid var(--line)}
+.nav-bottom a{text-decoration:none;padding:12px 16px;border:1px solid var(--line);border-radius:var(--radius);color:var(--paper)}
+.source{background:var(--ink-2);border-radius:var(--radius);padding:14px 18px;margin:22px 0;font-size:.95rem}
+.source b{color:var(--accent)}
+.objectives li{list-style:none;margin:6px 0}
+.objectives input{margin-right:8px;accent-color:var(--accent)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.85rem;color:var(--muted)}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:5px;vertical-align:-2px}
+.tag{display:inline-block;font-size:.75rem;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted);margin-right:6px}
+.log{font-family:'IBM Plex Mono',monospace;font-size:.82rem;background:#0f1424;border:1px solid var(--line);border-radius:var(--radius);padding:10px 12px;max-height:220px;overflow:auto;white-space:pre-wrap}
+@media print{body{background:#fff;color:#111}.topbar,.nav-bottom,button{display:none}.fig,.crux,details,.source{border-color:#bbb;background:#fff}pre{background:#f5f5f5;color:#111}}
+
+/* ---------- site chrome: sticky header + directory drawer ---------- */
+.topbar{position:sticky;top:0;z-index:30;display:flex;gap:14px;align-items:center;padding:10px 16px;background:color-mix(in srgb,var(--ink) 92%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);font-size:.9rem}
+.topbar .menu{display:flex;align-items:center;gap:8px;padding:8px 12px;font-size:1rem}
+.topbar .menu span{font-size:.85rem}
+.topbar .brand{color:var(--paper);text-decoration:none;font-weight:600;display:flex;align-items:center;gap:8px}
+.topbar .dot{width:10px;height:10px;border-radius:50%;background:var(--accent);display:inline-block}
+.topbar .links{display:flex;gap:16px;margin-left:8px}
+.topbar .links a{color:var(--muted);text-decoration:none}
+.topbar .links a:hover{color:var(--paper)}
+.topbar .where{margin-left:auto;color:var(--faint);font-variant-numeric:tabular-nums}
+.drawer{position:fixed;top:0;left:0;bottom:0;width:min(340px,88vw);background:var(--ink-2);border-right:1px solid var(--line);z-index:50;transform:translateX(-102%);transition:transform .25s;overflow-y:auto;padding:0 0 24px;box-shadow:0 0 40px rgba(0,0,0,.5)}
+.drawer-open .drawer{transform:none}
+.scrim{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:40;opacity:0;pointer-events:none;transition:opacity .2s}
+.drawer-open .scrim{opacity:1;pointer-events:auto}
+.drawer .dhead{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--ink-2)}
+.drawer .close,.notes-sheet .close{font-size:1.3rem;line-height:1;padding:4px 10px}
+.drawer .dgroup{padding:8px 0 4px}
+.drawer .dname{padding:8px 16px 4px;color:var(--accent);font-family:'Fraunces',serif;font-weight:700}
+.drawer .ditem{display:flex;gap:10px;align-items:center;padding:9px 16px;color:var(--paper);text-decoration:none;border-left:3px solid transparent;font-size:.92rem}
+.drawer .ditem:hover{background:var(--ink-3)}
+.drawer .ditem.cur{border-left-color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
+.drawer .ditem .n{color:var(--faint);min-width:1.4em;font-variant-numeric:tabular-nums}
+.drawer .ditem .t{flex:1;line-height:1.25}
+.drawer .ditem .t small{display:block;color:var(--faint);font-size:.75rem}
+.drawer .badges{display:flex;gap:6px;align-items:center}
+.drawer .badges i{font-style:normal;color:var(--accent)}
+.drawer .badges em{font-style:normal;font-size:.75rem;padding:1px 6px;border-radius:999px;background:var(--ink-3);color:var(--muted);font-variant-numeric:tabular-nums}
+.drawer .dfoot{padding:16px;color:var(--faint);font-size:.8rem}
+/* ---------- notes: floating button + bottom sheet ---------- */
+.notes-fab{position:fixed;right:16px;bottom:16px;z-index:35;display:flex;gap:8px;align-items:center;padding:12px 16px;border-radius:999px;background:var(--accent);color:#111;border:none;font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,.4)}
+.notes-sheet{position:fixed;left:0;right:0;bottom:0;z-index:45;background:var(--ink-2);border-top:1px solid var(--line);border-radius:14px 14px 0 0;transform:translateY(105%);transition:transform .25s;box-shadow:0 -10px 40px rgba(0,0,0,.5);max-width:900px;margin:0 auto;padding-bottom:env(safe-area-inset-bottom)}
+.notes-open .notes-sheet{transform:none}
+.notes-open .notes-fab{display:none}
+.notes-sheet .nhead{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line)}
+.notes-sheet .nhead b{flex:1;font-size:.95rem}
+.notes-sheet .nstatus{color:var(--faint);font-size:.8rem}
+.notes-sheet textarea{display:block;width:100%;min-height:36vh;max-height:60vh;resize:vertical;border:none;background:#0f1424;color:var(--paper);font:inherit;font-size:1rem;line-height:1.5;padding:14px 16px;outline:none}
+.notes-sheet .nfoot{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;font-size:.85rem;color:var(--muted)}
+/* ---------- wide widgets scroll sideways instead of breaking the page ---------- */
+.tw{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:16px 0}
+.tw table{margin:0;min-width:520px}
+.fig{overflow-x:auto}
+@media (prefers-reduced-motion:reduce){.drawer,.notes-sheet,.scrim{transition:none}}
+/* ---------- phones ---------- */
+@media (max-width:760px){
+  body{font-size:16px}
+  .wrap{padding:0 16px 110px}
+  h1{font-size:1.85rem} h2{font-size:1.45rem;margin-top:2rem} h3{font-size:1.15rem}
+  .lede{font-size:1.05rem}
+  .topbar{padding:8px 12px;gap:10px}
+  .topbar .links{display:none}
+  .topbar .menu span{display:none}
+  .topbar .menu{padding:8px 11px}
+  .fig{padding:12px 12px;margin:16px -4px;border-radius:8px}
+  .crux,.source{padding:12px 14px}
+  pre{font-size:.8em;padding:12px 12px}
+  button,.btn{padding:10px 14px;font-size:.92rem}
+  .controls{gap:8px}
+  .controls label{display:flex;align-items:center;gap:6px}
+  input[type=number]{max-width:96px}
+  .cards{grid-template-columns:1fr 1fr;gap:8px}
+  .card,.card .inner{min-height:120px}
+  .card .face{font-size:.88rem;padding:10px}
+  .cells{min-width:420px}
+  .quiz .opt{padding:12px 12px;line-height:1.35}
+  .nav-bottom{flex-direction:column}
+  .nav-bottom a{text-align:center}
+  .notes-fab span{display:none}
+  .notes-fab{padding:14px;right:12px;bottom:12px}
+  .notes-sheet textarea{min-height:44vh}
+  .stepper .stage{padding:12px}
+  .gantt .row{grid-template-columns:44px 1fr;font-size:.75rem}
+  /* lesson-specific grids collapse */
+  .lde,.il,.two,.cry,.flash,.dl,.fdt,.how,.cards.wide,.vm{grid-template-columns:1fr}
+  .map{grid-template-columns:1fr}
+  .net{grid-template-columns:1fr}.net .arrow{padding:0;transform:rotate(90deg)}
+  .phil{grid-template-columns:repeat(2,1fr)}
+  .jobs{max-width:100%}
+  .trace{min-width:620px}.tl{min-width:720px}.disk{min-width:560px}
+}
+@media (max-width:420px){.cards{grid-template-columns:1fr}}
+
+</style></head>
+<body class="piece-virt"><div class="wrap">
+<header class="hero"><div class="chapters">OSTEP chapters 4–5 · The Abstraction: The Process · Interlude: Process API</div>
+<h1>The process: a running program, and the API that makes one</h1>
+<p class="lede">The first big abstraction. A process is what the OS turns a dead program on disk into: memory, registers, and open files, plus a state machine the OS drives. UNIX creates one with the strangest pair of calls you'll ever use: <code>fork()</code> and <code>exec()</code>.</p></header>
+<div class="source"><b>Primary sources:</b> <a href="https://pages.cs.wisc.edu/~remzi/OSTEP/cpu-intro.pdf">Chapter 4</a> and <a href="https://pages.cs.wisc.edu/~remzi/OSTEP/cpu-api.pdf">Chapter 5</a>. Code for chapter 5 (p1.c–p4.c) is in <a href="https://github.com/remzi-arpacidusseau/ostep-code/tree/master/cpu-api">ostep-code/cpu-api</a>; type it in and run it. For depth, the book points to Stevens & Rago, <em>Advanced Programming in the UNIX Environment</em>.</div>
+<h2>What you'll be able to do</h2><ul id="obj"></ul>
+
+<div class="crux"><b>Crux: how to provide the illusion of many CPUs?</b> There are only a few physical CPUs. By running one process, stopping it, running another, and so on — <span class="k">time sharing</span> — the OS makes it look like there are endless virtual CPUs. The cost is performance: each runs slower when the CPU is shared. Doing this needs low-level <span class="k">mechanisms</span> (the context switch) and high-level <span class="k">policies</span> (the scheduler).</div>
+
+<h2>What a process <em>is</em>: its machine state</h2>
+<p>To describe a process at any instant you need three things. Everything the OS saves and restores when switching lives in one of these.</p>
+<figure class="fig"><svg viewBox="0 0 900 260" role="img" aria-label="process machine state">
+<rect x="20" y="20" width="270" height="220" rx="6" fill="#1e2540" stroke="#e8b84a" stroke-width="2"/><text x="155" y="50" text-anchor="middle" fill="#e8b84a" font-size="16" font-weight="600">Memory (address space)</text>
+<rect x="45" y="70" width="220" height="30" fill="#28304f"/><text x="155" y="90" text-anchor="middle" fill="#eef0f7" font-size="13">code + static data</text>
+<rect x="45" y="105" width="220" height="30" fill="#28304f"/><text x="155" y="125" text-anchor="middle" fill="#eef0f7" font-size="13">heap (malloc)</text>
+<rect x="45" y="140" width="220" height="30" fill="#0f1424" stroke="#3a4368" stroke-dasharray="4"/><text x="155" y="160" text-anchor="middle" fill="#6e779a" font-size="13">free</text>
+<rect x="45" y="175" width="220" height="30" fill="#28304f"/><text x="155" y="195" text-anchor="middle" fill="#eef0f7" font-size="13">stack (locals, args, return addrs)</text>
+<rect x="315" y="20" width="270" height="220" rx="6" fill="#1e2540" stroke="#e8b84a" stroke-width="2"/><text x="450" y="50" text-anchor="middle" fill="#e8b84a" font-size="16" font-weight="600">Registers</text>
+<text x="340" y="90" fill="#eef0f7" font-size="13" class="mono">PC  — program counter</text><text x="340" y="120" fill="#eef0f7" font-size="13" class="mono">SP  — stack pointer</text><text x="340" y="150" fill="#eef0f7" font-size="13" class="mono">FP  — frame pointer</text><text x="340" y="180" fill="#eef0f7" font-size="13" class="mono">general purpose ...</text><text x="340" y="215" fill="#a9b1cf" font-size="12">= where it is and what it holds</text>
+<rect x="610" y="20" width="270" height="220" rx="6" fill="#1e2540" stroke="#e8b84a" stroke-width="2"/><text x="745" y="50" text-anchor="middle" fill="#e8b84a" font-size="16" font-weight="600">I/O information</text>
+<text x="635" y="90" fill="#eef0f7" font-size="13" class="mono">fd 0 stdin</text><text x="635" y="115" fill="#eef0f7" font-size="13" class="mono">fd 1 stdout</text><text x="635" y="140" fill="#eef0f7" font-size="13" class="mono">fd 2 stderr</text><text x="635" y="165" fill="#eef0f7" font-size="13" class="mono">fd 3 ... other open files</text><text x="635" y="215" fill="#a9b1cf" font-size="12">every UNIX process starts with 3</text>
+</svg><figcaption>Machine state of a process. The address space is its memory; registers say what it's doing; I/O info says what it has open.</figcaption></figure>
+
+<h2>Creating a process, step by step</h2>
+<div id="create"></div>
+<div class="tip"><b>Eager vs lazy.</b> Early systems loaded all code and data up front (eagerly). Modern OSes load pieces only when needed (lazily) — that requires paging and swapping, which come in lessons 6–7.</div>
+
+<h2>Process states — click the events</h2>
+<p>In the simplified view a process is <b>Running</b>, <b>Ready</b> (could run, but the OS chose not to right now), or <b>Blocked</b> (waiting on something, typically I/O). Drive the machine yourself; illegal transitions are refused.</p>
+<div class="fig"><svg id="sm" viewBox="0 0 760 240" role="img" aria-label="process state machine">
+<defs><marker id="ar" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8z" fill="#a9b1cf"/></marker></defs>
+<g id="s-run"><ellipse cx="130" cy="70" rx="90" ry="40" fill="#28304f" stroke="#3a4368" stroke-width="2"/><text x="130" y="76" text-anchor="middle" fill="#eef0f7" font-size="18" font-weight="600">Running</text></g>
+<g id="s-ready"><ellipse cx="620" cy="70" rx="90" ry="40" fill="#28304f" stroke="#3a4368" stroke-width="2"/><text x="620" y="76" text-anchor="middle" fill="#eef0f7" font-size="18" font-weight="600">Ready</text></g>
+<g id="s-blk"><ellipse cx="375" cy="200" rx="90" ry="34" fill="#28304f" stroke="#3a4368" stroke-width="2"/><text x="375" y="206" text-anchor="middle" fill="#eef0f7" font-size="18" font-weight="600">Blocked</text></g>
+<path d="M220,55 L530,55" stroke="#a9b1cf" stroke-width="2" marker-end="url(#ar)"/><text x="375" y="45" text-anchor="middle" fill="#a9b1cf" font-size="13">descheduled</text>
+<path d="M530,88 L220,88" stroke="#a9b1cf" stroke-width="2" marker-end="url(#ar)"/><text x="375" y="108" text-anchor="middle" fill="#a9b1cf" font-size="13">scheduled</text>
+<path d="M175,105 L320,175" stroke="#a9b1cf" stroke-width="2" marker-end="url(#ar)"/><text x="215" y="155" fill="#a9b1cf" font-size="13">I/O: initiate</text>
+<path d="M430,175 L575,105" stroke="#a9b1cf" stroke-width="2" marker-end="url(#ar)"/><text x="470" y="155" fill="#a9b1cf" font-size="13">I/O: done</text>
+</svg>
+<div class="controls"><button data-ev="desched">Timer: deschedule</button><button data-ev="sched">Scheduler: run it</button><button data-ev="io">Process initiates I/O</button><button data-ev="done">I/O completes</button><span id="smmsg" style="color:var(--muted);font-size:.9rem"></span></div>
+<figcaption>The book also mentions an <b>initial</b> state (being created) and a <b>final</b> state (exited but not yet cleaned up — the <em>zombie</em>, which lets the parent read the exit code via <code>wait()</code>). xv6 names them <code>EMBRYO</code> and <code>ZOMBIE</code>.</figcaption></div>
+
+<h2>What the OS keeps: the process list and PCB</h2>
+<p>The OS tracks every process in a <b>process list</b>; each entry is a <b>process control block (PCB)</b>. Here is the real one from xv6 — small enough to read in full. The <code>context</code> field is where registers go when the process is stopped; restoring them resumes it (the <em>context switch</em>, next lesson).</p>
+<pre><code>// xv6: the registers saved and restored to stop and restart a process
+struct context { int eip; int esp; int ebx; int ecx; int edx; int esi; int edi; int ebp; };
+
+enum proc_state { UNUSED, EMBRYO, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };
+
+struct proc {
+  char *mem;                 // Start of process memory
+  uint sz;                   // Size of process memory
+  char *kstack;              // Bottom of kernel stack for this process
+  enum proc_state state;     // Process state
+  int pid;                   // Process ID
+  struct proc *parent;       // Parent process
+  void *chan;                // If !zero, sleeping on chan
+  int killed;                // If !zero, has been killed
+  struct file *ofile[NOFILE];// Open files
+  struct inode *cwd;         // Current directory
+  struct context context;    // Switch here to run process
+  struct trapframe *tf;      // Trap frame for the current interrupt
+};</code></pre>
+
+<h2>The process API: fork, wait, exec</h2>
+<div class="crux"><b>Crux: how to create and control processes?</b> What interfaces should the OS present, and how should they be designed for power, ease of use, and performance?</div>
+<div class="fig"><div class="controls"><button class="primary" data-p="p1">p1.c — fork()</button><button data-p="p2">p2.c — fork() + wait()</button><button data-p="p3">p3.c — fork() + exec()</button><button data-p="p4">p4.c — redirection</button><button data-p="sim">Run p1 again (simulated)</button></div><div id="api"></div></div>
+
+<h2>Why such a strange API? Because of the shell</h2>
+<p>The separation of <code>fork()</code> from <code>exec()</code> is the point. The shell forks, and in the gap <em>before</em> exec it can rewire the child's environment — close <code>stdout</code>, open a file so it lands in fd 1, then exec <code>wc</code>. <code>wc</code> never knows. Pipes work the same way with <code>pipe()</code>: one process's output fd connected to another's input fd. Lampson's law, quoted by the book: <em>get it right</em> — neither abstraction nor simplicity substitutes for getting it right.</p>
+<figure class="fig"><svg viewBox="0 0 900 200" role="img" aria-label="shell fork exec redirection">
+<defs><marker id="ar2" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8z" fill="#a9b1cf"/></marker></defs>
+<rect x="20" y="70" width="150" height="60" rx="6" fill="#28304f" stroke="#e8b84a" stroke-width="2"/><text x="95" y="96" text-anchor="middle" fill="#eef0f7" font-size="14">shell</text><text x="95" y="116" text-anchor="middle" fill="#a9b1cf" font-size="12" class="mono">wc p3.c &gt; out</text>
+<line x1="170" y1="100" x2="235" y2="100" stroke="#a9b1cf" stroke-width="2" marker-end="url(#ar2)"/><text x="202" y="90" text-anchor="middle" fill="#e8b84a" font-size="12" class="mono">fork()</text>
+<rect x="240" y="70" width="170" height="60" rx="6" fill="#28304f" stroke="#3a4368"/><text x="325" y="96" text-anchor="middle" fill="#eef0f7" font-size="14">child (copy of shell)</text><text x="325" y="116" text-anchor="middle" fill="#a9b1cf" font-size="12">fd1 → terminal</text>
+<line x1="410" y1="100" x2="475" y2="100" stroke="#a9b1cf" stroke-width="2" marker-end="url(#ar2)"/><text x="442" y="80" text-anchor="middle" fill="#e8b84a" font-size="11" class="mono">close(1)</text><text x="442" y="128" text-anchor="middle" fill="#e8b84a" font-size="11" class="mono">open("out")→1</text>
+<rect x="480" y="70" width="170" height="60" rx="6" fill="#28304f" stroke="#3a4368"/><text x="565" y="96" text-anchor="middle" fill="#eef0f7" font-size="14">child, rewired</text><text x="565" y="116" text-anchor="middle" fill="#a9b1cf" font-size="12">fd1 → out</text>
+<line x1="650" y1="100" x2="715" y2="100" stroke="#a9b1cf" stroke-width="2" marker-end="url(#ar2)"/><text x="682" y="90" text-anchor="middle" fill="#e8b84a" font-size="12" class="mono">exec()</text>
+<rect x="720" y="70" width="160" height="60" rx="6" fill="#e8b84a" opacity=".9"/><text x="800" y="96" text-anchor="middle" fill="#111" font-size="14" font-weight="600">wc</text><text x="800" y="116" text-anchor="middle" fill="#111" font-size="12">writes to fd1, unaware</text>
+<text x="95" y="165" text-anchor="middle" fill="#a9b1cf" font-size="12">meanwhile: wait() for the child</text>
+</svg><figcaption>Redirection is a few lines in the child between fork and exec. The program being run needs no changes.</figcaption></figure>
+
+<h2>Control and users</h2>
+<ul>
+<li><b>Signals</b>: <code>kill()</code> sends one. Control-C sends <code>SIGINT</code> (interrupt, usually terminates); Control-Z sends <code>SIGTSTP</code> (stop/pause; resume later with <code>fg</code>). A process can catch signals with <code>signal()</code>.</li>
+<li><b>Users</b>: the OS lets many users in and ensures each can only control their own processes. The <b>superuser</b> (root) can control any — the book's advice is to run as a regular user and tread carefully as root.</li>
+<li><b>Tools</b>: <code>ps</code>, <code>top</code>, <code>kill</code>, <code>killall</code>. The book suggests always having a CPU meter visible.</li></ul>
+
+<h2>Flash cards</h2><div id="cards"></div>
+<h2>Retrieval practice</h2><div id="quiz"></div>
+<p class="tip">Stuck on why <code>fork()</code> returns twice, or want to trace <code>wait()</code> with several children? Ask me in the chat.</p>
+</div>
+<script>
+/* OSTEP course — shared components. Every page loads this file (inlined by build.py). */
+window.OS = (function () {
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+  /* ---------- persistent storage (localStorage on a real site; in-memory fallback in sandboxes) ---------- */
+  const mem = {};
+  const store = {
+    get(k) { try { const v = localStorage.getItem('ostep:' + k); return v === null ? (mem[k] ?? null) : JSON.parse(v); } catch (e) { return mem[k] ?? null; } },
+    set(k, v) { mem[k] = v; try { localStorage.setItem('ostep:' + k, JSON.stringify(v)); } catch (e) {} },
+    del(k) { delete mem[k]; try { localStorage.removeItem('ostep:' + k); } catch (e) {} },
+    keys(prefix) { const out = new Set(Object.keys(mem).filter(k => k.startsWith(prefix))); try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith('ostep:' + prefix)) out.add(k.slice(6)); } } catch (e) {} return [...out]; },
+    available() { try { localStorage.setItem('ostep:test', '1'); localStorage.removeItem('ostep:test'); return true; } catch (e) { return false; } }
+  };
+
+  /* ---------- course structure ---------- */
+  const PIECES = [
+    ['intro', 'Introduction', [['0001-three-easy-pieces', 'Three easy pieces', 'ch 1–2']]],
+    ['virt', 'Virtualization', [
+      ['0002-processes', 'Processes & the process API', 'ch 4–5'],
+      ['0003-limited-direct-execution', 'Limited direct execution', 'ch 6'],
+      ['0004-scheduling', 'Scheduling', 'ch 7–10'],
+      ['0005-address-spaces', 'Address spaces & segments', 'ch 13–16'],
+      ['0006-paging-and-tlbs', 'Paging & TLBs', 'ch 17–20'],
+      ['0007-swapping', 'Swapping & policies', 'ch 21–23']]],
+    ['conc', 'Concurrency', [
+      ['0008-threads-and-locks', 'Threads & locks', 'ch 26–28'],
+      ['0009-cvs-and-semaphores', 'CVs & semaphores', 'ch 29–31'],
+      ['0010-bugs-and-events', 'Bugs & events', 'ch 32–33']]],
+    ['pers', 'Persistence', [
+      ['0011-devices-disks-raid', 'Devices, disks, RAID', 'ch 36–38'],
+      ['0012-files-and-vsfs', 'Files & a simple FS', 'ch 39–40'],
+      ['0013-ffs-journaling-lfs', 'FFS, journaling, LFS', 'ch 41–43'],
+      ['0014-ssd-and-integrity', 'SSDs & integrity', 'ch 44–45'],
+      ['0015-distributed-nfs-afs', 'Distributed FS', 'ch 48–50']]],
+    ['sec', 'Security', [['0016-security-and-vmms', 'Security & VMMs', 'ch 53–57, App B']]]
+  ];
+  const LESSONS = PIECES.flatMap(p => p[2].map(l => [l[0], l[1], p[0], l[2]]));
+  const title = id => (LESSONS.find(l => l[0] === id) || [])[1] || id;
+  let pageId = null, root = '../';
+
+  /* ---------- chrome: sticky header, slide-out directory, notes drawer, prev/next ---------- */
+  function chrome(id, rootPath) {
+    pageId = id; root = rootPath === undefined ? '../' : rootPath;
+    const i = LESSONS.findIndex(l => l[0] === id);
+    const isLesson = i >= 0;
+    const top = document.createElement('header'); top.className = 'topbar';
+    top.innerHTML = `<button class="menu" aria-label="Open directory" aria-expanded="false">☰<span>Directory</span></button>
+      <a class="brand" href="${root}index.html"><span class="dot"></span>OSTEP course</a>
+      <nav class="links"><a href="${root}reference/glossary.html">Glossary</a><a href="${root}reference/cheatsheets.html">Cheat sheets</a><a href="${root}notes.html">My notes</a></nav>
+      ${isLesson ? `<span class="where">${i+1} / ${LESSONS.length}</span>` : ''}`;
+    document.body.prepend(top);
+    // directory drawer
+    const drawer = document.createElement('aside'); drawer.className = 'drawer'; drawer.setAttribute('aria-label', 'Course directory');
+    const scores = Object.fromEntries(LESSONS.map(l => [l[0], store.get('quiz:' + l[0])]));
+    const notes = new Set(store.keys('notes:').map(k => k.slice(6)).filter(k => (store.get('notes:' + k) || {}).text));
+    drawer.innerHTML = `<div class="dhead"><b>Directory</b><button class="close" aria-label="Close">×</button></div>
+      <a class="ditem ${id === 'index' ? 'cur' : ''}" href="${root}index.html">Course hub</a>
+      ${PIECES.map(([cls, name, ls]) => `<div class="dgroup piece-${cls}"><div class="dname">${name}</div>${ls.map(l => {
+        const n = LESSONS.findIndex(x => x[0] === l[0]) + 1, s = scores[l[0]];
+        return `<a class="ditem ${l[0] === id ? 'cur' : ''}" href="${root}lessons/${l[0]}.html"><span class="n">${n}</span><span class="t">${l[1]}<small>${l[3]}</small></span><span class="badges">${notes.has(l[0]) ? '<i title="you have notes">✎</i>' : ''}${s ? `<em title="best quiz score">${s.score}/${s.total}</em>` : ''}</span></a>`; }).join('')}</div>`).join('')}
+      <div class="dgroup piece-intro"><div class="dname">Reference</div>
+        <a class="ditem ${id === 'glossary' ? 'cur' : ''}" href="${root}reference/glossary.html"><span class="t">Glossary</span></a>
+        <a class="ditem ${id === 'cheatsheets' ? 'cur' : ''}" href="${root}reference/cheatsheets.html"><span class="t">Cheat sheets</span></a>
+        <a class="ditem ${id === 'notes' ? 'cur' : ''}" href="${root}notes.html"><span class="t">My notes &amp; progress</span></a></div>
+      <div class="dfoot">${store.available() ? 'Notes and scores are saved in this browser.' : 'Notes and scores are kept for this session only (storage unavailable here).'}</div>`;
+    document.body.append(drawer);
+    const scrim = document.createElement('div'); scrim.className = 'scrim'; document.body.append(scrim);
+    const open = o => { document.body.classList.toggle('drawer-open', o); top.querySelector('.menu').setAttribute('aria-expanded', o); if (o) drawer.querySelector('.cur, .ditem')?.focus(); };
+    top.querySelector('.menu').onclick = () => open(!document.body.classList.contains('drawer-open'));
+    drawer.querySelector('.close').onclick = () => open(false); scrim.onclick = () => open(false);
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') { open(false); notesOpen(false); } });
+    // prev/next for lessons
+    if (isLesson) {
+      const nav = document.createElement('div'); nav.className = 'nav-bottom';
+      const prev = LESSONS[i-1], next = LESSONS[i+1];
+      nav.innerHTML = (prev ? `<a href="${prev[0]}.html">← ${i}. ${prev[1]}</a>` : '<span></span>') +
+                      (next ? `<a href="${next[0]}.html">${i+2}. ${next[1]} →</a>` : `<a href="${root}index.html">Back to course hub →</a>`);
+      document.querySelector('.wrap').append(nav);
+    }
+    // wrap tables so they scroll sideways on phones
+    document.querySelectorAll('.wrap table').forEach(t => { if (t.parentElement.classList.contains('tw')) return; const w = document.createElement('div'); w.className = 'tw'; t.replaceWith(w); w.append(t); });
+    // notes drawer (every page except the notes page itself)
+    if (id !== 'notes') notesUI(id, isLesson ? `${i+1}. ${LESSONS[i][1]}` : (document.title.split(' — ')[0]));
+  }
+
+  /* ---------- notes: floating button + bottom sheet, autosaved ---------- */
+  let notesOpen = () => {};
+  function notesUI(id, label) {
+    const btn = document.createElement('button'); btn.className = 'notes-fab'; btn.innerHTML = '✎ <span>Notes</span>'; btn.setAttribute('aria-label', 'Open notes');
+    const sheet = document.createElement('section'); sheet.className = 'notes-sheet'; sheet.setAttribute('aria-label', 'Notes for this page');
+    const saved = store.get('notes:' + id) || {};
+    sheet.innerHTML = `<div class="nhead"><b>Notes · ${esc(label)}</b><span class="nstatus"></span><button class="close" aria-label="Close notes">×</button></div>
+      <textarea placeholder="Your notes for this page. Markdown is fine. Saved automatically.">${esc(saved.text || '')}</textarea>
+      <div class="nfoot"><span class="ncount"></span><a href="${root}notes.html">All notes &amp; export →</a></div>`;
+    document.body.append(btn, sheet);
+    const ta = sheet.querySelector('textarea'), status = sheet.querySelector('.nstatus'), count = sheet.querySelector('.ncount');
+    const upd = () => { count.textContent = ta.value.trim() ? ta.value.trim().split(/\s+/).length + ' words' : ''; };
+    let t; ta.addEventListener('input', () => { status.textContent = 'saving…'; clearTimeout(t); t = setTimeout(() => { store.set('notes:' + id, { text: ta.value, title: label, updated: new Date().toISOString() }); status.textContent = 'saved'; upd(); }, 400); });
+    upd();
+    notesOpen = o => { document.body.classList.toggle('notes-open', o); if (o) ta.focus(); };
+    btn.onclick = () => notesOpen(!document.body.classList.contains('notes-open'));
+    sheet.querySelector('.close').onclick = () => notesOpen(false);
+  }
+
+  /* ---------- quiz: immediate feedback; best score persisted ---------- */
+  function quiz(el, qs) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('quiz');
+    let score = 0, answered = 0;
+    const best = pageId ? store.get('quiz:' + pageId) : null;
+    el.innerHTML = qs.map((q, i) => `<div class="q" data-i="${i}"><p>${i+1}. ${q.q}</p>
+      <div class="opts">${q.o.map((o, j) => `<button class="opt" data-j="${j}">${esc(o)}</button>`).join('')}</div>
+      <div class="why">${q.why}</div></div>`).join('') + `<div class="score">${best ? `Best so far: ${best.score}/${best.total} (${new Date(best.date).toLocaleDateString()})` : ''}</div>`;
+    el.querySelectorAll('.q').forEach(qd => {
+      const q = qs[+qd.dataset.i];
+      qd.querySelectorAll('.opt').forEach(b => b.addEventListener('click', () => {
+        if (qd.classList.contains('done')) return;
+        qd.classList.add('done'); answered++;
+        const j = +b.dataset.j;
+        if (j === q.a) { b.classList.add('right'); score++; }
+        else { b.classList.add('wrong'); qd.querySelectorAll('.opt')[q.a].classList.add('right'); }
+        const s = el.querySelector('.score');
+        s.textContent = `${score} / ${answered} correct`;
+        if (answered === qs.length) {
+          s.textContent += score === qs.length ? ' — all of them. Retry from memory in two days.' : ' — reread the sections you missed, then retry.';
+          if (pageId && (!best || score >= best.score)) store.set('quiz:' + pageId, { score, total: qs.length, date: new Date().toISOString() });
+        }
+      }));
+    });
+  }
+
+  /* ---------- flip cards ---------- */
+  function cards(el, list) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('cards');
+    el.innerHTML = list.map(([f, b]) => `<div class="card" tabindex="0" role="button" aria-label="flip card"><div class="inner"><div class="face front">${f}</div><div class="face back">${b}</div></div></div>`).join('');
+    el.querySelectorAll('.card').forEach(c => {
+      const t = () => c.classList.toggle('flipped');
+      c.addEventListener('click', t);
+      c.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); t(); } });
+    });
+  }
+
+  /* ---------- stepper ---------- */
+  function stepper(el, steps, render) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('stepper');
+    let i = 0;
+    el.innerHTML = `<div class="controls"><button class="prev">← Back</button><button class="next primary">Next step →</button><span class="idx"></span></div><div class="stage"></div><div class="extra"></div>`;
+    const stage = el.querySelector('.stage'), idx = el.querySelector('.idx'), extra = el.querySelector('.extra');
+    const draw = () => { stage.innerHTML = steps[i]; idx.textContent = `step ${i+1} / ${steps.length}`; if (render) render(i, extra); };
+    el.querySelector('.prev').onclick = () => { i = Math.max(0, i-1); draw(); };
+    el.querySelector('.next').onclick = () => { i = Math.min(steps.length-1, i+1); draw(); };
+    draw();
+  }
+
+  /* ---------- gantt ---------- */
+  function gantt(el, rows, total, colors) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('gantt');
+    const pal = colors || ['#e8b84a','#5bc8f5','#6bcb77','#f47fa0','#c9a8ff','#ffb86b'];
+    el.innerHTML = rows.map((r, i) => `<div class="row"><span>${esc(r.name)}</span><div class="track">${r.segs.map(s =>
+      `<div class="seg" style="left:${100*s.start/total}%;width:${100*(s.end-s.start)/total}%;background:${pal[i%pal.length]}" title="${s.start}–${s.end}">${(s.end-s.start)/total > .06 ? (s.end-s.start) : ''}</div>`).join('')}</div></div>`).join('') +
+      `<div class="row"><span></span><div style="display:flex;justify-content:space-between;font-size:.75rem;color:var(--muted)"><span>0</span><span>${total}</span></div></div>`;
+  }
+
+  /* ---------- objectives checklist (persisted) ---------- */
+  function objectives(el, items) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('objectives');
+    const saved = (pageId && store.get('obj:' + pageId)) || [];
+    el.innerHTML = items.map((t, i) => `<li><label><input type="checkbox" data-i="${i}" ${saved.includes(i) ? 'checked' : ''}>${t}</label></li>`).join('');
+    el.querySelectorAll('input').forEach(c => c.onchange = () => { const s = [...el.querySelectorAll('input:checked')].map(x => +x.dataset.i); if (pageId) store.set('obj:' + pageId, s); });
+  }
+
+  return { chrome, quiz, cards, stepper, gantt, objectives, esc, store, LESSONS, PIECES, title };
+})();
+
+</script>
+<script>
+OS.chrome('0002-processes');
+OS.objectives('obj',['Describe a process by its machine state: address space, registers (PC, SP), I/O info.','List the steps the OS takes to turn a program on disk into a running process.','Draw the three-state machine and name every transition.','Predict the output of small fork()/wait()/exec() programs, including what is and isn\'t deterministic.','Explain why fork and exec are separate calls and how the shell uses the gap.']);
+OS.stepper('create',[
+'<b>1. Load code and static data</b> from the executable on disk into the new address space. (Eagerly in old systems; lazily — only what\'s touched — in modern ones.)',
+'<b>2. Allocate the run-time stack</b> and initialize it: set up <code>argc</code> and <code>argv</code> so <code>main()</code> finds its arguments.',
+'<b>3. Allocate the heap</b>, small at first, grown as the program calls <code>malloc()</code>.',
+'<b>4. Other initialization</b>, especially I/O: on UNIX every process gets three open file descriptors — standard input, output, and error.',
+'<b>5. Jump to <code>main()</code>.</b> The OS transfers control to the entry point and the program is running. <em>How</em> it transfers control safely is the next lesson.']);
+/* state machine */
+let st='run';const msg=document.getElementById('smmsg');
+function paint(){['run','ready','blk'].forEach(s=>{const e=document.querySelector('#s-'+s+' ellipse');e.setAttribute('fill',s===st?'#e8b84a':'#28304f');e.setAttribute('stroke',s===st?'#e8b84a':'#3a4368');document.querySelector('#s-'+s+' text').setAttribute('fill',s===st?'#111':'#eef0f7');});}
+const T={desched:['run','ready','Timer interrupt: the OS saves registers and picks another process.'],sched:['ready','run','Scheduler picks it: restore registers, return-from-trap into it.'],io:['run','blk','It asked for I/O (e.g., a disk read) so it cannot use the CPU; the OS runs someone else.'],done:['blk','ready','Device interrupt: the request finished. It is ready, but not running until scheduled.']};
+document.querySelectorAll('[data-ev]').forEach(b=>b.onclick=()=>{const [from,to,t]=T[b.dataset.ev];if(st!==from){msg.textContent=`Not possible from "${st}". ${from==='run'?'Only a running process can do that.':from==='ready'?'Only a ready process can be scheduled.':'Only a blocked process can have its I/O complete.'}`;return;}st=to;msg.textContent=t;paint();});paint();
+/* api tabs */
+const api={
+p1:`<pre><code>// p1.c
+int main(int argc, char *argv[]) {
+    printf("hello (pid:%d)\\n", (int) getpid());
+    int rc = fork();
+    if (rc &lt; 0) { fprintf(stderr, "fork failed\\n"); exit(1); }
+    else if (rc == 0) printf("child (pid:%d)\\n", (int) getpid());        // child
+    else printf("parent of %d (pid:%d)\\n", rc, (int) getpid());         // parent
+    return 0;
+}</code></pre><pre><code>prompt&gt; ./p1
+hello (pid:29146)
+parent of 29147 (pid:29146)
+child (pid:29147)</code></pre>
+<p><code>fork()</code> makes an <b>almost exact copy</b> of the caller: same code, own address space, own registers, own PC. It returns <em>twice</em>: the child gets 0, the parent gets the child's PID. Which prints first depends on the scheduler — the output is <b>nondeterministic</b>. Only "hello" is printed once, because it ran before the fork.</p>`,
+p2:`<pre><code>// p2.c — parent waits for the child
+int rc = fork();
+if (rc == 0) {
+    printf("child (pid:%d)\\n", (int) getpid());
+} else {
+    int rc_wait = wait(NULL);
+    printf("parent of %d (rc_wait:%d) (pid:%d)\\n", rc, rc_wait, (int) getpid());
+}</code></pre><pre><code>prompt&gt; ./p2
+hello (pid:29266)
+child (pid:29267)
+parent of 29267 (rc_wait:29267) (pid:29266)</code></pre>
+<p><code>wait()</code> blocks the parent until a child finishes, and returns that child's PID. Now the order is <b>deterministic</b>: child always prints first. (There are subtle cases the book leaves as homework.)</p>`,
+p3:`<pre><code>// p3.c — child becomes a different program
+if (rc == 0) {
+    char *myargs[3];
+    myargs[0] = strdup("wc");      // program: "wc" (word count)
+    myargs[1] = strdup("p3.c");    // argument: file to count
+    myargs[2] = NULL;              // end of array
+    execvp(myargs[0], myargs);     // runs word count
+    printf("this shouldn't print out");
+} else { int rc_wait = wait(NULL); ... }</code></pre><pre><code>prompt&gt; ./p3
+hello (pid:29383)
+child (pid:29384)
+      29     107    1030 p3.c
+parent of 29384 (rc_wait:29384) (pid:29383)</code></pre>
+<p><code>exec()</code> loads code and static data from the named executable <em>over</em> the current process, re-initializes its stack and heap, and starts it. It does <b>not</b> create a new process and, on success, <b>never returns</b> — which is why the line after it "shouldn't print".</p>`,
+p4:`<pre><code>// p4.c — the shell's trick: rewire stdout before exec
+if (rc == 0) {
+    close(STDOUT_FILENO);                       // free fd 1
+    open("./p4.output", O_CREAT|O_WRONLY|O_TRUNC, S_IRWXU); // lands in fd 1
+    char *myargs[3] = { strdup("wc"), strdup("p4.c"), NULL };
+    execvp(myargs[0], myargs);
+}</code></pre><pre><code>prompt&gt; ./p4
+prompt&gt; cat p4.output
+      32     109     846 p4.c</code></pre>
+<p>Nothing on screen: <code>wc</code>'s output went to the file. It works because UNIX allocates the <b>lowest free descriptor</b>, so the freshly opened file takes fd 1. Pipes use the same fork→rewire→exec pattern.</p>`};
+const ad=document.getElementById('api');const pb=document.querySelectorAll('[data-p]');
+pb.forEach(b=>b.onclick=()=>{pb.forEach(x=>x.classList.remove('primary'));b.classList.add('primary');if(b.dataset.p==='sim'){const first=Math.random()<.5?'parent':'child';const pid=29000+Math.floor(Math.random()*900);ad.innerHTML=`<pre><code>prompt&gt; ./p1\nhello (pid:${pid})\n${first==='parent'?`parent of ${pid+1} (pid:${pid})\nchild (pid:${pid+1})`:`child (pid:${pid+1})\nparent of ${pid+1} (pid:${pid})`}</code></pre><p>This run: <b>${first}</b> printed first. Click again — on a single CPU the scheduler decides, and it may decide differently. That is what "nondeterministic" means here.</p>`;}else ad.innerHTML=api[b.dataset.p];});ad.innerHTML=api.p1;
+OS.cards('cards',[['Process','The OS abstraction of a running program: its address space, registers, and open files, in one of several states.'],['PID','Process identifier: a number naming the process. fork() returns the child\'s PID to the parent, 0 to the child.'],['Zombie','A process that has exited but whose parent has not yet called wait() to collect its exit status. Cleaned up after wait().'],['Time sharing','Run one process for a while, then another, giving each the illusion of its own CPU. Space sharing is the analogous idea for disk space.'],['PCB','Process control block: the per-process struct in the OS process list (state, PID, saved registers, open files...).'],['exec()','Replace the current process image with a new program; on success it never returns. Usually preceded by fork().']]);
+OS.quiz('quiz',[
+{q:'A process calls fork(). What does the child receive as the return value?',o:['The parent\'s PID','The number zero','The child\'s PID','A negative code'],a:1,why:'Child gets 0; parent gets the child\'s PID; a negative value means fork failed. The parent uses the PID to wait() for or signal the child.'},
+{q:'In p1.c (fork with no wait), which line is guaranteed to appear exactly once and first?',o:['the child\'s line','the "hello" line','the parent\'s line','none of the lines'],a:1,why:'"hello" is printed before fork() so only one process prints it. After fork, parent and child order depends on the scheduler.'},
+{q:'What happens right after a successful execvp() call?',o:['The caller gets back a new PID','The caller\'s code never runs again','The caller waits for the new code','The caller\'s memory is duplicated'],a:1,why:'exec overwrites the process\'s code, data, stack and heap with the new program and jumps to it. A successful exec does not return.'},
+{q:'A process is Blocked. Which single event can move it out of that state?',o:['a timer interrupt firing','the I/O it issued finishes','the scheduler choosing it','the parent calling wait()'],a:1,why:'Blocked means waiting on an event such as disk I/O. When the device signals completion the process becomes Ready; only then can the scheduler run it.'},
+{q:'Why can the shell redirect wc\'s output without modifying wc?',o:['wc checks an environment flag','fd 1 is rewired before exec runs','the kernel copies stdout later','the shell edits the wc binary'],a:1,why:'Between fork and exec the child closes fd 1 and opens the output file, which takes the lowest free descriptor (1). wc just writes to fd 1 as usual.'},
+{q:'Which item is NOT part of a process\'s machine state as defined in chapter 4?',o:['program counter','scheduler policy','open file list','stack pointer'],a:1,why:'Machine state = memory (address space), registers including PC and SP, and I/O information (open files). The scheduling policy belongs to the OS, not the process.'},
+{q:'Control-Z on a foreground job sends which signal, with what effect?',o:['SIGINT — it terminates the job','SIGTSTP — it pauses the job','SIGKILL — it destroys the job','SIGHUP — it restarts the job'],a:1,why:'Control-Z sends SIGTSTP, stopping (pausing) the process; it can be resumed with fg. Control-C sends SIGINT, which normally terminates.'}]);
+</script></body></html>
