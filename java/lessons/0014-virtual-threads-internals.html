@@ -1,0 +1,472 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>14 · Virtual threads: continuations, carriers, scheduler — Java 21 course</title><style>
+/* OSTEP course — shared stylesheet. Three pieces, three hues. */
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+:root{
+  --ink:#151b2f; --ink-2:#1e2540; --ink-3:#28304f; --line:#3a4368;
+  --paper:#eef0f7; --muted:#a9b1cf; --faint:#6e779a;
+  --virt:#e8b84a; --conc:#5bc8f5; --pers:#6bcb77; --sec:#f47fa0; --intro:#c9a8ff; --spec:#ffd166; --internals:#5bc8f5; --data:#6bcb77;
+  --ok:#6bcb77; --bad:#ff6b6b;
+  --accent:var(--virt);
+  --radius:6px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--ink);color:var(--paper);font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:17px;line-height:1.6}
+a{color:var(--accent)}
+code,pre,kbd,.mono{font-family:'IBM Plex Mono',ui-monospace,monospace}
+code{background:var(--ink-3);padding:1px 5px;border-radius:4px;font-size:.9em}
+pre{background:#0f1424;border:1px solid var(--line);border-left:4px solid var(--accent);padding:14px 16px;overflow:auto;border-radius:var(--radius);font-size:.86em;line-height:1.5}
+pre code{background:none;padding:0;font-size:inherit}
+h1,h2,h3,h4{font-family:'Fraunces',Georgia,serif;font-weight:700;line-height:1.15;margin:0 0 .4em}
+h1{font-size:2.6rem;letter-spacing:-.01em}
+h2{font-size:1.9rem;margin-top:2.6rem;padding-top:1.2rem;border-top:1px solid var(--line)}
+h3{font-size:1.3rem;margin-top:1.8rem;color:var(--accent)}
+h4{font-size:1.05rem;margin-top:1.2rem}
+p,li{max-width:72ch}
+.wrap{max-width:1100px;margin:0 auto;padding:0 28px 96px}
+.hero{padding:44px 0 16px}
+.hero .chapters{color:var(--muted);font-size:.95rem;margin-bottom:6px}
+.lede{font-size:1.2rem;color:var(--muted);max-width:66ch}
+.piece-lang{--accent:var(--spec)} .piece-jvm{--accent:var(--internals)} .piece-loom{--accent:var(--data)} .piece-spec{--accent:var(--spec)} .piece-internals{--accent:var(--internals)} .piece-data{--accent:var(--data)} .piece-virt{--accent:var(--virt)} .piece-conc{--accent:var(--conc)} .piece-pers{--accent:var(--pers)} .piece-sec{--accent:var(--sec)} .piece-intro{--accent:var(--intro)}
+.fig{background:var(--ink-2);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;margin:22px 0}
+.fig figcaption,.cap{color:var(--muted);font-size:.9rem;margin-top:10px}
+.fig svg{max-width:100%;height:auto;display:block}
+svg text{font-family:'IBM Plex Sans',sans-serif}
+svg .mono{font-family:'IBM Plex Mono',monospace}
+.crux{border:1px solid var(--accent);border-radius:var(--radius);padding:14px 18px;margin:22px 0;background:color-mix(in srgb,var(--accent) 8%,transparent)}
+.crux b{color:var(--accent)}
+.tip{border-left:4px solid var(--muted);padding:6px 16px;margin:18px 0;color:var(--muted)}
+.tip b{color:var(--paper)}
+table{border-collapse:collapse;width:100%;margin:16px 0;font-size:.95rem}
+th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{color:var(--muted);font-weight:500}
+td.mono,th.mono{font-family:'IBM Plex Mono',monospace}
+button,.btn{font:inherit;font-size:.9rem;background:var(--ink-3);color:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:7px 13px;cursor:pointer}
+button:hover{border-color:var(--accent)}
+button.primary{background:var(--accent);color:#111;border-color:var(--accent);font-weight:600}
+button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+input[type=range]{accent-color:var(--accent)}
+input[type=text],input[type=number],select{font:inherit;background:#0f1424;color:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:6px 10px}
+.controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:10px 0}
+.controls label{font-size:.9rem;color:var(--muted)}
+details{border:1px solid var(--line);border-radius:var(--radius);margin:10px 0;background:var(--ink-2)}
+summary{cursor:pointer;padding:12px 16px;font-weight:600;list-style:none}
+summary::before{content:"+";display:inline-block;width:1.2em;color:var(--accent)}
+details[open] summary::before{content:"–"}
+details>div{padding:0 16px 14px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;margin:16px 0}
+.card{perspective:900px;min-height:140px;cursor:pointer}
+.card .inner{position:relative;width:100%;height:100%;min-height:140px;transition:transform .45s;transform-style:preserve-3d}
+.card.flipped .inner{transform:rotateY(180deg)}
+.card .face{position:absolute;inset:0;padding:14px;border-radius:var(--radius);border:1px solid var(--line);background:var(--ink-2);backface-visibility:hidden;display:flex;align-items:center;justify-content:center;text-align:center;font-size:.95rem}
+.card .back{transform:rotateY(180deg);background:var(--ink-3);border-color:var(--accent);font-size:.88rem;line-height:1.45}
+.card .front{font-weight:600}
+@media (prefers-reduced-motion:reduce){.card .inner{transition:none}}
+.quiz .q{border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin:12px 0;background:var(--ink-2)}
+.quiz .q p{margin:0 0 10px;font-weight:600}
+.quiz .opts{display:grid;gap:8px}
+.quiz .opt{text-align:left;background:var(--ink);width:100%}
+.quiz .opt.right{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 15%,var(--ink))}
+.quiz .opt.wrong{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 15%,var(--ink))}
+.quiz .why{margin-top:10px;color:var(--muted);font-size:.93rem;display:none}
+.quiz .q.done .why{display:block}
+.quiz .score{margin-top:12px;font-weight:600}
+.stepper .stage{min-height:60px;background:#0f1424;border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin:10px 0}
+.stepper .idx{color:var(--muted);font-size:.85rem}
+.gantt{display:grid;gap:6px;margin:10px 0}
+.gantt .row{display:grid;grid-template-columns:60px 1fr;align-items:center;gap:8px;font-size:.85rem}
+.gantt .track{position:relative;height:26px;background:#0f1424;border-radius:4px;overflow:hidden}
+.gantt .seg{position:absolute;top:0;bottom:0;display:flex;align-items:center;justify-content:center;font-size:.75rem;color:#111;font-weight:600;border-right:1px solid rgba(0,0,0,.3)}
+.cells{display:grid;gap:4px;margin:10px 0}
+.cell{background:#0f1424;border:1px solid var(--line);border-radius:4px;padding:6px;text-align:center;font-family:'IBM Plex Mono',monospace;font-size:.8rem;min-height:36px;display:flex;align-items:center;justify-content:center}
+.cell.hit{background:color-mix(in srgb,var(--ok) 35%,#0f1424);border-color:var(--ok)}
+.cell.miss{background:color-mix(in srgb,var(--bad) 35%,#0f1424);border-color:var(--bad)}
+.cell.active{outline:2px solid var(--accent)}
+.cell.free{opacity:.45}
+.hl{background:color-mix(in srgb,var(--accent) 30%,transparent);padding:1px 5px;border-radius:3px}
+.k{color:var(--accent);font-weight:600}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media (max-width:760px){.two{grid-template-columns:1fr}.topbar{gap:10px}h1{font-size:2rem}}
+.nav-bottom{display:flex;justify-content:space-between;gap:16px;margin-top:56px;padding-top:20px;border-top:1px solid var(--line)}
+.nav-bottom a{text-decoration:none;padding:12px 16px;border:1px solid var(--line);border-radius:var(--radius);color:var(--paper)}
+.source{background:var(--ink-2);border-radius:var(--radius);padding:14px 18px;margin:22px 0;font-size:.95rem}
+.source b{color:var(--accent)}
+.objectives li{list-style:none;margin:6px 0}
+.objectives input{margin-right:8px;accent-color:var(--accent)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.85rem;color:var(--muted)}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:5px;vertical-align:-2px}
+.tag{display:inline-block;font-size:.75rem;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted);margin-right:6px}
+.log{font-family:'IBM Plex Mono',monospace;font-size:.82rem;background:#0f1424;border:1px solid var(--line);border-radius:var(--radius);padding:10px 12px;max-height:220px;overflow:auto;white-space:pre-wrap}
+@media print{body{background:#fff;color:#111}.topbar,.nav-bottom,button{display:none}.fig,.crux,details,.source{border-color:#bbb;background:#fff}pre{background:#f5f5f5;color:#111}}
+
+/* ---------- site chrome: sticky header + directory drawer ---------- */
+.topbar{position:sticky;top:0;z-index:30;display:flex;gap:14px;align-items:center;padding:10px 16px;background:color-mix(in srgb,var(--ink) 92%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);font-size:.9rem}
+.topbar .menu{display:flex;align-items:center;gap:8px;padding:8px 12px;font-size:1rem}
+.topbar .menu span{font-size:.85rem}
+.topbar .brand{color:var(--paper);text-decoration:none;font-weight:600;display:flex;align-items:center;gap:8px}
+.topbar .dot{width:10px;height:10px;border-radius:50%;background:var(--accent);display:inline-block}
+.topbar .links{display:flex;gap:16px;margin-left:8px}
+.topbar .links a{color:var(--muted);text-decoration:none}
+.topbar .links a:hover{color:var(--paper)}
+.topbar .where{margin-left:auto;color:var(--faint);font-variant-numeric:tabular-nums}
+.drawer{position:fixed;top:0;left:0;bottom:0;width:min(340px,88vw);background:var(--ink-2);border-right:1px solid var(--line);z-index:50;transform:translateX(-102%);transition:transform .25s;overflow-y:auto;padding:0 0 24px;box-shadow:0 0 40px rgba(0,0,0,.5)}
+.drawer-open .drawer{transform:none}
+.scrim{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:40;opacity:0;pointer-events:none;transition:opacity .2s}
+.drawer-open .scrim{opacity:1;pointer-events:auto}
+.drawer .dhead{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--ink-2)}
+.drawer .close,.notes-sheet .close{font-size:1.3rem;line-height:1;padding:4px 10px}
+.drawer .dgroup{padding:8px 0 4px}
+.drawer .dname{padding:8px 16px 4px;color:var(--accent);font-family:'Fraunces',serif;font-weight:700}
+.drawer .ditem{display:flex;gap:10px;align-items:center;padding:9px 16px;color:var(--paper);text-decoration:none;border-left:3px solid transparent;font-size:.92rem}
+.drawer .ditem:hover{background:var(--ink-3)}
+.drawer .ditem.cur{border-left-color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
+.drawer .ditem .n{color:var(--faint);min-width:1.4em;font-variant-numeric:tabular-nums}
+.drawer .ditem .t{flex:1;line-height:1.25}
+.drawer .ditem .t small{display:block;color:var(--faint);font-size:.75rem}
+.drawer .badges{display:flex;gap:6px;align-items:center}
+.drawer .badges i{font-style:normal;color:var(--accent)}
+.drawer .badges em{font-style:normal;font-size:.75rem;padding:1px 6px;border-radius:999px;background:var(--ink-3);color:var(--muted);font-variant-numeric:tabular-nums}
+.drawer .dfoot{padding:16px;color:var(--faint);font-size:.8rem}
+/* ---------- notes: floating button + bottom sheet ---------- */
+.notes-fab{position:fixed;right:16px;bottom:16px;z-index:35;display:flex;gap:8px;align-items:center;padding:12px 16px;border-radius:999px;background:var(--accent);color:#111;border:none;font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,.4)}
+.notes-sheet{position:fixed;left:0;right:0;bottom:0;z-index:45;background:var(--ink-2);border-top:1px solid var(--line);border-radius:14px 14px 0 0;transform:translateY(105%);transition:transform .25s;box-shadow:0 -10px 40px rgba(0,0,0,.5);max-width:900px;margin:0 auto;padding-bottom:env(safe-area-inset-bottom)}
+.notes-open .notes-sheet{transform:none}
+.notes-open .notes-fab{display:none}
+.notes-sheet .nhead{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line)}
+.notes-sheet .nhead b{flex:1;font-size:.95rem}
+.notes-sheet .nstatus{color:var(--faint);font-size:.8rem}
+.notes-sheet textarea{display:block;width:100%;min-height:36vh;max-height:60vh;resize:vertical;border:none;background:#0f1424;color:var(--paper);font:inherit;font-size:1rem;line-height:1.5;padding:14px 16px;outline:none}
+.notes-sheet .nfoot{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;font-size:.85rem;color:var(--muted)}
+/* ---------- wide widgets scroll sideways instead of breaking the page ---------- */
+.tw{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:16px 0}
+.tw table{margin:0;min-width:520px}
+.fig{overflow-x:auto}
+@media (prefers-reduced-motion:reduce){.drawer,.notes-sheet,.scrim{transition:none}}
+/* ---------- phones ---------- */
+@media (max-width:760px){
+  body{font-size:16px}
+  .wrap{padding:0 16px 110px}
+  h1{font-size:1.85rem} h2{font-size:1.45rem;margin-top:2rem} h3{font-size:1.15rem}
+  .lede{font-size:1.05rem}
+  .topbar{padding:8px 12px;gap:10px}
+  .topbar .links{display:none}
+  .topbar .menu span{display:none}
+  .topbar .menu{padding:8px 11px}
+  .fig{padding:12px 12px;margin:16px -4px;border-radius:8px}
+  .crux,.source{padding:12px 14px}
+  pre{font-size:.8em;padding:12px 12px}
+  button,.btn{padding:10px 14px;font-size:.92rem}
+  .controls{gap:8px}
+  .controls label{display:flex;align-items:center;gap:6px}
+  input[type=number]{max-width:96px}
+  .cards{grid-template-columns:1fr 1fr;gap:8px}
+  .card,.card .inner{min-height:120px}
+  .card .face{font-size:.88rem;padding:10px}
+  .cells{min-width:420px}
+  .quiz .opt{padding:12px 12px;line-height:1.35}
+  .nav-bottom{flex-direction:column}
+  .nav-bottom a{text-align:center}
+  .notes-fab span{display:none}
+  .notes-fab{padding:14px;right:12px;bottom:12px}
+  .notes-sheet textarea{min-height:44vh}
+  .stepper .stage{padding:12px}
+  .gantt .row{grid-template-columns:44px 1fr;font-size:.75rem}
+  /* lesson-specific grids collapse */
+  .lde,.il,.two,.cry,.flash,.dl,.fdt,.how,.cards.wide,.vm{grid-template-columns:1fr}
+  .map{grid-template-columns:1fr}
+  .net{grid-template-columns:1fr}.net .arrow{padding:0;transform:rotate(90deg)}
+  .phil{grid-template-columns:repeat(2,1fr)}
+  .jobs{max-width:100%}
+  .trace{min-width:620px}.tl{min-width:720px}.disk{min-width:560px}
+}
+@media (max-width:420px){.cards{grid-template-columns:1fr}}
+
+/* ---------- runnable Python ---------- */
+.pyrun{border:1px solid var(--line);border-radius:var(--radius);background:#0f1424;margin:18px 0;overflow:hidden}
+.pyrun .pyhead{display:flex;gap:10px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--line);font-size:.85rem;color:var(--muted);background:var(--ink-2)}
+.pyrun .pyhead span:first-child{flex:1;font-weight:600;color:var(--paper)}
+.pyrun .pystatus{font-size:.78rem}
+.pyrun textarea{display:block;width:100%;border:none;background:#0f1424;color:var(--paper);font-family:'IBM Plex Mono',monospace;font-size:.86rem;line-height:1.5;padding:12px 14px;resize:vertical;outline:none;min-height:60px;tab-size:4}
+.pyrun .pyout{font-family:'IBM Plex Mono',monospace;font-size:.86rem;line-height:1.5;padding:12px 14px;margin:0;border:none;border-top:1px solid var(--line);border-left:none;border-radius:0;background:#0a0e1a;color:#cfe3ff;max-height:none;overflow:auto}
+
+</style>
+<style>.sm{display:grid;grid-template-columns:1fr 1fr;gap:12px}.states{display:flex;flex-wrap:wrap;gap:6px}.states span{padding:6px 10px;border-radius:6px;border:1px solid var(--line);background:#0f1424;font-family:'IBM Plex Mono',monospace;font-size:.78rem}.states span.on{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 25%,#0f1424)}.log{font-family:'IBM Plex Mono',monospace;font-size:.78rem;background:#0f1424;border:1px solid var(--line);border-radius:6px;padding:10px;min-height:170px;white-space:pre-wrap}.stack{display:grid;gap:3px;font-family:'IBM Plex Mono',monospace;font-size:.75rem}.stack div{padding:5px 8px;border:1px solid var(--line);border-radius:4px;background:#0f1424}.stack .c{background:#28304f}.stack .k{border-color:var(--accent)}@media(max-width:700px){.sm{grid-template-columns:1fr}}</style></head>
+<body class="piece-loom"><div class="wrap">
+<header class="hero"><div class="chapters">JDK 21u sources: java/lang/VirtualThread.java, jdk/internal/vm/Continuation.java, jdk/internal/misc/CarrierThread.java, java/util/concurrent/ForkJoinPool.java · HotSpot runtime/continuationFreezeThaw.cpp</div>
+<h1>Inside a virtual thread: a continuation, a state machine, a scheduler</h1>
+<p class="lede">Strip away the API and a virtual thread is three things: a <code>Continuation</code> that can be run, yielded and resumed (its frames copied between the carrier's stack and heap <em>stack chunks</em> by HotSpot's freeze/thaw code); a small state machine in <code>VirtualThread.java</code> that decides when to yield and what to do if it can't; and a <code>ForkJoinPool</code> whose worker threads are the carriers. Everything in lesson 13 — mount/unmount, pinning, compensation, parking — is a path through these three.</p></header>
+<div class="source"><b>Primary sources:</b> read directly from the JDK 21u tree — <code>VirtualThread.java</code> (state constants and transition comment, <code>createDefaultScheduler</code>, <code>runContinuation</code>, <code>mount</code>/<code>unmount</code>, <code>park</code>/<code>parkNanos</code>/<code>parkOnCarrierThread</code>), <code>Continuation.java</code> (<code>run</code>, <code>yield</code>, <code>Pinned</code>, <code>onPinned</code>), <code>CarrierThread.java</code>, and the design comment at the top of <code>continuationFreezeThaw.cpp</code> (budgets, fast/slow paths, stack layout). Names and numbers below are the source's.</div>
+<h2>What you'll be able to do</h2><ul id="obj"></ul>
+
+<h2>The scheduler, as constructed</h2>
+<pre><code>// VirtualThread.createDefaultScheduler() — JDK 21
+ForkJoinWorkerThreadFactory factory = pool -> new CarrierThread(pool);   // CarrierThread extends ForkJoinWorkerThread
+parallelism = jdk.virtualThreadScheduler.parallelism ?? Runtime.getRuntime().availableProcessors();
+maxPoolSize = jdk.virtualThreadScheduler.maxPoolSize ?? max(parallelism, 256);
+minRunnable = jdk.virtualThreadScheduler.minRunnable ?? max(parallelism / 2, 1);
+boolean asyncMode = true;                                                 // FIFO
+new ForkJoinPool(parallelism, factory, handler, asyncMode, 0, maxPoolSize, minRunnable, pool -> true, 30, SECONDS);</code></pre>
+<p>So: carriers are <code>ForkJoinWorkerThread</code>s; FIFO ("asyncMode") so the oldest runnable virtual thread goes first; the pool may grow beyond parallelism up to <code>maxPoolSize</code> (default ≥ 256) for compensation when a carrier is captured (e.g. file I/O uses <code>ForkJoinPool.managedBlock</code>); idle carriers die after 30 s. A separate <code>ScheduledThreadPoolExecutor</code> ("unparker", <code>jdk.unparker.maxPoolSize</code>) implements timed parking by scheduling an unpark. Submitting a virtual thread means submitting its <code>runContinuation</code> task: from a carrier it goes to the worker's local queue, otherwise to an external submission queue.</p>
+
+<h2>The state machine</h2>
+<div class="fig"><h4>States from VirtualThread.java (values are the source's)</h4><div class="states" id="states"></div><div class="controls" style="margin-top:8px"><button class="primary" data-e="start">Thread.start()</button><button data-e="run">scheduler runs it</button><button data-e="park">LockSupport.park()</button><button data-e="parkpinned">park() while pinned</button><button data-e="unpark">unpark()</button><button data-e="yield">Thread.yield()</button><button data-e="done">task returns</button><button data-e="reset">reset</button></div><div class="sm"><div class="log" id="slog"></div><div class="cap" id="smsg"></div></div></div>
+<p>The transition comment in the source, verbatim in structure: NEW → STARTED (start, schedule to run) → RUNNING (first run) → TERMINATED. RUNNING → PARKING (park); PARKING → PARKED when <code>cont.yield</code> succeeds (unmounted), or → <b>PINNED</b> when it fails ("parked indefinitely on carrier"); PARKED → UNPARKED (unmounted but runnable) → RUNNING; PINNED → RUNNING on the same carrier. The TIMED_ variants mirror this for <code>parkNanos</code>. RUNNING → YIELDING → YIELDED (yield succeeded; will be rescheduled) or back to RUNNING. A SUSPENDED bit (1 &lt;&lt; 8) is OR'd in by debuggers. The state field is volatile and read by the VM.</p>
+
+<h2>Mount, run, unmount: <code>runContinuation()</code></h2>
+<div class="crux"><b>The carrier's task.</b> <code>runContinuation()</code> throws <code>WrongThreadException</code> if called from a virtual thread. It CASes the state from STARTED/UNPARKED/YIELDED to RUNNING (consuming the park permit when coming from UNPARKED), calls <code>mount()</code> — record the carrier, transfer the interrupt status, and <code>carrier.setCurrentThread(this)</code>, which is what makes <code>Thread.currentThread()</code> answer with the virtual thread — then <code>cont.run()</code>. When <code>run()</code> returns, the continuation either finished or yielded: <code>unmount()</code> restores <code>carrier.setCurrentThread(carrier)</code>, clears the carrier reference and interrupt, and then <code>afterDone()</code> or <code>afterYield()</code> decides the next state (PARKED/YIELDED, or immediately resubmit if an unpark raced in).</div>
+<p><b>Parking</b>: <code>park()</code> returns at once if a permit is available or the thread is interrupted; otherwise it sets PARKING and calls <code>yieldContinuation()</code> → <code>Continuation.yield(VTHREAD_SCOPE)</code>. If the yield <em>succeeds</em>, control returns to <code>runContinuation</code> on the carrier — the virtual thread's frames are now in the heap. If it <em>fails</em> (pinned), the state goes back to RUNNING and <code>parkOnCarrierThread()</code> blocks the carrier with <code>Unsafe.park</code>, emitting the <code>VirtualThreadPinnedEvent</code> (the JFR event from lesson 13). <code>parkNanos</code> first schedules an unpark on the unparker pool and cancels it afterwards. <b>Unparking</b> CASes PARKED → UNPARKED and submits <code>runContinuation</code> again; for a PINNED thread it simply unparks the carrier.</p>
+
+<h2>Continuations and freeze/thaw</h2>
+<p><code>jdk.internal.vm.Continuation</code> (internal API; the language never exposes it) wraps a <code>Runnable</code> in a <code>ContinuationScope</code>. <code>run()</code> enters it (<code>enterSpecial</code>), <code>yield(scope)</code> suspends the innermost continuation of that scope; <code>isDone()</code>; and the <code>Pinned</code> enum names the reasons a yield can fail: <b>NATIVE</b> (a native frame on the stack), <b>MONITOR</b> (a monitor held — <code>synchronized</code>), <b>CRITICAL_SECTION</b>. <code>onPinned</code> defaults to throwing <code>IllegalStateException("Pinned: …")</code>; <code>VirtualThread</code> overrides it to return <code>false</code> from the yield so <code>park()</code> can fall back to parking the carrier.</p>
+<div class="fig"><h4>Freeze: copying frames into a stack chunk</h4><div class="sm"><div class="stack" id="fstack"></div><div><div class="controls"><button class="primary" id="fz">freeze (yield)</button><button id="th">thaw (run)</button></div><div class="cap" id="fmsg"></div></div></div></div>
+<p>The HotSpot side (<code>continuationFreezeThaw.cpp</code>) is "very latency-critical and very hot": freeze runs on every I/O, every <code>j.u.c</code> lock acquisition, every queue take, and thaw possibly several times per blocking call because the <em>return barrier</em> thaws frames lazily as the code returns into them. The budget is <b>~100–150 ns</b> per operation. The <b>fast path</b> applies when all frames are compiled and the chunk needs no GC barriers: frames are simply memcpy'd into the chunk (or out of it) and the bottom-most frame is patched (its return address becomes the return barrier). The <b>slow path</b> handles interpreted frames (internal pointers must be made relative in the chunk and absolute again on thaw) and GC barriers. The stack layout: carrier frames, then <code>Continuation.run</code>, then the <code>enterSpecial</code> frame holding a <code>ContinuationEntry</code> (argsize, the continuation and chunk oops, a parent entry), then the continuation's frames down to the yield stub; freeze copies everything below the entry. Stack chunks are ordinary heap objects (<code>jdk.internal.vm.StackChunk</code>), which is why the stacks can grow, are not GC roots, and why the G1 humongous limitation exists.</p>
+<div id="py1"></div>
+
+<h2>Why this design</h2>
+<p>JEP 444's alternatives section explains the choices: async/await coroutines were rejected because they would split the world into thread APIs and coroutine APIs and require rewriting tooling; a brand-new user-mode-thread class was prototyped but foundered on <code>Thread.currentThread()</code> being used pervasively (lock ownership, thread-locals) — so virtual threads had to <em>be</em> <code>Thread</code>s, and the carrier's <code>currentThread</code> had to be switched on mount. Delimited continuations were the enabling primitive precisely because they let existing blocking code suspend without being rewritten.</p>
+
+<h2>Flash cards</h2><div id="cards"></div>
+<h2>Retrieval practice</h2><div id="quiz"></div>
+<p class="tip">Ask me in the chat to walk through the actual <code>afterYield()</code> race handling in VirtualThread.java, or through <code>ForkJoinPool</code>'s compensation via managedBlock.</p>
+</div>
+<script>
+/* Java 21 course — shared components (from the OSTEP course). Every page loads this file (inlined by build.py). */
+window.OS = (function () {
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+  /* ---------- persistent storage (localStorage on a real site; in-memory fallback in sandboxes) ---------- */
+  const mem = {};
+  const store = {
+    get(k) { try { const v = localStorage.getItem('java21:' + k); return v === null ? (mem[k] ?? null) : JSON.parse(v); } catch (e) { return mem[k] ?? null; } },
+    set(k, v) { mem[k] = v; try { localStorage.setItem('java21:' + k, JSON.stringify(v)); } catch (e) {} },
+    del(k) { delete mem[k]; try { localStorage.removeItem('java21:' + k); } catch (e) {} },
+    keys(prefix) { const out = new Set(Object.keys(mem).filter(k => k.startsWith(prefix))); try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith('java21:' + prefix)) out.add(k.slice(6)); } } catch (e) {} return [...out]; },
+    available() { try { localStorage.setItem('java21:test', '1'); localStorage.removeItem('java21:test'); return true; } catch (e) { return false; } }
+  };
+
+  /* ---------- course structure ---------- */
+  const PIECES = [
+    ['lang', 'The language, as specified (JLS 21)', [
+      ['0001-types-values-variables', 'Types, values, variables', 'JLS ch 4, 5'],
+      ['0002-classes-objects-initialization', 'Classes, objects, initialization order', 'JLS ch 8, 12'],
+      ['0003-records-sealed-interfaces', 'Records, sealed types, interfaces', 'JLS §8.10, §8.1.1.2, ch 9'],
+      ['0004-generics-and-erasure', 'Generics, wildcards, erasure', 'JLS §4.5–4.10, §8.4.8.3'],
+      ['0005-expressions-exceptions-switch', 'Expressions, exceptions, switch & patterns', 'JLS ch 11, 14, 15; JEPs 440/441'],
+      ['0006-lambdas-streams', 'Lambdas, method references, streams', 'JLS §15.27, §15.13, java.util.stream'],
+      ['0007-java-memory-model', 'The Java memory model', 'JLS ch 17']]],
+    ['jvm', 'The JVM (JVMS 21 + HotSpot)', [
+      ['0008-class-files-and-bytecode', 'Class files and bytecode', 'JVMS ch 4, 6'],
+      ['0009-loading-linking-initialization', 'Loading, linking, initialization, class loaders', 'JVMS ch 5'],
+      ['0010-execution-frames-invokedynamic', 'Execution: frames, invoke*, invokedynamic', 'JVMS ch 2, 5.4.3, 6'],
+      ['0011-hotspot-jit', 'HotSpot: interpreter, C1/C2, deoptimization', 'compilationPolicy.cpp, c2_globals.hpp'],
+      ['0012-heap-gc-generational-zgc', 'Objects, heap, GC, Generational ZGC', 'markWord.hpp, gcConfig.cpp, JEP 439']]],
+    ['loom', 'Java 21: virtual threads and new features', [
+      ['0013-virtual-threads-model', 'Virtual threads: the model (JEP 444)', 'JEP 444'],
+      ['0014-virtual-threads-internals', 'Virtual threads: continuations, carriers, scheduler', 'VirtualThread.java, Continuation.java, freeze/thaw'],
+      ['0015-structured-concurrency-scoped-values', 'Structured concurrency & scoped values', 'StructuredTaskScope, ScopedValue (preview)'],
+      ['0016-concurrency-toolkit', 'The concurrency toolkit: monitors, locks, executors', 'JLS §17.1–17.3, java.util.concurrent'],
+      ['0017-java-21-features', 'What Java 21 adds', 'JEPs 431, 440, 441, 442, 443, 445, 446, 453']]]
+  ];
+  const LESSONS = PIECES.flatMap(p => p[2].map(l => [l[0], l[1], p[0], l[2]]));
+  const title = id => (LESSONS.find(l => l[0] === id) || [])[1] || id;
+  let pageId = null, root = '../';
+
+  /* ---------- chrome: sticky header, slide-out directory, notes drawer, prev/next ---------- */
+  function chrome(id, rootPath) {
+    pageId = id; root = rootPath === undefined ? '../' : rootPath;
+    const i = LESSONS.findIndex(l => l[0] === id);
+    const isLesson = i >= 0;
+    const top = document.createElement('header'); top.className = 'topbar';
+    top.innerHTML = `<button class="menu" aria-label="Open directory" aria-expanded="false">☰<span>Directory</span></button>
+      <a class="brand" href="${root}index.html"><span class="dot"></span>Java 21 course</a>
+      <nav class="links"><a href="${root}reference/glossary.html">Glossary</a><a href="${root}reference/cheatsheets.html">Cheat sheets</a><a href="${root}notes.html">My notes</a></nav>
+      ${isLesson ? `<span class="where">${i+1} / ${LESSONS.length}</span>` : ''}`;
+    document.body.prepend(top);
+    // directory drawer
+    const drawer = document.createElement('aside'); drawer.className = 'drawer'; drawer.setAttribute('aria-label', 'Course directory');
+    const scores = Object.fromEntries(LESSONS.map(l => [l[0], store.get('quiz:' + l[0])]));
+    const notes = new Set(store.keys('notes:').map(k => k.slice(6)).filter(k => (store.get('notes:' + k) || {}).text));
+    drawer.innerHTML = `<div class="dhead"><b>Directory</b><button class="close" aria-label="Close">×</button></div>
+      <a class="ditem ${id === 'index' ? 'cur' : ''}" href="${root}index.html">Course hub</a>
+      ${PIECES.map(([cls, name, ls]) => `<div class="dgroup piece-${cls}"><div class="dname">${name}</div>${ls.map(l => {
+        const n = LESSONS.findIndex(x => x[0] === l[0]) + 1, s = scores[l[0]];
+        return `<a class="ditem ${l[0] === id ? 'cur' : ''}" href="${root}lessons/${l[0]}.html"><span class="n">${n}</span><span class="t">${l[1]}<small>${l[3]}</small></span><span class="badges">${notes.has(l[0]) ? '<i title="you have notes">✎</i>' : ''}${s ? `<em title="best quiz score">${s.score}/${s.total}</em>` : ''}</span></a>`; }).join('')}</div>`).join('')}
+      <div class="dgroup piece-intro"><div class="dname">Reference</div>
+        <a class="ditem ${id === 'glossary' ? 'cur' : ''}" href="${root}reference/glossary.html"><span class="t">Glossary</span></a>
+        <a class="ditem ${id === 'cheatsheets' ? 'cur' : ''}" href="${root}reference/cheatsheets.html"><span class="t">Cheat sheets</span></a>
+        <a class="ditem ${id === 'notes' ? 'cur' : ''}" href="${root}notes.html"><span class="t">My notes &amp; progress</span></a></div>
+      <div class="dfoot">${store.available() ? 'Notes and scores are saved in this browser.' : 'Notes and scores are kept for this session only (storage unavailable here).'}</div>`;
+    document.body.append(drawer);
+    const scrim = document.createElement('div'); scrim.className = 'scrim'; document.body.append(scrim);
+    const open = o => { document.body.classList.toggle('drawer-open', o); top.querySelector('.menu').setAttribute('aria-expanded', o); if (o) drawer.querySelector('.cur, .ditem')?.focus(); };
+    top.querySelector('.menu').onclick = () => open(!document.body.classList.contains('drawer-open'));
+    drawer.querySelector('.close').onclick = () => open(false); scrim.onclick = () => open(false);
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') { open(false); notesOpen(false); } });
+    // prev/next for lessons
+    if (isLesson) {
+      const nav = document.createElement('div'); nav.className = 'nav-bottom';
+      const prev = LESSONS[i-1], next = LESSONS[i+1];
+      nav.innerHTML = (prev ? `<a href="${prev[0]}.html">← ${i}. ${prev[1]}</a>` : '<span></span>') +
+                      (next ? `<a href="${next[0]}.html">${i+2}. ${next[1]} →</a>` : `<a href="${root}index.html">Back to course hub →</a>`);
+      document.querySelector('.wrap').append(nav);
+    }
+    // wrap tables so they scroll sideways on phones
+    document.querySelectorAll('.wrap table').forEach(t => { if (t.parentElement.classList.contains('tw')) return; const w = document.createElement('div'); w.className = 'tw'; t.replaceWith(w); w.append(t); });
+    // notes drawer (every page except the notes page itself)
+    if (id !== 'notes') notesUI(id, isLesson ? `${i+1}. ${LESSONS[i][1]}` : (document.title.split(' — ')[0]));
+  }
+
+  /* ---------- notes: floating button + bottom sheet, autosaved ---------- */
+  let notesOpen = () => {};
+  function notesUI(id, label) {
+    const btn = document.createElement('button'); btn.className = 'notes-fab'; btn.innerHTML = '✎ <span>Notes</span>'; btn.setAttribute('aria-label', 'Open notes');
+    const sheet = document.createElement('section'); sheet.className = 'notes-sheet'; sheet.setAttribute('aria-label', 'Notes for this page');
+    const saved = store.get('notes:' + id) || {};
+    sheet.innerHTML = `<div class="nhead"><b>Notes · ${esc(label)}</b><span class="nstatus"></span><button class="close" aria-label="Close notes">×</button></div>
+      <textarea placeholder="Your notes for this page. Markdown is fine. Saved automatically.">${esc(saved.text || '')}</textarea>
+      <div class="nfoot"><span class="ncount"></span><a href="${root}notes.html">All notes &amp; export →</a></div>`;
+    document.body.append(btn, sheet);
+    const ta = sheet.querySelector('textarea'), status = sheet.querySelector('.nstatus'), count = sheet.querySelector('.ncount');
+    const upd = () => { count.textContent = ta.value.trim() ? ta.value.trim().split(/\s+/).length + ' words' : ''; };
+    let t; ta.addEventListener('input', () => { status.textContent = 'saving…'; clearTimeout(t); t = setTimeout(() => { store.set('notes:' + id, { text: ta.value, title: label, updated: new Date().toISOString() }); status.textContent = 'saved'; upd(); }, 400); });
+    upd();
+    notesOpen = o => { document.body.classList.toggle('notes-open', o); if (o) ta.focus(); };
+    btn.onclick = () => notesOpen(!document.body.classList.contains('notes-open'));
+    sheet.querySelector('.close').onclick = () => notesOpen(false);
+  }
+
+  /* ---------- quiz: immediate feedback; best score persisted ---------- */
+  function quiz(el, qs) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('quiz');
+    let score = 0, answered = 0;
+    const best = pageId ? store.get('quiz:' + pageId) : null;
+    el.innerHTML = qs.map((q, i) => `<div class="q" data-i="${i}"><p>${i+1}. ${q.q}</p>
+      <div class="opts">${q.o.map((o, j) => `<button class="opt" data-j="${j}">${esc(o)}</button>`).join('')}</div>
+      <div class="why">${q.why}</div></div>`).join('') + `<div class="score">${best ? `Best so far: ${best.score}/${best.total} (${new Date(best.date).toLocaleDateString()})` : ''}</div>`;
+    el.querySelectorAll('.q').forEach(qd => {
+      const q = qs[+qd.dataset.i];
+      qd.querySelectorAll('.opt').forEach(b => b.addEventListener('click', () => {
+        if (qd.classList.contains('done')) return;
+        qd.classList.add('done'); answered++;
+        const j = +b.dataset.j;
+        if (j === q.a) { b.classList.add('right'); score++; }
+        else { b.classList.add('wrong'); qd.querySelectorAll('.opt')[q.a].classList.add('right'); }
+        const s = el.querySelector('.score');
+        s.textContent = `${score} / ${answered} correct`;
+        if (answered === qs.length) {
+          s.textContent += score === qs.length ? ' — all of them. Retry from memory in two days.' : ' — reread the sections you missed, then retry.';
+          if (pageId && (!best || score >= best.score)) store.set('quiz:' + pageId, { score, total: qs.length, date: new Date().toISOString() });
+        }
+      }));
+    });
+  }
+
+
+  /* ---------- Java code blocks: annotated, copyable, with a jshell hint (no JVM in the browser) ---------- */
+  function py(el, code, opts) {
+    el = typeof el === 'string' ? document.getElementById(el) : el; opts = opts || {};
+    el.classList.add('pyrun');
+    const src = code.trim();
+    const preview = /--enable-preview|StructuredTaskScope|ScopedValue|STR\./.test(src);
+    el.innerHTML = `<div class="pyhead"><span>Java 21${preview ? ' · needs --enable-preview' : ''}${opts.note ? ' · ' + esc(opts.note) : ''}</span><span class="pystatus">paste into jshell or a scratch file</span><button class="primary copy">Copy</button></div><pre class="pyout" style="display:block;white-space:pre-wrap;margin:0"><code>${esc(src)}</code></pre>`;
+    el.querySelector('.copy').onclick = () => { navigator.clipboard && navigator.clipboard.writeText(src).then(() => { el.querySelector('.pystatus').textContent = 'copied'; }).catch(() => {}); };
+  }
+
+  /* ---------- flip cards ---------- */
+  function cards(el, list) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('cards');
+    el.innerHTML = list.map(([f, b]) => `<div class="card" tabindex="0" role="button" aria-label="flip card"><div class="inner"><div class="face front">${f}</div><div class="face back">${b}</div></div></div>`).join('');
+    el.querySelectorAll('.card').forEach(c => {
+      const t = () => c.classList.toggle('flipped');
+      c.addEventListener('click', t);
+      c.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); t(); } });
+    });
+  }
+
+  /* ---------- stepper ---------- */
+  function stepper(el, steps, render) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('stepper');
+    let i = 0;
+    el.innerHTML = `<div class="controls"><button class="prev">← Back</button><button class="next primary">Next step →</button><span class="idx"></span></div><div class="stage"></div><div class="extra"></div>`;
+    const stage = el.querySelector('.stage'), idx = el.querySelector('.idx'), extra = el.querySelector('.extra');
+    const draw = () => { stage.innerHTML = steps[i]; idx.textContent = `step ${i+1} / ${steps.length}`; if (render) render(i, extra); };
+    el.querySelector('.prev').onclick = () => { i = Math.max(0, i-1); draw(); };
+    el.querySelector('.next').onclick = () => { i = Math.min(steps.length-1, i+1); draw(); };
+    draw();
+  }
+
+  /* ---------- gantt ---------- */
+  function gantt(el, rows, total, colors) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('gantt');
+    const pal = colors || ['#e8b84a','#5bc8f5','#6bcb77','#f47fa0','#c9a8ff','#ffb86b'];
+    el.innerHTML = rows.map((r, i) => `<div class="row"><span>${esc(r.name)}</span><div class="track">${r.segs.map(s =>
+      `<div class="seg" style="left:${100*s.start/total}%;width:${100*(s.end-s.start)/total}%;background:${pal[i%pal.length]}" title="${s.start}–${s.end}">${(s.end-s.start)/total > .06 ? (s.end-s.start) : ''}</div>`).join('')}</div></div>`).join('') +
+      `<div class="row"><span></span><div style="display:flex;justify-content:space-between;font-size:.75rem;color:var(--muted)"><span>0</span><span>${total}</span></div></div>`;
+  }
+
+  /* ---------- objectives checklist (persisted) ---------- */
+  function objectives(el, items) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('objectives');
+    const saved = (pageId && store.get('obj:' + pageId)) || [];
+    el.innerHTML = items.map((t, i) => `<li><label><input type="checkbox" data-i="${i}" ${saved.includes(i) ? 'checked' : ''}>${t}</label></li>`).join('');
+    el.querySelectorAll('input').forEach(c => c.onchange = () => { const s = [...el.querySelectorAll('input:checked')].map(x => +x.dataset.i); if (pageId) store.set('obj:' + pageId, s); });
+  }
+
+  return { chrome, quiz, cards, stepper, gantt, objectives, py, esc, store, LESSONS, PIECES, title };
+})();
+
+</script>
+<script>
+OS.chrome('0014-virtual-threads-internals');
+OS.objectives('obj',['Reconstruct the default scheduler\'s construction (carrier factory, FIFO, parallelism/maxPoolSize/minRunnable) and the unparker.','Name the VirtualThread states and drive the transitions for start, park, pinned park, unpark, yield and termination.','Explain runContinuation/mount/unmount and why Thread.currentThread() returns the virtual thread.','Describe Continuation.run/yield, the Pinned reasons, and the freeze/thaw fast and slow paths with their budget.','Relate stack chunks to GC behaviour and justify the "virtual threads are Threads" design decision.']);
+const ST=['NEW=0','STARTED=1','RUNNING=2','PARKING=3','PARKED=4','PINNED=5','TIMED_PARKING=6','TIMED_PARKED=7','TIMED_PINNED=8','UNPARKED=9','YIELDING=10','YIELDED=11','TERMINATED=99'];
+let cur='NEW',log=[];function sdraw(m){document.getElementById('states').innerHTML=ST.map(s=>`<span class="${s.startsWith(cur+'=')?'on':''}">${s}</span>`).join('');document.getElementById('slog').textContent=log.slice(-8).join('\n');document.getElementById('smsg').textContent=m||'';}
+const E={start(){if(cur!=='NEW')return sdraw('start() only from NEW (IllegalThreadStateException otherwise)');cur='STARTED';log.push('start(): NEW → STARTED; submitRunContinuation() → scheduler queue');sdraw('The continuation task is submitted to the ForkJoinPool (FIFO).');},
+run(){if(!['STARTED','UNPARKED','YIELDED'].includes(cur))return sdraw('runContinuation() returns immediately unless state is STARTED/UNPARKED/YIELDED');log.push(`runContinuation(): CAS ${cur} → RUNNING; mount(): carrier.setCurrentThread(vthread); cont.run()`);cur='RUNNING';sdraw('Mounted on a carrier: Thread.currentThread() now returns the virtual thread; frames thawed from the stack chunk if resuming.');},
+park(){if(cur!=='RUNNING')return sdraw('park() is called by the virtual thread itself, so it must be RUNNING');log.push('park(): no permit → state PARKING; Continuation.yield(VTHREAD_SCOPE) → freeze frames into stack chunk → yield succeeds');log.push('runContinuation() continues on carrier: unmount(); afterYield(): PARKING → PARKED');cur='PARKED';sdraw('Unmounted. The carrier picks the next virtual thread. Frames live in the heap.');},
+parkpinned(){if(cur!=='RUNNING')return sdraw('must be RUNNING');log.push('park() inside synchronized: yield fails (Pinned.MONITOR) → onPinned returns false → state back to RUNNING → parkOnCarrierThread(): PINNED; VirtualThreadPinnedEvent; Unsafe.park(carrier)');cur='PINNED';sdraw('Still mounted: the carrier OS thread is blocked. No scheduler compensation.');},
+unpark(){if(cur==='PARKED'){log.push('unpark(): CAS PARKED → UNPARKED; submitRunContinuation()');cur='UNPARKED';return sdraw('Runnable but unmounted; waits in the FIFO queue for a carrier.');}if(cur==='PINNED'){log.push('unpark(): PINNED → RUNNING; Unsafe.unpark(carrier)');cur='RUNNING';return sdraw('Continues on the same carrier.');}log.push('unpark(): thread not parked → set park permit (next park() returns immediately)');sdraw('Permit stored.');},
+yield(){if(cur!=='RUNNING')return sdraw('must be RUNNING');log.push('Thread.yield(): RUNNING → YIELDING; cont.yield succeeds → YIELDED; resubmitted to the scheduler');cur='YIELDED';sdraw('Gives other runnable virtual threads a turn; there is no time-slicing otherwise.');},
+done(){if(cur!=='RUNNING')return sdraw('must be RUNNING');log.push('task returns: cont.run() returns with isDone(); unmount(); afterDone(): → TERMINATED; joiners notified');cur='TERMINATED';sdraw('Final state.');},
+reset(){cur='NEW';log=[];sdraw('');}};
+document.querySelectorAll('[data-e]').forEach(b=>b.onclick=()=>E[b.dataset.e]());sdraw('Press Thread.start().');
+/* freeze/thaw */
+const FR=[['carrier frames (ForkJoinWorkerThread.run, runWorker…)','c'],['VirtualThread.runContinuation','c'],['Continuation.run','c'],['enterSpecial frame — ContinuationEntry {argsize, cont, chunk, parent}','k'],['VirtualThread.run(task)','v'],['task.run()','v'],['SocketInputStream.read → blocking op','v'],['LockSupport.park → VirtualThread.park','v'],['Continuation.yield → doYield stub','v']];
+let frozen=false;function fdraw(){document.getElementById('fstack').innerHTML=FR.map(f=>`<div class="${f[1]}${f[1]==='v'&&frozen?' c':''}" style="${f[1]==='v'&&frozen?'opacity:.35;text-decoration:line-through':''}">${f[0]}${f[1]==='v'&&frozen?'  → in stack chunk (heap)':''}</div>`).join('');}
+document.getElementById('fz').onclick=()=>{frozen=true;fdraw();document.getElementById('fmsg').textContent='freeze: all frames below the ContinuationEntry are copied into a jdk.internal.vm.StackChunk object (fast path: memcpy of compiled frames, bottom frame patched with the return barrier). The carrier\'s stack now ends at Continuation.run, which returns to runContinuation → unmount(). Budget ~100–150 ns.';};
+document.getElementById('th').onclick=()=>{frozen=false;fdraw();document.getElementById('fmsg').textContent='thaw: on the next mount, cont.run() copies the top frames back onto the (possibly different) carrier\'s stack; deeper frames are thawed lazily by the return barrier as methods return into them. Interpreted frames take the slow path (pointer relativization, GC barriers).';};fdraw();
+OS.py('py1',`// What you can observe from Java 21 (internal classes are not exported; use --add-opens only for exploration)
+Thread vt = Thread.ofVirtual().unstarted(() -> {
+    System.out.println(Thread.currentThread());            // VirtualThread[#21]/runnable@ForkJoinPool-1-worker-1
+    LockSupport.park();                                    // RUNNING → PARKING → PARKED (frames frozen into a StackChunk)
+    System.out.println("resumed on " + Thread.currentThread());   // same virtual thread, maybe a different carrier
+});
+vt.start();                                                // NEW → STARTED, submitted to the FIFO ForkJoinPool
+Thread.sleep(100);
+LockSupport.unpark(vt);                                    // PARKED → UNPARKED → runContinuation() on a carrier
+vt.join();
+
+// Pinning observed: -Djdk.tracePinnedThreads=full prints the frames holding the monitor
+Object lock = new Object();
+Thread.startVirtualThread(() -> { synchronized (lock) { LockSupport.parkNanos(1_000_000); } }).join();
+//   → yield fails with Pinned.MONITOR; state PINNED; the carrier blocks for 1 ms
+
+// Tuning knobs (system properties): jdk.virtualThreadScheduler.parallelism, .maxPoolSize, .minRunnable, jdk.unparker.maxPoolSize
+// Thread dump grouping carriers/virtual threads: jcmd <pid> Thread.dump_to_file -format=json out.json`);
+OS.cards('cards',[['CarrierThread','A ForkJoinWorkerThread subclass created by the scheduler\'s factory; virtual threads mount on it.'],['Default scheduler','ForkJoinPool(parallelism = availableProcessors, maxPoolSize = max(parallelism, 256), minRunnable = max(parallelism/2, 1), asyncMode = true (FIFO), 30 s keepalive).'],['State constants','NEW 0, STARTED 1, RUNNING 2, PARKING 3, PARKED 4, PINNED 5, TIMED_* 6–8, UNPARKED 9, YIELDING 10, YIELDED 11, TERMINATED 99.'],['runContinuation()','CAS to RUNNING, mount() (set carrier, currentThread = vthread), cont.run(), unmount(), then afterDone()/afterYield().'],['park() logic','Permit? return. Else PARKING → Continuation.yield; success → PARKED (unmounted); failure (pinned) → RUNNING → parkOnCarrierThread → PINNED.'],['Continuation.Pinned','NATIVE, MONITOR, CRITICAL_SECTION — reasons yield() cannot freeze the frames.'],['Freeze / thaw','Copy continuation frames into / out of a heap StackChunk; fast path memcpy for compiled frames; ~100–150 ns budget; return barrier thaws lazily.'],['ContinuationEntry','The enterSpecial frame separating carrier frames from continuation frames; holds cont/chunk oops and the parent entry.'],['Why Threads, not coroutines','Thread.currentThread() is pervasive (locks, thread-locals); making virtual threads real Threads keeps existing code and tools working.']]);
+OS.quiz('quiz',[
+{q:'What kind of thread is a carrier in JDK 21?',o:['a plain java.lang.Thread','a CarrierThread extending ForkJoinWorkerThread','a native thread without a Thread object','a virtual thread'],a:1,why:'createDefaultScheduler installs a factory returning CarrierThread, a ForkJoinWorkerThread subclass.'},
+{q:'The default maxPoolSize of the virtual-thread scheduler is:',o:['equal to parallelism','max(parallelism, 256)','unbounded','2 × parallelism'],a:1,why:'VirtualThread.createDefaultScheduler: maxPoolSize = Integer.max(parallelism, 256) unless overridden.'},
+{q:'A virtual thread calls park() and Continuation.yield fails. Its state becomes:',o:['PARKED','PINNED (parked on the carrier)','TERMINATED','UNPARKED'],a:1,why:'PARKING → PINNED: "cont.yield failed, parked indefinitely on carrier"; parkOnCarrierThread blocks the OS thread.'},
+{q:'Why does Thread.currentThread() return the virtual thread while it runs on a carrier?',o:['the JVM keeps a separate thread table','mount() calls carrier.setCurrentThread(this)','the carrier is replaced','virtual threads run on their own OS thread'],a:1,why:'mount() switches the carrier\'s current-thread pointer to the virtual thread; unmount() switches it back.'},
+{q:'Which is NOT a Continuation.Pinned reason?',o:['NATIVE','MONITOR','CRITICAL_SECTION','SLEEPING'],a:3,why:'The enum has NATIVE, MONITOR and CRITICAL_SECTION; sleep parks normally and unmounts.'},
+{q:'The freeze fast path applies when:',o:['the stack is empty','all frames are compiled and the chunk needs no barriers','the thread is pinned','the carrier is idle'],a:1,why:'continuationFreezeThaw.cpp: on the fast path frames are simply copied and the bottom-most one patched; interpreted frames take the slow path.'},
+{q:'What does the return barrier do?',o:['prevents returning from a virtual thread','thaws deeper frozen frames lazily when code returns into them','blocks the carrier','marks the stack chunk for GC'],a:1,why:'Thaw is invoked by the return barrier, so a resumed thread only copies back the frames it actually returns into.'},
+{q:'Timed parking (parkNanos) is implemented by:',o:['a timer in the OS','scheduling an unpark on a ScheduledThreadPoolExecutor (the "unparker") then yielding','busy waiting on the carrier','the ForkJoinPool\'s delayed tasks'],a:1,why:'parkNanos schedules the unpark, sets TIMED_PARKING, yields, and cancels the unpark when resumed.'}]);
+</script></body></html>

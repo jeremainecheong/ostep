@@ -1,11 +1,11 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>OSTEP course — Operating Systems: Three Easy Pieces, taught interactively</title><style>
+<title>1 · Types, values, variables — Java 21 course</title><style>
 /* OSTEP course — shared stylesheet. Three pieces, three hues. */
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
 :root{
   --ink:#151b2f; --ink-2:#1e2540; --ink-3:#28304f; --line:#3a4368;
   --paper:#eef0f7; --muted:#a9b1cf; --faint:#6e779a;
-  --virt:#e8b84a; --conc:#5bc8f5; --pers:#6bcb77; --sec:#f47fa0; --intro:#c9a8ff;
+  --virt:#e8b84a; --conc:#5bc8f5; --pers:#6bcb77; --sec:#f47fa0; --intro:#c9a8ff; --spec:#ffd166; --internals:#5bc8f5; --data:#6bcb77;
   --ok:#6bcb77; --bad:#ff6b6b;
   --accent:var(--virt);
   --radius:6px;
@@ -28,7 +28,7 @@ p,li{max-width:72ch}
 .hero{padding:44px 0 16px}
 .hero .chapters{color:var(--muted);font-size:.95rem;margin-bottom:6px}
 .lede{font-size:1.2rem;color:var(--muted);max-width:66ch}
-.piece-virt{--accent:var(--virt)} .piece-conc{--accent:var(--conc)} .piece-pers{--accent:var(--pers)} .piece-sec{--accent:var(--sec)} .piece-intro{--accent:var(--intro)}
+.piece-lang{--accent:var(--spec)} .piece-jvm{--accent:var(--internals)} .piece-loom{--accent:var(--data)} .piece-spec{--accent:var(--spec)} .piece-internals{--accent:var(--internals)} .piece-data{--accent:var(--data)} .piece-virt{--accent:var(--virt)} .piece-conc{--accent:var(--conc)} .piece-pers{--accent:var(--pers)} .piece-sec{--accent:var(--sec)} .piece-intro{--accent:var(--intro)}
 .fig{background:var(--ink-2);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;margin:22px 0}
 .fig figcaption,.cap{color:var(--muted);font-size:.9rem;margin-top:10px}
 .fig svg{max-width:100%;height:auto;display:block}
@@ -182,69 +182,105 @@ details>div{padding:0 16px 14px}
 }
 @media (max-width:420px){.cards{grid-template-columns:1fr}}
 
+/* ---------- runnable Python ---------- */
+.pyrun{border:1px solid var(--line);border-radius:var(--radius);background:#0f1424;margin:18px 0;overflow:hidden}
+.pyrun .pyhead{display:flex;gap:10px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--line);font-size:.85rem;color:var(--muted);background:var(--ink-2)}
+.pyrun .pyhead span:first-child{flex:1;font-weight:600;color:var(--paper)}
+.pyrun .pystatus{font-size:.78rem}
+.pyrun textarea{display:block;width:100%;border:none;background:#0f1424;color:var(--paper);font-family:'IBM Plex Mono',monospace;font-size:.86rem;line-height:1.5;padding:12px 14px;resize:vertical;outline:none;min-height:60px;tab-size:4}
+.pyrun .pyout{font-family:'IBM Plex Mono',monospace;font-size:.86rem;line-height:1.5;padding:12px 14px;margin:0;border:none;border-top:1px solid var(--line);border-left:none;border-radius:0;background:#0a0e1a;color:#cfe3ff;max-height:none;overflow:auto}
+
 </style>
-<style>.map{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:24px 0}.piece{border:1px solid var(--line);border-radius:8px;padding:16px;background:var(--ink-2);border-top:4px solid var(--accent)}.piece h3{margin:0 0 4px;color:var(--accent)}.piece p{font-size:.9rem;color:var(--muted);margin:0 0 10px}.piece a{display:block;text-decoration:none;color:var(--paper);padding:6px 0;border-top:1px solid var(--line);font-size:.92rem}.piece a:hover{color:var(--accent)}.piece a small{display:block;color:var(--faint);font-size:.78rem}.piece a.done::after{content:" ✓";color:var(--ok)}.how{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}.how .fig{margin:0}.how h4{margin:0 0 6px}@media(max-width:900px){.map{grid-template-columns:1fr 1fr}.how{grid-template-columns:1fr}}@media(max-width:600px){.map{grid-template-columns:1fr}}.big{font-size:1.05rem}</style></head>
-<body class="piece-intro"><div class="wrap">
-<header class="hero"><div class="chapters">Operating Systems: Three Easy Pieces · Remzi H. and Andrea C. Arpaci-Dusseau (v1.10, 2023) · security chapters by Peter Reiher</div>
-<h1>The whole book, as sixteen interactive lessons</h1>
-<p class="lede big">Built from the text of all 57 chapters plus the VMM appendix — every "crux", every summary, every number in the figures was extracted from the chapter PDFs, not recalled. Each lesson is short, visual, and ends in retrieval practice. Do them in order; the book's pieces build on each other.</p></header>
+<style>.prim td:first-child{font-family:'IBM Plex Mono',monospace;color:var(--accent)}.conv{display:grid;grid-template-columns:1fr 1fr;gap:12px}.conv select{width:100%}.res{padding:12px;border-radius:6px;background:#0f1424;border:1px solid var(--line);margin-top:10px;font-size:.9rem}.res b{color:var(--accent)}.box{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}.box span{padding:6px 10px;border:1px solid var(--line);border-radius:6px;background:#0f1424;font-family:'IBM Plex Mono',monospace;font-size:.82rem}.box span.same{border-color:var(--ok)}.box span.diff{border-color:var(--bad)}</style></head>
+<body class="piece-lang"><div class="wrap">
+<header class="hero"><div class="chapters">JLS SE 21 · Chapter 4 Types, Values, and Variables · Chapter 5 Conversions and Contexts · §15.17–15.18 arithmetic</div>
+<h1>Types, values, variables: what Java promises about every value</h1>
+<p class="lede">Java is statically and strongly typed: every variable and every expression has a type known at compile time, and the specification fixes the exact size and behaviour of each primitive on every platform. This lesson covers the two kinds of types (primitive and reference), the conversions the compiler is allowed to insert, and the arithmetic rules that produce the classic surprises — <code>Integer</code> identity, integer overflow, <code>0.1 + 0.2</code>, and the sign of <code>%</code>.</p></header>
+<div class="source"><b>Primary sources:</b> <a href="https://docs.oracle.com/javase/specs/jls/se21/html/jls-4.html">JLS ch 4</a> (§4.2 primitive types and values, §4.3 reference types, §4.12.4 final variables, §4.12.5 initial values), <a href="https://docs.oracle.com/javase/specs/jls/se21/html/jls-5.html">ch 5</a> (widening/narrowing, boxing §5.1.7, numeric promotion §5.6), <a href="https://docs.oracle.com/javase/specs/jls/se21/html/jls-15.html">ch 15</a> (§15.17 multiplicative operators, §15.18.1 string concatenation).</div>
+<h2>What you'll be able to do</h2><ul id="obj"></ul>
 
-<figure class="fig"><svg viewBox="0 0 900 150" role="img" aria-label="three pieces">
-<rect x="20" y="30" width="270" height="90" rx="8" fill="#e8b84a"/><text x="155" y="68" text-anchor="middle" fill="#111" font-size="20" font-weight="700" font-family="Fraunces,serif">Virtualization</text><text x="155" y="95" text-anchor="middle" fill="#111" font-size="13">CPU (ch 4–10) · Memory (ch 13–23)</text>
-<rect x="315" y="30" width="270" height="90" rx="8" fill="#5bc8f5"/><text x="450" y="68" text-anchor="middle" fill="#111" font-size="20" font-weight="700" font-family="Fraunces,serif">Concurrency</text><text x="450" y="95" text-anchor="middle" fill="#111" font-size="13">threads, locks, CVs, semaphores, bugs (ch 26–33)</text>
-<rect x="610" y="30" width="270" height="90" rx="8" fill="#6bcb77"/><text x="745" y="68" text-anchor="middle" fill="#111" font-size="20" font-weight="700" font-family="Fraunces,serif">Persistence</text><text x="745" y="95" text-anchor="middle" fill="#111" font-size="13">devices, disks, file systems, distributed (ch 36–50)</text>
-<text x="450" y="140" text-anchor="middle" fill="#a9b1cf" font-size="13">+ Security (ch 53–57) and Virtual Machine Monitors (Appendix B)</text></svg></figure>
+<h2>The eight primitives</h2>
+<table class="prim"><tr><th>Type</th><th>Bits</th><th>Range / values</th><th>Default</th><th>Notes</th></tr>
+<tr><td>boolean</td><td>—</td><td>true, false</td><td>false</td><td>size unspecified; not convertible to/from numbers</td></tr>
+<tr><td>byte</td><td>8</td><td>−128 … 127</td><td>0</td><td>two's complement, signed</td></tr>
+<tr><td>short</td><td>16</td><td>−32,768 … 32,767</td><td>0</td><td></td></tr>
+<tr><td>char</td><td>16</td><td>'\u0000' … '\uffff' (0 … 65,535)</td><td>'\u0000'</td><td>the only unsigned integral type; a UTF-16 code unit, not a code point</td></tr>
+<tr><td>int</td><td>32</td><td>−2<sup>31</sup> … 2<sup>31</sup>−1</td><td>0</td><td>arithmetic wraps silently on overflow</td></tr>
+<tr><td>long</td><td>64</td><td>−2<sup>63</sup> … 2<sup>63</sup>−1</td><td>0L</td><td>literal suffix L</td></tr>
+<tr><td>float</td><td>32</td><td>IEEE 754 binary32</td><td>0.0f</td><td>NaN, ±Infinity, −0.0</td></tr>
+<tr><td>double</td><td>64</td><td>IEEE 754 binary64</td><td>0.0d</td><td>default type of a decimal literal</td></tr></table>
+<p>Everything else is a <b>reference type</b>: classes, interfaces, arrays, type variables — and the value of a reference-typed variable is a reference to an object or <code>null</code>. Fields, static fields and array elements get the defaults above (§4.12.5); <b>local variables have no default</b> and must be definitely assigned before use (ch 16). A <b>constant variable</b> (§4.12.4) is a <code>final</code> primitive or <code>String</code> initialized with a constant expression; its uses are inlined at compile time — which is why changing one requires recompiling its users (lesson 9) and why reading one does <em>not</em> trigger class initialization (lesson 2).</p>
 
-<h2>Course map</h2>
-<div class="map" id="map"></div>
+<h2>Conversions the compiler may insert</h2>
+<p>§5.1: <b>widening primitive</b> (byte→short→int→long→float→double, char→int; never loses magnitude, may lose precision for int→float / long→double) is implicit; <b>narrowing</b> (the reverse; truncates bits) requires a cast — except that an <code>int</code> constant expression may be assigned to byte/short/char if it fits (§5.2). <b>Boxing/unboxing</b> (§5.1.7–5.1.8) between primitives and wrappers is implicit; unboxing <code>null</code> throws <code>NullPointerException</code>. <b>Widening reference</b> (subtype → supertype) is implicit; downcasts are checked at run time (<code>ClassCastException</code>). Each context (assignment, invocation, casting, numeric, string) permits a fixed set of these.</p>
+<div class="fig"><h4>Is the conversion allowed?</h4><div class="conv"><label>from <select id="from"></select></label><label>to <select id="to"></select></label></div><div class="res" id="cres"></div></div>
+<div class="crux"><b>§5.1.7, the boxing identity guarantee:</b> boxing an <code>int</code>, <code>short</code>, <code>char</code> or <code>byte</code> value between −128 and 127 (and any <code>boolean</code>) always yields the same object: <code>a == b</code>. Outside that range the result "may or may not" be the same object — HotSpot's <code>Integer.valueOf</code> caches exactly that range by default. So compare wrappers with <code>equals</code>, never <code>==</code>.</div>
+<div class="fig"><h4>Integer == Integer</h4><div class="controls"><label>value <input type="number" id="ival" value="127" style="width:100px"></label></div><div class="box" id="ibox"></div><div class="cap" id="imsg"></div></div>
 
-<h2>How to use this course</h2>
-<div class="how">
-<div class="fig"><h4>1. One lesson per sitting</h4><p>Each takes 25–45 minutes: read, play with the simulator until you can predict its output, flip the cards, then do the quiz <em>from memory</em>. Check off the objectives at the top only when you could explain them to someone else.</p></div>
-<div class="fig"><h4>2. Then read the chapter</h4><p>Every lesson links its primary source — the free chapter PDFs at <a href="https://pages.cs.wisc.edu/~remzi/OSTEP/">ostep.org</a>. The lesson gives you the map; the chapter has the jokes, the asides, and the homework simulators (<code>ostep-homework</code>) which are the best practice there is.</p></div>
-<div class="fig"><h4>3. Space it out</h4><p>Long-term retention comes from re-testing later, not from feeling fluent now. Redo a lesson's quiz two days later and again after a week; the <a href="reference/cheatsheets.html">cheat sheets</a> are for the fast pass, the <a href="reference/glossary.html">glossary</a> for vocabulary. Ask me in the chat for mixed quizzes across lessons.</p></div></div>
+<h2>Arithmetic, precisely</h2>
+<ul><li><b>Binary numeric promotion (§5.6):</b> if either operand is double → double; else float → float; else long → long; else <b>int</b>. So <code>byte + byte</code> is an <code>int</code> and needs a cast to store back; <code>char + 1</code> is an int; <code>1/2</code> is <code>0</code>.</li>
+<li><b>Integer division and remainder (§15.17.2–3):</b> division truncates toward zero; <code>%</code> satisfies <code>(a/b)*b + a%b == a</code>, so the remainder has the sign of the <em>dividend</em>: <code>-7 % 3 == -1</code> (Python gives 2). Division by zero on integers throws <code>ArithmeticException</code>; on floating point yields ±Infinity or NaN.</li>
+<li><b>Overflow</b> wraps silently: <code>Integer.MAX_VALUE + 1 == Integer.MIN_VALUE</code>; <code>Math.addExact</code> throws instead. <code>Math.abs(Integer.MIN_VALUE)</code> is negative.</li>
+<li><b>Floating point:</b> IEEE 754; <code>0.1 + 0.2 != 0.3</code>; <code>NaN != NaN</code> (use <code>Double.isNaN</code>); <code>-0.0 == 0.0</code> but <code>Double.compare</code> distinguishes; casting a double outside the int range saturates to MIN/MAX, NaN → 0 (§5.1.3).</li>
+<li><b>Shifts:</b> the shift distance is masked (<code>&amp; 31</code> for int, <code>&amp; 63</code> for long); <code>&gt;&gt;</code> is arithmetic, <code>&gt;&gt;&gt;</code> logical.</li>
+<li><b>String concatenation (§15.18.1):</b> if either operand is a <code>String</code> the other is converted (<code>null</code> → "null"); left-associative, so <code>1 + 2 + "x"</code> is <code>"3x"</code> but <code>"x" + 1 + 2</code> is <code>"x12"</code>. Non-constant concatenation creates a new String (§12.5); constant expressions are folded and interned, so <code>"a" + "b" == "ab"</code> is true while <code>new String("ab") == "ab"</code> is false.</li></ul>
+<pre><code>byte b = 10; b += 5;           // compound assignment implies a cast: b = (byte)(b + 5)
+// b = b + 5;                  // error: int cannot be converted to byte
+int i = 'A' + 1;               // 66 — char promoted to int
+char c = (char) i;             // 'B'
+long big = 1 &lt;&lt; 40;             // 256 (!) — int shift, distance masked to 8; write 1L &lt;&lt; 40
+System.out.println(-7 / 2 + " " + -7 % 2);    // -3 -1
+System.out.println((int) 3.99e9);             // 2147483647 — saturates
+Integer x = 127, y = 127, p = 128, q = 128;
+System.out.println((x == y) + " " + (p == q) + " " + p.equals(q));   // true false true
+String s1 = "ab", s2 = "a" + "b", s3 = new String("ab");
+System.out.println((s1 == s2) + " " + (s1 == s3) + " " + s1.equals(s3));   // true false true</code></pre>
+<div class="fig"><h4>Predict the output</h4><div id="predict"></div></div>
 
-<h2>What the book covers that this course does too</h2>
-<p>Chapters 1–2 (dialogue, introduction) → lesson 1. Chapters 3, 11, 12, 24, 25, 34, 35, 46, 47, 51, 52 are the book's short dialogues that open and close each part; their content is folded into the neighbouring lessons. The lab appendices (tutorial, systems and xv6 projects) and the deprecated monitors appendix are referenced in RESOURCES.md rather than taught.</p>
-<h2>Sister courses</h2><div class="how"><div class="fig"><h4><a href="python/index.html">Python 3.13</a></h4><p>The Language Reference, CPython internals (specializing interpreter, JIT, GC, GIL and free-threading), and pandas vs Polars — 20 interactive lessons with Python running in the browser.</p></div><div class="fig"><h4><a href="java/index.html">Java 21</a></h4><p>The JLS and JVMS, HotSpot (class loading, bytecode, tiered JIT, Generational ZGC), and virtual threads from JEP 444 down to VirtualThread.java — 17 interactive lessons with simulators.</p></div></div>
-<p class="tip">This workspace follows the <code>teach</code> skill layout: <code>MISSION.md</code> (why you're learning this), <code>RESOURCES.md</code> (sources), <code>NOTES.md</code>, <code>learning-records/</code>, <code>lessons/</code>, <code>reference/</code>, <code>assets/</code>. Tell me in the chat how a lesson landed and I'll adapt the next ones.</p>
+<h2>Variables and <code>var</code></h2>
+<p>Seven kinds of variables (§4.12.3): class variables (static), instance variables, array components, method parameters, constructor parameters, lambda parameters, exception parameters, local variables. <code>final</code> means assigned exactly once. <code>var</code> (§14.4, Java 10) infers a <em>local</em> variable's type from its initializer — it is not dynamic typing: <code>var list = new ArrayList&lt;String&gt;()</code> has type <code>ArrayList&lt;String&gt;</code> forever; <code>var x = null</code> is an error. Generic arrays don't exist (<code>new List&lt;String&gt;[3]</code> is illegal) because arrays are <em>covariant</em> and checked at run time: storing a <code>Integer</code> into an <code>Object[]</code> that is really a <code>String[]</code> throws <code>ArrayStoreException</code> — a contrast with generics that lesson 4 builds on.</p>
+
+<h2>Flash cards</h2><div id="cards"></div>
+<h2>Retrieval practice</h2><div id="quiz"></div>
+<p class="tip">Want drills on numeric promotion puzzles, or a walkthrough of IEEE 754 representation (<code>Double.doubleToLongBits</code>)? Ask me in the chat.</p>
 </div>
 <script>
-/* OSTEP course — shared components. Every page loads this file (inlined by build.py). */
+/* Java 21 course — shared components (from the OSTEP course). Every page loads this file (inlined by build.py). */
 window.OS = (function () {
   const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
   /* ---------- persistent storage (localStorage on a real site; in-memory fallback in sandboxes) ---------- */
   const mem = {};
   const store = {
-    get(k) { try { const v = localStorage.getItem('ostep:' + k); return v === null ? (mem[k] ?? null) : JSON.parse(v); } catch (e) { return mem[k] ?? null; } },
-    set(k, v) { mem[k] = v; try { localStorage.setItem('ostep:' + k, JSON.stringify(v)); } catch (e) {} },
-    del(k) { delete mem[k]; try { localStorage.removeItem('ostep:' + k); } catch (e) {} },
-    keys(prefix) { const out = new Set(Object.keys(mem).filter(k => k.startsWith(prefix))); try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith('ostep:' + prefix)) out.add(k.slice(6)); } } catch (e) {} return [...out]; },
-    available() { try { localStorage.setItem('ostep:test', '1'); localStorage.removeItem('ostep:test'); return true; } catch (e) { return false; } }
+    get(k) { try { const v = localStorage.getItem('java21:' + k); return v === null ? (mem[k] ?? null) : JSON.parse(v); } catch (e) { return mem[k] ?? null; } },
+    set(k, v) { mem[k] = v; try { localStorage.setItem('java21:' + k, JSON.stringify(v)); } catch (e) {} },
+    del(k) { delete mem[k]; try { localStorage.removeItem('java21:' + k); } catch (e) {} },
+    keys(prefix) { const out = new Set(Object.keys(mem).filter(k => k.startsWith(prefix))); try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith('java21:' + prefix)) out.add(k.slice(6)); } } catch (e) {} return [...out]; },
+    available() { try { localStorage.setItem('java21:test', '1'); localStorage.removeItem('java21:test'); return true; } catch (e) { return false; } }
   };
 
   /* ---------- course structure ---------- */
   const PIECES = [
-    ['intro', 'Introduction', [['0001-three-easy-pieces', 'Three easy pieces', 'ch 1–2']]],
-    ['virt', 'Virtualization', [
-      ['0002-processes', 'Processes & the process API', 'ch 4–5'],
-      ['0003-limited-direct-execution', 'Limited direct execution', 'ch 6'],
-      ['0004-scheduling', 'Scheduling', 'ch 7–10'],
-      ['0005-address-spaces', 'Address spaces & segments', 'ch 13–16'],
-      ['0006-paging-and-tlbs', 'Paging & TLBs', 'ch 17–20'],
-      ['0007-swapping', 'Swapping & policies', 'ch 21–23']]],
-    ['conc', 'Concurrency', [
-      ['0008-threads-and-locks', 'Threads & locks', 'ch 26–28'],
-      ['0009-cvs-and-semaphores', 'CVs & semaphores', 'ch 29–31'],
-      ['0010-bugs-and-events', 'Bugs & events', 'ch 32–33']]],
-    ['pers', 'Persistence', [
-      ['0011-devices-disks-raid', 'Devices, disks, RAID', 'ch 36–38'],
-      ['0012-files-and-vsfs', 'Files & a simple FS', 'ch 39–40'],
-      ['0013-ffs-journaling-lfs', 'FFS, journaling, LFS', 'ch 41–43'],
-      ['0014-ssd-and-integrity', 'SSDs & integrity', 'ch 44–45'],
-      ['0015-distributed-nfs-afs', 'Distributed FS', 'ch 48–50']]],
-    ['sec', 'Security', [['0016-security-and-vmms', 'Security & VMMs', 'ch 53–57, App B']]]
+    ['lang', 'The language, as specified (JLS 21)', [
+      ['0001-types-values-variables', 'Types, values, variables', 'JLS ch 4, 5'],
+      ['0002-classes-objects-initialization', 'Classes, objects, initialization order', 'JLS ch 8, 12'],
+      ['0003-records-sealed-interfaces', 'Records, sealed types, interfaces', 'JLS §8.10, §8.1.1.2, ch 9'],
+      ['0004-generics-and-erasure', 'Generics, wildcards, erasure', 'JLS §4.5–4.10, §8.4.8.3'],
+      ['0005-expressions-exceptions-switch', 'Expressions, exceptions, switch & patterns', 'JLS ch 11, 14, 15; JEPs 440/441'],
+      ['0006-lambdas-streams', 'Lambdas, method references, streams', 'JLS §15.27, §15.13, java.util.stream'],
+      ['0007-java-memory-model', 'The Java memory model', 'JLS ch 17']]],
+    ['jvm', 'The JVM (JVMS 21 + HotSpot)', [
+      ['0008-class-files-and-bytecode', 'Class files and bytecode', 'JVMS ch 4, 6'],
+      ['0009-loading-linking-initialization', 'Loading, linking, initialization, class loaders', 'JVMS ch 5'],
+      ['0010-execution-frames-invokedynamic', 'Execution: frames, invoke*, invokedynamic', 'JVMS ch 2, 5.4.3, 6'],
+      ['0011-hotspot-jit', 'HotSpot: interpreter, C1/C2, deoptimization', 'compilationPolicy.cpp, c2_globals.hpp'],
+      ['0012-heap-gc-generational-zgc', 'Objects, heap, GC, Generational ZGC', 'markWord.hpp, gcConfig.cpp, JEP 439']]],
+    ['loom', 'Java 21: virtual threads and new features', [
+      ['0013-virtual-threads-model', 'Virtual threads: the model (JEP 444)', 'JEP 444'],
+      ['0014-virtual-threads-internals', 'Virtual threads: continuations, carriers, scheduler', 'VirtualThread.java, Continuation.java, freeze/thaw'],
+      ['0015-structured-concurrency-scoped-values', 'Structured concurrency & scoped values', 'StructuredTaskScope, ScopedValue (preview)'],
+      ['0016-concurrency-toolkit', 'The concurrency toolkit: monitors, locks, executors', 'JLS §17.1–17.3, java.util.concurrent'],
+      ['0017-java-21-features', 'What Java 21 adds', 'JEPs 431, 440, 441, 442, 443, 445, 446, 453']]]
   ];
   const LESSONS = PIECES.flatMap(p => p[2].map(l => [l[0], l[1], p[0], l[2]]));
   const title = id => (LESSONS.find(l => l[0] === id) || [])[1] || id;
@@ -257,7 +293,7 @@ window.OS = (function () {
     const isLesson = i >= 0;
     const top = document.createElement('header'); top.className = 'topbar';
     top.innerHTML = `<button class="menu" aria-label="Open directory" aria-expanded="false">☰<span>Directory</span></button>
-      <a class="brand" href="${root}index.html"><span class="dot"></span>OSTEP course</a>
+      <a class="brand" href="${root}index.html"><span class="dot"></span>Java 21 course</a>
       <nav class="links"><a href="${root}reference/glossary.html">Glossary</a><a href="${root}reference/cheatsheets.html">Cheat sheets</a><a href="${root}notes.html">My notes</a></nav>
       ${isLesson ? `<span class="where">${i+1} / ${LESSONS.length}</span>` : ''}`;
     document.body.prepend(top);
@@ -341,6 +377,17 @@ window.OS = (function () {
     });
   }
 
+
+  /* ---------- Java code blocks: annotated, copyable, with a jshell hint (no JVM in the browser) ---------- */
+  function py(el, code, opts) {
+    el = typeof el === 'string' ? document.getElementById(el) : el; opts = opts || {};
+    el.classList.add('pyrun');
+    const src = code.trim();
+    const preview = /--enable-preview|StructuredTaskScope|ScopedValue|STR\./.test(src);
+    el.innerHTML = `<div class="pyhead"><span>Java 21${preview ? ' · needs --enable-preview' : ''}${opts.note ? ' · ' + esc(opts.note) : ''}</span><span class="pystatus">paste into jshell or a scratch file</span><button class="primary copy">Copy</button></div><pre class="pyout" style="display:block;white-space:pre-wrap;margin:0"><code>${esc(src)}</code></pre>`;
+    el.querySelector('.copy').onclick = () => { navigator.clipboard && navigator.clipboard.writeText(src).then(() => { el.querySelector('.pystatus').textContent = 'copied'; }).catch(() => {}); };
+  }
+
   /* ---------- flip cards ---------- */
   function cards(el, list) {
     el = typeof el === 'string' ? document.getElementById(el) : el;
@@ -385,17 +432,37 @@ window.OS = (function () {
     el.querySelectorAll('input').forEach(c => c.onchange = () => { const s = [...el.querySelectorAll('input:checked')].map(x => +x.dataset.i); if (pageId) store.set('obj:' + pageId, s); });
   }
 
-  return { chrome, quiz, cards, stepper, gantt, objectives, esc, store, LESSONS, PIECES, title };
+  return { chrome, quiz, cards, stepper, gantt, objectives, py, esc, store, LESSONS, PIECES, title };
 })();
 
 </script>
 <script>
-OS.chrome('index','');
-const P=[['intro','Introduction','What an OS is: the three pieces, design goals, history.',['0001-three-easy-pieces','Three easy pieces','ch 1–2']],
-['virt','Virtualization','The CPU and memory made private and plentiful.',['0002-processes','Processes & the process API','ch 4–5'],['0003-limited-direct-execution','Limited direct execution','ch 6'],['0004-scheduling','Scheduling: FIFO to CFS and multi-CPU','ch 7–10'],['0005-address-spaces','Address spaces, base/bounds, segments','ch 13–16'],['0006-paging-and-tlbs','Free space, paging, TLBs, small tables','ch 17–20'],['0007-swapping','Swapping, replacement, VAX/VMS & Linux','ch 21–23']],
-['conc','Concurrency','Threads and the primitives that make them safe.',['0008-threads-and-locks','Threads, thread API, locks','ch 26–28'],['0009-cvs-and-semaphores','Locked structures, CVs, semaphores','ch 29–31'],['0010-bugs-and-events','Concurrency bugs & event-based servers','ch 32–33']],
-['pers','Persistence + Security','Storage from the device up; then protecting it all.',['0011-devices-disks-raid','Devices, disks, RAID','ch 36–38'],['0012-files-and-vsfs','Files, directories, a simple file system','ch 39–40'],['0013-ffs-journaling-lfs','FFS, crash consistency, LFS','ch 41–43'],['0014-ssd-and-integrity','SSDs & data integrity','ch 44–45'],['0015-distributed-nfs-afs','Distributed systems, NFS, AFS','ch 48–50'],['0016-security-and-vmms','Security (ch 53–57) & VMMs','ch 53–57, App B']]];
-const m=document.getElementById('map');let idx=0;const S=OS.store;
-m.innerHTML=P.map(([cls,name,desc,...ls])=>`<div class="piece piece-${cls}"><h3>${name}</h3><p>${desc}</p>${ls.map(l=>{idx++;const q=S.get('quiz:'+l[0]),nt=(S.get('notes:'+l[0])||{}).text;return `<a href="lessons/${l[0]}.html" data-id="${l[0]}" class="${q&&q.score===q.total?'done':''}">${idx}. ${l[1]}<small>${l[2]}${q?` · quiz ${q.score}/${q.total}`:''}${nt?' · ✎ notes':''}</small></a>`;}).join('')}</div>`).join('');
-const done=OS.LESSONS.filter(l=>S.get('quiz:'+l[0])).length;const ph=document.createElement('p');ph.className='cap';ph.textContent=done?`${done} of 16 lesson quizzes attempted — see My notes & progress for details.`:'Quiz scores, checked objectives and notes are saved in this browser as you go.';document.getElementById('map').after(ph);
+OS.chrome('0001-types-values-variables');
+OS.objectives('obj',['List the eight primitives with sizes, ranges and defaults, and state that locals have no default.','Classify a conversion as widening/narrowing/boxing/reference and say whether it needs a cast.','State the boxing identity guarantee (−128…127) and why wrappers need equals().','Predict results of promotion, integer division/remainder, overflow, shifts and string concatenation.','Explain constant variables, final, var, and why arrays are covariant but checked.']);
+const T=['byte','short','char','int','long','float','double','boolean','Integer','Long','Object','String'];
+const order={byte:1,short:2,char:2,int:3,long:4,float:5,double:6};
+function conv(){const a=document.getElementById('from').value,b=document.getElementById('to').value;let r;
+if(a===b)r='<b>identity</b> — no conversion.';
+else if(a==='boolean'||b==='boolean')r=(a==='boolean'&&b==='Object')?'<b>boxing then widening reference</b>: boolean → Boolean → Object (allowed in assignment context).':'<b>not allowed</b>: boolean does not convert to or from numeric types (§5.1).';
+else if(order[a]&&order[b]){const wid=order[a]<order[b]&&!(a==='short'&&b==='char')&&!(a==='char'&&b==='short')&&!(a==='byte'&&b==='char');r=wid?`<b>widening primitive</b> (§5.1.2): implicit; ${(a==='int'&&b==='float')||(a==='long'&&(b==='float'||b==='double'))?'may lose precision (large values round)':'no information lost'}.`:`<b>narrowing primitive</b> (§5.1.3): needs an explicit cast${b!=='float'&&b!=='double'&&a==='int'?' — except an int constant expression that fits the target (§5.2)':''}; bits are truncated (floating→integral saturates, NaN→0).`;}
+else if(order[a]&&(b==='Integer'||b==='Long'||b==='Object'||b==='String')){if(b==='String')r='<b>not a conversion</b>: use String.valueOf / concatenation with "".';else if(b==='Object')r=`<b>boxing then widening reference</b>: ${a} → ${a.charAt(0).toUpperCase()+a.slice(1)} → Object; implicit in assignment context.`;else r=(a.toLowerCase()===b.toLowerCase())?`<b>boxing</b> (§5.1.7): implicit; values −128…127 share one object.`:`<b>not allowed</b>: boxing converts int only to Integer, long only to Long; ${a}→${b} would need widening first, which assignment context does not combine with boxing (write ${b}.valueOf((${b.toLowerCase()}) v)).`;}
+else if((a==='Integer'||a==='Long')&&order[b]){r=(a.toLowerCase()===b)?'<b>unboxing</b> (§5.1.8): implicit; NullPointerException if the reference is null.':(order[a.toLowerCase()]<order[b])?`<b>unboxing then widening primitive</b>: implicit (Integer → int → ${b}).`:'<b>unboxing then narrowing</b>: requires a cast.';}
+else if(a==='Integer'&&b==='Long'||a==='Long'&&b==='Integer')r='<b>not allowed</b>: wrapper classes are unrelated siblings under Number; unbox, convert, rebox.';
+else if(b==='Object')r='<b>widening reference</b> (§5.1.5): implicit; every reference type is a subtype of Object.';
+else if(a==='Object')r=`<b>narrowing reference</b> (§5.1.6): explicit cast, checked at run time (ClassCastException); pattern <code>obj instanceof ${b} s</code> avoids the cast.`;
+else if(a==='String'||b==='String')r='<b>not allowed</b>: String has no conversions to other types; parse with Integer.parseInt etc.';
+else r='<b>not allowed</b>.';document.getElementById('cres').innerHTML=r;}
+['from','to'].forEach(id=>{const s=document.getElementById(id);s.innerHTML=T.map(t=>`<option>${t}</option>`).join('');s.onchange=conv;});document.getElementById('from').value='byte';document.getElementById('to').value='int';conv();
+function ibox(){const v=+document.getElementById('ival').value;const cached=v>=-128&&v<=127;document.getElementById('ibox').innerHTML=`<span class="${cached?'same':'diff'}">Integer a = ${v};</span><span class="${cached?'same':'diff'}">Integer b = ${v};</span><span class="${cached?'same':'diff'}">a == b → ${cached?'true (guaranteed by §5.1.7)':'false on HotSpot by default (only "may" be the same object)'}</span><span class="same">a.equals(b) → true</span>`;document.getElementById('imsg').textContent=cached?'Inside −128…127 the JLS guarantees a single cached object for boxed ints, shorts, chars, bytes.':'Outside the guaranteed range Integer.valueOf allocates (HotSpot caches only up to 127 unless -XX:AutoBoxCacheMax is raised).';}
+document.getElementById('ival').oninput=ibox;ibox();
+OS.stepper('predict',['<code>System.out.println(1 + 2 + "3" + 4 + 5);</code> → <b>3345</b>: left to right, int addition until a String appears, then concatenation.','<code>System.out.println((byte) 200);</code> → <b>-56</b>: narrowing keeps the low 8 bits (200 = 0xC8 → −56 in two\'s complement).','<code>System.out.println(Integer.MAX_VALUE + 1 == Integer.MIN_VALUE);</code> → <b>true</b>: wrap-around, no exception.','<code>System.out.println(0.1 + 0.2 == 0.3);</code> → <b>false</b>; use BigDecimal or a tolerance.','<code>System.out.println(-7 % 3 + " " + 7 % -3);</code> → <b>-1 1</b>: sign of the dividend.','<code>char c = \'a\'; c += 1; System.out.println(c);</code> → <b>b</b>: compound assignment casts back to char.','<code>Long l = 127L; Integer i = 127; System.out.println(l.equals(i));</code> → <b>false</b>: equals checks the class first; <code>l == i</code> would not even compile.']);
+OS.cards('cards',[['Primitive sizes','byte 8, short 16, char 16 (unsigned), int 32, long 64, float 32, double 64; boolean size unspecified.'],['Default values','Fields and array elements: 0 / 0.0 / \'\\u0000\' / false / null. Local variables: none — definite assignment required.'],['Constant variable','final primitive or String initialized with a constant expression; inlined at compile time; does not trigger class init.'],['Widening vs narrowing','Widening (byte→…→double, char→int) is implicit and never loses magnitude; narrowing needs a cast and truncates.'],['Boxing identity','§5.1.7: boxed values in −128…127 (and booleans) are always ==; outside, may or may not be. Use equals().'],['Binary numeric promotion','Operands promoted to double, float, long, or at least int; byte+byte is an int.'],['Integer % sign','Result has the sign of the dividend; (a/b)*b + a%b == a; division truncates toward zero.'],['String + rules','Any operand String → concatenation; left-associative; constant expressions folded and interned; non-constant creates a new String.'],['Arrays are covariant','String[] is an Object[]; stores are checked at run time (ArrayStoreException); generic array creation is illegal.']]);
+OS.quiz('quiz',[
+{q:'byte a = 10, b = 20; byte c = a + b; compiles?',o:['yes','no: a + b is an int','yes, with a warning','only if c is final'],a:1,why:'Binary numeric promotion makes the sum an int; assigning it to byte needs a cast (c = (byte)(a + b)) or compound assignment.'},
+{q:'Integer p = 128, q = 128; p == q is:',o:['true, guaranteed','false on HotSpot; the JLS only guarantees identity for −128…127','a compile error','true only after p.equals(q)'],a:1,why:'§5.1.7 guarantees a shared object only for values in −128…127; beyond that valueOf may allocate.'},
+{q:'-7 % 2 evaluates to:',o:['1','-1','-3','ArithmeticException'],a:1,why:'The remainder takes the sign of the dividend so that (a/b)*b + a%b == a with truncating division.'},
+{q:'What does (int) Double.NaN yield?',o:['Integer.MIN_VALUE','0','ArithmeticException','Integer.MAX_VALUE'],a:1,why:'§5.1.3: NaN converts to 0; out-of-range values saturate to MIN/MAX.'},
+{q:'Which local variable declaration is illegal?',o:['var s = "x";','var n = null;','var list = new ArrayList<String>();','final var k = 3;'],a:1,why:'var needs an initializer with a proper type; null has no standalone type to infer.'},
+{q:'"a" + "b" == "ab" is true because:',o:['String compares contents with ==','constant expressions are folded at compile time and interned','== is overloaded for Strings','the JIT deduplicates strings'],a:1,why:'§15.29/§3.10.5: a constant concatenation is a compile-time constant, and constant strings are interned.'},
+{q:'Object[] arr = new String[2]; arr[0] = 1; results in:',o:['a compile error','ArrayStoreException at run time','silent success','ClassCastException'],a:1,why:'Arrays are covariant but every store is checked against the array\'s actual component type.'}]);
 </script></body></html>

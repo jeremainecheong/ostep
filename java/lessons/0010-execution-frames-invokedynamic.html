@@ -1,11 +1,11 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>OSTEP course — Operating Systems: Three Easy Pieces, taught interactively</title><style>
+<title>10 · Execution: frames, invoke*, invokedynamic — Java 21 course</title><style>
 /* OSTEP course — shared stylesheet. Three pieces, three hues. */
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
 :root{
   --ink:#151b2f; --ink-2:#1e2540; --ink-3:#28304f; --line:#3a4368;
   --paper:#eef0f7; --muted:#a9b1cf; --faint:#6e779a;
-  --virt:#e8b84a; --conc:#5bc8f5; --pers:#6bcb77; --sec:#f47fa0; --intro:#c9a8ff;
+  --virt:#e8b84a; --conc:#5bc8f5; --pers:#6bcb77; --sec:#f47fa0; --intro:#c9a8ff; --spec:#ffd166; --internals:#5bc8f5; --data:#6bcb77;
   --ok:#6bcb77; --bad:#ff6b6b;
   --accent:var(--virt);
   --radius:6px;
@@ -28,7 +28,7 @@ p,li{max-width:72ch}
 .hero{padding:44px 0 16px}
 .hero .chapters{color:var(--muted);font-size:.95rem;margin-bottom:6px}
 .lede{font-size:1.2rem;color:var(--muted);max-width:66ch}
-.piece-virt{--accent:var(--virt)} .piece-conc{--accent:var(--conc)} .piece-pers{--accent:var(--pers)} .piece-sec{--accent:var(--sec)} .piece-intro{--accent:var(--intro)}
+.piece-lang{--accent:var(--spec)} .piece-jvm{--accent:var(--internals)} .piece-loom{--accent:var(--data)} .piece-spec{--accent:var(--spec)} .piece-internals{--accent:var(--internals)} .piece-data{--accent:var(--data)} .piece-virt{--accent:var(--virt)} .piece-conc{--accent:var(--conc)} .piece-pers{--accent:var(--pers)} .piece-sec{--accent:var(--sec)} .piece-intro{--accent:var(--intro)}
 .fig{background:var(--ink-2);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;margin:22px 0}
 .fig figcaption,.cap{color:var(--muted);font-size:.9rem;margin-top:10px}
 .fig svg{max-width:100%;height:auto;display:block}
@@ -182,69 +182,83 @@ details>div{padding:0 16px 14px}
 }
 @media (max-width:420px){.cards{grid-template-columns:1fr}}
 
+/* ---------- runnable Python ---------- */
+.pyrun{border:1px solid var(--line);border-radius:var(--radius);background:#0f1424;margin:18px 0;overflow:hidden}
+.pyrun .pyhead{display:flex;gap:10px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--line);font-size:.85rem;color:var(--muted);background:var(--ink-2)}
+.pyrun .pyhead span:first-child{flex:1;font-weight:600;color:var(--paper)}
+.pyrun .pystatus{font-size:.78rem}
+.pyrun textarea{display:block;width:100%;border:none;background:#0f1424;color:var(--paper);font-family:'IBM Plex Mono',monospace;font-size:.86rem;line-height:1.5;padding:12px 14px;resize:vertical;outline:none;min-height:60px;tab-size:4}
+.pyrun .pyout{font-family:'IBM Plex Mono',monospace;font-size:.86rem;line-height:1.5;padding:12px 14px;margin:0;border:none;border-top:1px solid var(--line);border-left:none;border-radius:0;background:#0a0e1a;color:#cfe3ff;max-height:none;overflow:auto}
+
 </style>
-<style>.map{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:24px 0}.piece{border:1px solid var(--line);border-radius:8px;padding:16px;background:var(--ink-2);border-top:4px solid var(--accent)}.piece h3{margin:0 0 4px;color:var(--accent)}.piece p{font-size:.9rem;color:var(--muted);margin:0 0 10px}.piece a{display:block;text-decoration:none;color:var(--paper);padding:6px 0;border-top:1px solid var(--line);font-size:.92rem}.piece a:hover{color:var(--accent)}.piece a small{display:block;color:var(--faint);font-size:.78rem}.piece a.done::after{content:" ✓";color:var(--ok)}.how{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}.how .fig{margin:0}.how h4{margin:0 0 6px}@media(max-width:900px){.map{grid-template-columns:1fr 1fr}.how{grid-template-columns:1fr}}@media(max-width:600px){.map{grid-template-columns:1fr}}.big{font-size:1.05rem}</style></head>
-<body class="piece-intro"><div class="wrap">
-<header class="hero"><div class="chapters">Operating Systems: Three Easy Pieces · Remzi H. and Andrea C. Arpaci-Dusseau (v1.10, 2023) · security chapters by Peter Reiher</div>
-<h1>The whole book, as sixteen interactive lessons</h1>
-<p class="lede big">Built from the text of all 57 chapters plus the VMM appendix — every "crux", every summary, every number in the figures was extracted from the chapter PDFs, not recalled. Each lesson is short, visual, and ends in retrieval practice. Do them in order; the book's pieces build on each other.</p></header>
+<style>.inv td:first-child{font-family:'IBM Plex Mono',monospace;color:var(--accent);white-space:nowrap}.sel{display:grid;grid-template-columns:1fr 1fr;gap:12px}.sel pre{margin:0}.steps div{padding:8px 12px;border-radius:6px;border:1px solid var(--line);background:#0f1424;margin:4px 0;font-size:.88rem}.steps div.now{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,#0f1424)}@media(max-width:700px){.sel{grid-template-columns:1fr}}</style></head>
+<body class="piece-jvm"><div class="wrap">
+<header class="hero"><div class="chapters">JVMS 21 §2.5–2.6 Run-time data areas and frames · §2.11.8 Invocation · §5.4.3.3–5.4.3.6, §5.4.5–5.4.6 Resolution, overriding, selection · §6 invokevirtual/invokeinterface/invokespecial/invokestatic/invokedynamic</div>
+<h1>Execution: the five invoke instructions and the frame they create</h1>
+<p class="lede">Every method call in Java compiles to one of five instructions, and the choice encodes what the language guaranteed at compile time: static dispatch, virtual dispatch, interface dispatch, special (constructor/super/private) dispatch, or — since Java 7 — a call whose target is decided at run time by a <em>bootstrap method</em>. Understanding <code>invokedynamic</code> explains how lambdas, string concatenation and pattern switches are compiled without new bytecodes.</p></header>
+<div class="source"><b>Primary sources:</b> <a href="https://docs.oracle.com/javase/specs/jvms/se21/html/jvms-2.html#jvms-2.5">JVMS §2.5–2.6</a> (fetched: per-thread pc register and JVM stack, frames, local variables, operand stack, dynamic linking, normal/abrupt completion), <a href="https://docs.oracle.com/javase/specs/jvms/se21/html/jvms-5.html#jvms-5.4.3">§5.4.3</a> (fetched: method resolution, method-handle kinds, bootstrap invocation), §5.4.5–5.4.6 (fetched: overriding and selection), <a href="https://docs.oracle.com/javase/specs/jvms/se21/html/jvms-6.html">§6.5</a>. JEP 280 (string concatenation), <code>java.lang.invoke.LambdaMetafactory</code> javadoc.</div>
+<h2>What you'll be able to do</h2><ul id="obj"></ul>
 
-<figure class="fig"><svg viewBox="0 0 900 150" role="img" aria-label="three pieces">
-<rect x="20" y="30" width="270" height="90" rx="8" fill="#e8b84a"/><text x="155" y="68" text-anchor="middle" fill="#111" font-size="20" font-weight="700" font-family="Fraunces,serif">Virtualization</text><text x="155" y="95" text-anchor="middle" fill="#111" font-size="13">CPU (ch 4–10) · Memory (ch 13–23)</text>
-<rect x="315" y="30" width="270" height="90" rx="8" fill="#5bc8f5"/><text x="450" y="68" text-anchor="middle" fill="#111" font-size="20" font-weight="700" font-family="Fraunces,serif">Concurrency</text><text x="450" y="95" text-anchor="middle" fill="#111" font-size="13">threads, locks, CVs, semaphores, bugs (ch 26–33)</text>
-<rect x="610" y="30" width="270" height="90" rx="8" fill="#6bcb77"/><text x="745" y="68" text-anchor="middle" fill="#111" font-size="20" font-weight="700" font-family="Fraunces,serif">Persistence</text><text x="745" y="95" text-anchor="middle" fill="#111" font-size="13">devices, disks, file systems, distributed (ch 36–50)</text>
-<text x="450" y="140" text-anchor="middle" fill="#a9b1cf" font-size="13">+ Security (ch 53–57) and Virtual Machine Monitors (Appendix B)</text></svg></figure>
+<h2>Threads, stacks, frames</h2>
+<p>Per thread (§2.5): a <b>pc register</b> (address of the current instruction; undefined inside native methods), a <b>JVM stack</b> of frames (which may be heap-allocated and non-contiguous — the spec deliberately allows this, and it is what makes virtual-thread stack chunks legal), and optionally a native method stack. Shared: the <b>heap</b> (all objects and arrays; GC-managed) and the <b>method area</b> (per-class structures, run-time constant pools, method code; logically part of the heap — HotSpot calls it Metaspace since JDK 8). Exhaustion: <code>StackOverflowError</code> for stacks, <code>OutOfMemoryError</code> for everything. A <b>frame</b> (§2.6) is created per invocation and destroyed on completion, normal or abrupt; it holds the local variable array, the operand stack, and a reference to its class's run-time constant pool for <em>dynamic linking</em> — symbolic references in the code are translated to concrete ones lazily, which is why changing a callee's class rarely breaks callers. Only one frame per thread is current; on normal completion the return value is pushed onto the <em>invoker's</em> operand stack; on abrupt completion nothing is returned and the exception propagates to the invoker's handlers.</p>
 
-<h2>Course map</h2>
-<div class="map" id="map"></div>
+<h2>The five instructions</h2>
+<table class="inv"><tr><th>Instruction</th><th>Resolves</th><th>Selects at run time</th><th>Used for</th></tr>
+<tr><td>invokestatic</td><td>a static method (§5.4.3.3)</td><td>nothing — the resolved method runs</td><td>static methods; triggers class initialization</td></tr>
+<tr><td>invokespecial</td><td>a method in the current class, its superclasses/superinterfaces, or Object</td><td>nothing (except the rule that a superclass call uses the direct superclass when ACC_SUPER is set)</td><td><code>&lt;init&gt;</code> constructors, <code>super.m()</code>, private methods (older classfiles; nestmates use invokevirtual since JDK 11)</td></tr>
+<tr><td>invokevirtual</td><td>a class method; the resolved method is the compile-time overload</td><td>the receiver's <em>run-time class</em> is searched: C, then superclasses, then maximally-specific superinterface defaults (§5.4.6)</td><td>ordinary instance calls; also signature-polymorphic <code>MethodHandle.invoke</code>/<code>VarHandle</code> calls</td></tr>
+<tr><td>invokeinterface</td><td>an interface method (§5.4.3.4)</td><td>same selection on the receiver's class; extra checks that the receiver implements the interface</td><td>calls through an interface type</td></tr>
+<tr><td>invokedynamic</td><td>a <em>call site</em>: runs a bootstrap method once, yielding a <code>CallSite</code> holding a method handle</td><td>whatever the CallSite's target is (may be mutable)</td><td>lambdas, string <code>+</code>, pattern/enum/string switches, records' equals/hashCode/toString, dynamic languages</td></tr></table>
+<div class="crux"><b>Overriding vs selection.</b> §5.4.5: m<sub>C</sub> can override m<sub>A</sub> iff same name and descriptor, m<sub>C</sub> not private, and m<sub>A</sub> is public/protected — or package-private in the same run-time package (or transitively through intermediate classes). §5.4.6 selection for invokevirtual/invokeinterface: if the resolved method is <em>private</em>, it is selected as is; else search the receiver's class C, then its superclasses, for a method that can override the resolved one; else the unique non-abstract maximally-specific superinterface method. A package-private method with the same signature in another package therefore does <em>not</em> override — a favourite interview trap that is really a run-time-package rule.</div>
+<div class="fig"><h4>Which method runs?</h4><div class="controls"><select id="case"><option value="v">virtual: Animal a = new Dog(); a.speak()</option><option value="pp">package-private "override" across packages</option><option value="def">default method vs superclass method</option><option value="priv">private method called from a subclass instance</option></select></div><div class="sel"><pre id="ccode"></pre><div class="steps" id="csteps"></div></div><div class="cap" id="cmsg"></div></div>
 
-<h2>How to use this course</h2>
-<div class="how">
-<div class="fig"><h4>1. One lesson per sitting</h4><p>Each takes 25–45 minutes: read, play with the simulator until you can predict its output, flip the cards, then do the quiz <em>from memory</em>. Check off the objectives at the top only when you could explain them to someone else.</p></div>
-<div class="fig"><h4>2. Then read the chapter</h4><p>Every lesson links its primary source — the free chapter PDFs at <a href="https://pages.cs.wisc.edu/~remzi/OSTEP/">ostep.org</a>. The lesson gives you the map; the chapter has the jokes, the asides, and the homework simulators (<code>ostep-homework</code>) which are the best practice there is.</p></div>
-<div class="fig"><h4>3. Space it out</h4><p>Long-term retention comes from re-testing later, not from feeling fluent now. Redo a lesson's quiz two days later and again after a week; the <a href="reference/cheatsheets.html">cheat sheets</a> are for the fast pass, the <a href="reference/glossary.html">glossary</a> for vocabulary. Ask me in the chat for mixed quizzes across lessons.</p></div></div>
+<h2>invokedynamic and bootstrap methods</h2>
+<p>An <code>invokedynamic</code> instruction references a <code>CONSTANT_InvokeDynamic</code> entry: a bootstrap method handle (from the <code>BootstrapMethods</code> attribute), a name, a method descriptor, and static arguments. On <em>first execution</em> (§5.4.3.6) the JVM builds the argument array <code>[Lookup, name, MethodType, staticArgs…]</code>, invokes the bootstrap via <code>invokeWithArguments</code>, and validates the result: a non-null <code>CallSite</code> whose type matches the descriptor, else <code>BootstrapMethodError</code>. Resolution is <em>per instruction</em> (another instruction sharing the same constant-pool entry bootstraps separately), memoized, and if several threads race, one result wins. Afterwards each execution simply invokes the CallSite's target method handle — a <code>ConstantCallSite</code> is as fast as a direct call after JIT inlining. Bootstrap invocation initializes the bootstrap method's class (a REF_invokeStatic handle).</p>
+<div class="fig"><h4>Life of a lambda: <code>Runnable r = () -&gt; System.out.println(x);</code></h4><div id="lsteps"></div></div>
+<p>Why this design? Compiling a lambda to an inner class would fix the strategy forever in class files; <code>invokedynamic</code> defers it to the JDK's <code>LambdaMetafactory</code>, which today spins a hidden class per lambda site and could change tomorrow without recompiling. The same trick powers <code>StringConcatFactory</code> (JEP 280, Java 9: <code>"a" + b</code> becomes one <code>invokedynamic</code> whose bootstrap builds an optimal concatenation recipe), <code>ObjectMethods</code> (records' <code>equals</code>/<code>hashCode</code>/<code>toString</code>), and <code>SwitchBootstraps.typeSwitch</code>/<code>enumSwitch</code> (pattern matching for switch, JEP 441). <b>Method handles</b> (§5.4.3.5) are the currency: nine kinds mirror bytecode behaviours (getField, getStatic, putField, putStatic, invokeVirtual, invokeStatic, invokeSpecial, newInvokeSpecial, invokeInterface), resolved with the same access checks as the equivalent bytecode; <code>MethodHandle.invokeExact</code> has exactly the stack effect of that bytecode. <b>Dynamically-computed constants</b> (<code>CONSTANT_Dynamic</code>, JDK 11) use the same bootstrap mechanism for <code>ldc</code>.</p>
+<div id="py1"></div>
 
-<h2>What the book covers that this course does too</h2>
-<p>Chapters 1–2 (dialogue, introduction) → lesson 1. Chapters 3, 11, 12, 24, 25, 34, 35, 46, 47, 51, 52 are the book's short dialogues that open and close each part; their content is folded into the neighbouring lessons. The lab appendices (tutorial, systems and xv6 projects) and the deprecated monitors appendix are referenced in RESOURCES.md rather than taught.</p>
-<h2>Sister courses</h2><div class="how"><div class="fig"><h4><a href="python/index.html">Python 3.13</a></h4><p>The Language Reference, CPython internals (specializing interpreter, JIT, GC, GIL and free-threading), and pandas vs Polars — 20 interactive lessons with Python running in the browser.</p></div><div class="fig"><h4><a href="java/index.html">Java 21</a></h4><p>The JLS and JVMS, HotSpot (class loading, bytecode, tiered JIT, Generational ZGC), and virtual threads from JEP 444 down to VirtualThread.java — 17 interactive lessons with simulators.</p></div></div>
-<p class="tip">This workspace follows the <code>teach</code> skill layout: <code>MISSION.md</code> (why you're learning this), <code>RESOURCES.md</code> (sources), <code>NOTES.md</code>, <code>learning-records/</code>, <code>lessons/</code>, <code>reference/</code>, <code>assets/</code>. Tell me in the chat how a lesson landed and I'll adapt the next ones.</p>
+<h2>Flash cards</h2><div id="cards"></div>
+<h2>Retrieval practice</h2><div id="quiz"></div>
+<p class="tip">Ask me in the chat to read a <code>javap -v</code> BootstrapMethods section with you, or to write a bootstrap method that returns a MutableCallSite.</p>
 </div>
 <script>
-/* OSTEP course — shared components. Every page loads this file (inlined by build.py). */
+/* Java 21 course — shared components (from the OSTEP course). Every page loads this file (inlined by build.py). */
 window.OS = (function () {
   const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
   /* ---------- persistent storage (localStorage on a real site; in-memory fallback in sandboxes) ---------- */
   const mem = {};
   const store = {
-    get(k) { try { const v = localStorage.getItem('ostep:' + k); return v === null ? (mem[k] ?? null) : JSON.parse(v); } catch (e) { return mem[k] ?? null; } },
-    set(k, v) { mem[k] = v; try { localStorage.setItem('ostep:' + k, JSON.stringify(v)); } catch (e) {} },
-    del(k) { delete mem[k]; try { localStorage.removeItem('ostep:' + k); } catch (e) {} },
-    keys(prefix) { const out = new Set(Object.keys(mem).filter(k => k.startsWith(prefix))); try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith('ostep:' + prefix)) out.add(k.slice(6)); } } catch (e) {} return [...out]; },
-    available() { try { localStorage.setItem('ostep:test', '1'); localStorage.removeItem('ostep:test'); return true; } catch (e) { return false; } }
+    get(k) { try { const v = localStorage.getItem('java21:' + k); return v === null ? (mem[k] ?? null) : JSON.parse(v); } catch (e) { return mem[k] ?? null; } },
+    set(k, v) { mem[k] = v; try { localStorage.setItem('java21:' + k, JSON.stringify(v)); } catch (e) {} },
+    del(k) { delete mem[k]; try { localStorage.removeItem('java21:' + k); } catch (e) {} },
+    keys(prefix) { const out = new Set(Object.keys(mem).filter(k => k.startsWith(prefix))); try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith('java21:' + prefix)) out.add(k.slice(6)); } } catch (e) {} return [...out]; },
+    available() { try { localStorage.setItem('java21:test', '1'); localStorage.removeItem('java21:test'); return true; } catch (e) { return false; } }
   };
 
   /* ---------- course structure ---------- */
   const PIECES = [
-    ['intro', 'Introduction', [['0001-three-easy-pieces', 'Three easy pieces', 'ch 1–2']]],
-    ['virt', 'Virtualization', [
-      ['0002-processes', 'Processes & the process API', 'ch 4–5'],
-      ['0003-limited-direct-execution', 'Limited direct execution', 'ch 6'],
-      ['0004-scheduling', 'Scheduling', 'ch 7–10'],
-      ['0005-address-spaces', 'Address spaces & segments', 'ch 13–16'],
-      ['0006-paging-and-tlbs', 'Paging & TLBs', 'ch 17–20'],
-      ['0007-swapping', 'Swapping & policies', 'ch 21–23']]],
-    ['conc', 'Concurrency', [
-      ['0008-threads-and-locks', 'Threads & locks', 'ch 26–28'],
-      ['0009-cvs-and-semaphores', 'CVs & semaphores', 'ch 29–31'],
-      ['0010-bugs-and-events', 'Bugs & events', 'ch 32–33']]],
-    ['pers', 'Persistence', [
-      ['0011-devices-disks-raid', 'Devices, disks, RAID', 'ch 36–38'],
-      ['0012-files-and-vsfs', 'Files & a simple FS', 'ch 39–40'],
-      ['0013-ffs-journaling-lfs', 'FFS, journaling, LFS', 'ch 41–43'],
-      ['0014-ssd-and-integrity', 'SSDs & integrity', 'ch 44–45'],
-      ['0015-distributed-nfs-afs', 'Distributed FS', 'ch 48–50']]],
-    ['sec', 'Security', [['0016-security-and-vmms', 'Security & VMMs', 'ch 53–57, App B']]]
+    ['lang', 'The language, as specified (JLS 21)', [
+      ['0001-types-values-variables', 'Types, values, variables', 'JLS ch 4, 5'],
+      ['0002-classes-objects-initialization', 'Classes, objects, initialization order', 'JLS ch 8, 12'],
+      ['0003-records-sealed-interfaces', 'Records, sealed types, interfaces', 'JLS §8.10, §8.1.1.2, ch 9'],
+      ['0004-generics-and-erasure', 'Generics, wildcards, erasure', 'JLS §4.5–4.10, §8.4.8.3'],
+      ['0005-expressions-exceptions-switch', 'Expressions, exceptions, switch & patterns', 'JLS ch 11, 14, 15; JEPs 440/441'],
+      ['0006-lambdas-streams', 'Lambdas, method references, streams', 'JLS §15.27, §15.13, java.util.stream'],
+      ['0007-java-memory-model', 'The Java memory model', 'JLS ch 17']]],
+    ['jvm', 'The JVM (JVMS 21 + HotSpot)', [
+      ['0008-class-files-and-bytecode', 'Class files and bytecode', 'JVMS ch 4, 6'],
+      ['0009-loading-linking-initialization', 'Loading, linking, initialization, class loaders', 'JVMS ch 5'],
+      ['0010-execution-frames-invokedynamic', 'Execution: frames, invoke*, invokedynamic', 'JVMS ch 2, 5.4.3, 6'],
+      ['0011-hotspot-jit', 'HotSpot: interpreter, C1/C2, deoptimization', 'compilationPolicy.cpp, c2_globals.hpp'],
+      ['0012-heap-gc-generational-zgc', 'Objects, heap, GC, Generational ZGC', 'markWord.hpp, gcConfig.cpp, JEP 439']]],
+    ['loom', 'Java 21: virtual threads and new features', [
+      ['0013-virtual-threads-model', 'Virtual threads: the model (JEP 444)', 'JEP 444'],
+      ['0014-virtual-threads-internals', 'Virtual threads: continuations, carriers, scheduler', 'VirtualThread.java, Continuation.java, freeze/thaw'],
+      ['0015-structured-concurrency-scoped-values', 'Structured concurrency & scoped values', 'StructuredTaskScope, ScopedValue (preview)'],
+      ['0016-concurrency-toolkit', 'The concurrency toolkit: monitors, locks, executors', 'JLS §17.1–17.3, java.util.concurrent'],
+      ['0017-java-21-features', 'What Java 21 adds', 'JEPs 431, 440, 441, 442, 443, 445, 446, 453']]]
   ];
   const LESSONS = PIECES.flatMap(p => p[2].map(l => [l[0], l[1], p[0], l[2]]));
   const title = id => (LESSONS.find(l => l[0] === id) || [])[1] || id;
@@ -257,7 +271,7 @@ window.OS = (function () {
     const isLesson = i >= 0;
     const top = document.createElement('header'); top.className = 'topbar';
     top.innerHTML = `<button class="menu" aria-label="Open directory" aria-expanded="false">☰<span>Directory</span></button>
-      <a class="brand" href="${root}index.html"><span class="dot"></span>OSTEP course</a>
+      <a class="brand" href="${root}index.html"><span class="dot"></span>Java 21 course</a>
       <nav class="links"><a href="${root}reference/glossary.html">Glossary</a><a href="${root}reference/cheatsheets.html">Cheat sheets</a><a href="${root}notes.html">My notes</a></nav>
       ${isLesson ? `<span class="where">${i+1} / ${LESSONS.length}</span>` : ''}`;
     document.body.prepend(top);
@@ -341,6 +355,17 @@ window.OS = (function () {
     });
   }
 
+
+  /* ---------- Java code blocks: annotated, copyable, with a jshell hint (no JVM in the browser) ---------- */
+  function py(el, code, opts) {
+    el = typeof el === 'string' ? document.getElementById(el) : el; opts = opts || {};
+    el.classList.add('pyrun');
+    const src = code.trim();
+    const preview = /--enable-preview|StructuredTaskScope|ScopedValue|STR\./.test(src);
+    el.innerHTML = `<div class="pyhead"><span>Java 21${preview ? ' · needs --enable-preview' : ''}${opts.note ? ' · ' + esc(opts.note) : ''}</span><span class="pystatus">paste into jshell or a scratch file</span><button class="primary copy">Copy</button></div><pre class="pyout" style="display:block;white-space:pre-wrap;margin:0"><code>${esc(src)}</code></pre>`;
+    el.querySelector('.copy').onclick = () => { navigator.clipboard && navigator.clipboard.writeText(src).then(() => { el.querySelector('.pystatus').textContent = 'copied'; }).catch(() => {}); };
+  }
+
   /* ---------- flip cards ---------- */
   function cards(el, list) {
     el = typeof el === 'string' ? document.getElementById(el) : el;
@@ -385,17 +410,56 @@ window.OS = (function () {
     el.querySelectorAll('input').forEach(c => c.onchange = () => { const s = [...el.querySelectorAll('input:checked')].map(x => +x.dataset.i); if (pageId) store.set('obj:' + pageId, s); });
   }
 
-  return { chrome, quiz, cards, stepper, gantt, objectives, esc, store, LESSONS, PIECES, title };
+  return { chrome, quiz, cards, stepper, gantt, objectives, py, esc, store, LESSONS, PIECES, title };
 })();
 
 </script>
 <script>
-OS.chrome('index','');
-const P=[['intro','Introduction','What an OS is: the three pieces, design goals, history.',['0001-three-easy-pieces','Three easy pieces','ch 1–2']],
-['virt','Virtualization','The CPU and memory made private and plentiful.',['0002-processes','Processes & the process API','ch 4–5'],['0003-limited-direct-execution','Limited direct execution','ch 6'],['0004-scheduling','Scheduling: FIFO to CFS and multi-CPU','ch 7–10'],['0005-address-spaces','Address spaces, base/bounds, segments','ch 13–16'],['0006-paging-and-tlbs','Free space, paging, TLBs, small tables','ch 17–20'],['0007-swapping','Swapping, replacement, VAX/VMS & Linux','ch 21–23']],
-['conc','Concurrency','Threads and the primitives that make them safe.',['0008-threads-and-locks','Threads, thread API, locks','ch 26–28'],['0009-cvs-and-semaphores','Locked structures, CVs, semaphores','ch 29–31'],['0010-bugs-and-events','Concurrency bugs & event-based servers','ch 32–33']],
-['pers','Persistence + Security','Storage from the device up; then protecting it all.',['0011-devices-disks-raid','Devices, disks, RAID','ch 36–38'],['0012-files-and-vsfs','Files, directories, a simple file system','ch 39–40'],['0013-ffs-journaling-lfs','FFS, crash consistency, LFS','ch 41–43'],['0014-ssd-and-integrity','SSDs & data integrity','ch 44–45'],['0015-distributed-nfs-afs','Distributed systems, NFS, AFS','ch 48–50'],['0016-security-and-vmms','Security (ch 53–57) & VMMs','ch 53–57, App B']]];
-const m=document.getElementById('map');let idx=0;const S=OS.store;
-m.innerHTML=P.map(([cls,name,desc,...ls])=>`<div class="piece piece-${cls}"><h3>${name}</h3><p>${desc}</p>${ls.map(l=>{idx++;const q=S.get('quiz:'+l[0]),nt=(S.get('notes:'+l[0])||{}).text;return `<a href="lessons/${l[0]}.html" data-id="${l[0]}" class="${q&&q.score===q.total?'done':''}">${idx}. ${l[1]}<small>${l[2]}${q?` · quiz ${q.score}/${q.total}`:''}${nt?' · ✎ notes':''}</small></a>`;}).join('')}</div>`).join('');
-const done=OS.LESSONS.filter(l=>S.get('quiz:'+l[0])).length;const ph=document.createElement('p');ph.className='cap';ph.textContent=done?`${done} of 16 lesson quizzes attempted — see My notes & progress for details.`:'Quiz scores, checked objectives and notes are saved in this browser as you go.';document.getElementById('map').after(ph);
+OS.chrome('0010-execution-frames-invokedynamic');
+OS.objectives('obj',['Describe per-thread and shared run-time data areas and what a frame contains.','Match each invoke instruction to what it resolves and what it selects at run time.','Apply the §5.4.5 overriding rule and the §5.4.6 selection algorithm, including package-private and default-method cases.','Explain invokedynamic resolution: bootstrap arguments, CallSite validation, per-instruction memoization.','Describe how lambdas, string concatenation, records and pattern switches use invokedynamic, and what method-handle kinds are.']);
+const C={v:{code:`class Animal { void speak() { print("..."); } }
+class Dog extends Animal { void speak() { print("woof"); } }
+Animal a = new Dog();
+a.speak();            // invokevirtual Animal.speak:()V`,steps:['Resolve Animal.speak:()V → Animal.speak (compile-time type).','Selection on receiver class Dog: Dog declares speak with same name/descriptor, not private, Animal.speak is package-private in the SAME run-time package → can override.','Selected: Dog.speak → "woof".'],m:'Ordinary virtual dispatch: the resolved method is the static type\'s; the selected method is the receiver class\'s override.'},
+pp:{code:`package p1; public class A { void m() { print("A"); } public void call() { m(); } }
+package p2; public class B extends p1.A { void m() { print("B"); } }
+new p2.B().call();    // inside A: invokevirtual A.m:()V`,steps:['Resolve A.m:()V → A.m (package-private in run-time package p1).','Selection on B: B.m has the same name/descriptor and is not private — but A.m is package-private and B is in a DIFFERENT run-time package → B.m CANNOT override A.m.','Search superclasses: A.m itself can trivially satisfy → selected: A.m → prints "A".'],m:'JVMS §5.4.5: package-private methods are overridable only within the same run-time package (or transitively). B.m is an unrelated method that merely shares a name.'},
+def:{code:`interface I { default void m() { print("I"); } }
+class S { public void m() { print("S"); } }
+class C extends S implements I { }
+I i = new C(); i.m();   // invokeinterface I.m:()V`,steps:['Resolve I.m → the default method I.m.','Selection on C: C declares no m → search superclasses: S.m can override I.m (same name/descriptor, public) → found first.','Selected: S.m → prints "S". Superclass methods always win over interface defaults ("class wins").'],m:'§5.4.6 searches the class hierarchy before falling back to maximally-specific superinterface methods, which is exactly the JLS "class wins" rule.'},
+priv:{code:`class P { private void h() { print("P.h"); } void run() { h(); } }
+class Q extends P { void h() { print("Q.h"); } }
+new Q().run();          // inside P: invokevirtual P.h:()V (nestmate-era javac)`,steps:['Resolve P.h:()V → P.h, which is private.','§5.4.6 step 1: the resolved method is ACC_PRIVATE → it is the selected method, no lookup on the receiver.','Selected: P.h → prints "P.h". Q.h is unrelated.'],m:'Private methods are never virtual. Since JDK 11 javac may emit invokevirtual for private calls (nestmates), but selection short-circuits on ACC_PRIVATE.'}};
+function cs(){const c=C[document.getElementById('case').value];document.getElementById('ccode').textContent=c.code;document.getElementById('csteps').innerHTML=c.steps.map((s,i)=>`<div class="${i===c.steps.length-1?'now':''}">${s}</div>`).join('');document.getElementById('cmsg').textContent=c.m;}document.getElementById('case').onchange=cs;cs();
+OS.stepper('lsteps',['<b>javac</b> desugars the body into a private static (or instance, if it captures <code>this</code>) synthetic method <code>lambda$main$0(int x)</code> and emits <code>invokedynamic #n "run":(I)Ljava/lang/Runnable;</code> whose BootstrapMethods entry names <code>LambdaMetafactory.metafactory</code> with static args: the erased SAM type <code>()V</code>, a method handle to <code>lambda$main$0</code>, and the instantiated type.','<b>First execution:</b> the JVM resolves the bootstrap method handle (initializing LambdaMetafactory\'s class), builds <code>[Lookup(caller), "run", MethodType (I)Runnable, samType, implHandle, instantiatedType]</code> and calls it via invokeWithArguments.','<b>The metafactory</b> spins a <em>hidden class</em> implementing Runnable with a field for the captured <code>x</code> and a <code>run()</code> that calls <code>lambda$main$0</code>; it returns a <code>ConstantCallSite</code> whose target is a method handle to that class\'s constructor/factory.','<b>Validation:</b> non-null CallSite, type equals the descriptor → the site is linked; other threads that raced use the winning result.','<b>Every later execution:</b> invokedynamic just invokes the target: allocate the hidden-class instance capturing x (or reuse a singleton for non-capturing lambdas). After JIT inlining this is as cheap as a direct call.']);
+OS.py('py1',`// javap -c -p shows the five instructions; run: javac Demo.java && javap -c -p Demo
+class Demo {
+    static void s() {}                 // invokestatic Demo.s:()V
+    void v() {}                        // invokevirtual Demo.v:()V
+    private void p() {}                // invokevirtual (JDK 11+ nestmates) — selected as-is because ACC_PRIVATE
+    Demo() { super(); }                // invokespecial java/lang/Object.<init>:()V
+    void run(Runnable r, CharSequence cs, int x) {
+        s(); v(); p();
+        r.run();                       // invokeinterface java/lang/Runnable.run:()V, 1
+        cs.length();                   // invokeinterface
+        Runnable l = () -> System.out.println(x);   // invokedynamic run:(I)Ljava/lang/Runnable; via LambdaMetafactory
+        String t = "x=" + x;           // invokedynamic makeConcatWithConstants:(I)Ljava/lang/String; (JEP 280)
+        record P(int a) {}
+        new P(1).equals(new P(1));     // record equals: invokedynamic to ObjectMethods.bootstrap
+    }
+}
+// Method handles mirror bytecode behaviours (JVMS Table 5.4.3.5-A):
+// MethodHandles.lookup().findVirtual(String.class, "length", MethodType.methodType(int.class))  → REF_invokeVirtual
+// mh.invokeExact("abc") has exactly the stack effect of invokevirtual String.length:()I`);
+OS.cards('cards',[['Frame','Per-invocation record: local variable array, operand stack, reference to the run-time constant pool; discarded on normal or abrupt completion.'],['Dynamic linking','Symbolic references in bytecode are resolved to concrete ones lazily via the frame\'s constant-pool reference.'],['invokevirtual','Resolves the compile-time method; selects on the receiver\'s run-time class (C, superclasses, then maximally-specific interface defaults).'],['invokespecial','No dynamic selection: constructors (<init>), super calls, some private calls.'],['invokeinterface','Interface method resolution + the same selection; receiver must implement the interface.'],['Can override (§5.4.5)','Same name and descriptor, not private, target public/protected or package-private in the same run-time package (transitively).'],['invokedynamic','Bootstrap method runs once per call-site instruction, returns a CallSite (validated), then the site invokes its target method handle.'],['Bootstrap arguments','(Lookup, name, MethodType, static args…) passed via invokeWithArguments; non-Error failures wrap in BootstrapMethodError.'],['Method handle kinds','getField, getStatic, putField, putStatic, invokeVirtual, invokeStatic, invokeSpecial, newInvokeSpecial, invokeInterface — each with the access checks of its bytecode.']]);
+OS.quiz('quiz',[
+{q:'Which run-time data area is per thread?',o:['the heap','the JVM stack (and pc register)','the method area','the run-time constant pool'],a:1,why:'§2.5: pc register, JVM stack and native method stack are per thread; heap and method area are shared.'},
+{q:'Class B in package p2 declares void m() with the same descriptor as package-private void m() in its superclass A (package p1). A calls m() on a B instance. Which runs?',o:['B.m','A.m','ambiguous → IncompatibleClassChangeError','B.m only if B is public'],a:1,why:'§5.4.5: B.m cannot override a package-private method from another run-time package, so selection finds A.m.'},
+{q:'A class inherits m() from its superclass S and a default m() from interface I. Calling m through I invokes:',o:['I.m','S.m (superclass search precedes interface defaults)','whichever was loaded first','a compile error'],a:1,why:'§5.4.6 searches C and its superclasses before maximally-specific superinterface methods — "class wins".'},
+{q:'How many times does an invokedynamic bootstrap method run for one call site in a class file?',o:['every execution','once per instruction (memoized), even if another instruction shares the constant-pool entry','once per class','once per thread'],a:1,why:'§5.4.3.6: resolution succeeds solely for that instruction; other instructions referencing the same entry resolve separately.'},
+{q:'What must a bootstrap method return for invokedynamic?',o:['a MethodHandle','a non-null CallSite whose type equals the site\'s descriptor','a Class object','a Lookup'],a:1,why:'Otherwise resolution fails with BootstrapMethodError.'},
+{q:'Why does javac compile lambdas with invokedynamic instead of inner classes?',o:['inner classes cannot capture variables','the translation strategy stays in the JDK (LambdaMetafactory) and can evolve without recompiling','invokedynamic is required by the JLS','inner classes are slower to load'],a:1,why:'Deferring the strategy to run time avoids baking it into class files; the metafactory spins hidden classes today and could change.'},
+{q:'"a" + b in Java 9+ compiles to:',o:['StringBuilder.append chains','one invokedynamic to StringConcatFactory','String.concat','a switch on the types'],a:1,why:'JEP 280: the bootstrap builds an optimized concatenation recipe at link time.'},
+{q:'A resolved method is private. During invokevirtual selection the JVM:',o:['searches the receiver class for an override','selects the resolved method directly (ACC_PRIVATE short-circuit)','throws IllegalAccessError','falls back to invokespecial'],a:1,why:'§5.4.6 step 1: private methods are never virtual; the resolved method is the selected method.'}]);
 </script></body></html>

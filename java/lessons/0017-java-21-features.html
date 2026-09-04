@@ -1,0 +1,505 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>17 · What Java 21 adds — Java 21 course</title><style>
+/* OSTEP course — shared stylesheet. Three pieces, three hues. */
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+:root{
+  --ink:#151b2f; --ink-2:#1e2540; --ink-3:#28304f; --line:#3a4368;
+  --paper:#eef0f7; --muted:#a9b1cf; --faint:#6e779a;
+  --virt:#e8b84a; --conc:#5bc8f5; --pers:#6bcb77; --sec:#f47fa0; --intro:#c9a8ff; --spec:#ffd166; --internals:#5bc8f5; --data:#6bcb77;
+  --ok:#6bcb77; --bad:#ff6b6b;
+  --accent:var(--virt);
+  --radius:6px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--ink);color:var(--paper);font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:17px;line-height:1.6}
+a{color:var(--accent)}
+code,pre,kbd,.mono{font-family:'IBM Plex Mono',ui-monospace,monospace}
+code{background:var(--ink-3);padding:1px 5px;border-radius:4px;font-size:.9em}
+pre{background:#0f1424;border:1px solid var(--line);border-left:4px solid var(--accent);padding:14px 16px;overflow:auto;border-radius:var(--radius);font-size:.86em;line-height:1.5}
+pre code{background:none;padding:0;font-size:inherit}
+h1,h2,h3,h4{font-family:'Fraunces',Georgia,serif;font-weight:700;line-height:1.15;margin:0 0 .4em}
+h1{font-size:2.6rem;letter-spacing:-.01em}
+h2{font-size:1.9rem;margin-top:2.6rem;padding-top:1.2rem;border-top:1px solid var(--line)}
+h3{font-size:1.3rem;margin-top:1.8rem;color:var(--accent)}
+h4{font-size:1.05rem;margin-top:1.2rem}
+p,li{max-width:72ch}
+.wrap{max-width:1100px;margin:0 auto;padding:0 28px 96px}
+.hero{padding:44px 0 16px}
+.hero .chapters{color:var(--muted);font-size:.95rem;margin-bottom:6px}
+.lede{font-size:1.2rem;color:var(--muted);max-width:66ch}
+.piece-lang{--accent:var(--spec)} .piece-jvm{--accent:var(--internals)} .piece-loom{--accent:var(--data)} .piece-spec{--accent:var(--spec)} .piece-internals{--accent:var(--internals)} .piece-data{--accent:var(--data)} .piece-virt{--accent:var(--virt)} .piece-conc{--accent:var(--conc)} .piece-pers{--accent:var(--pers)} .piece-sec{--accent:var(--sec)} .piece-intro{--accent:var(--intro)}
+.fig{background:var(--ink-2);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;margin:22px 0}
+.fig figcaption,.cap{color:var(--muted);font-size:.9rem;margin-top:10px}
+.fig svg{max-width:100%;height:auto;display:block}
+svg text{font-family:'IBM Plex Sans',sans-serif}
+svg .mono{font-family:'IBM Plex Mono',monospace}
+.crux{border:1px solid var(--accent);border-radius:var(--radius);padding:14px 18px;margin:22px 0;background:color-mix(in srgb,var(--accent) 8%,transparent)}
+.crux b{color:var(--accent)}
+.tip{border-left:4px solid var(--muted);padding:6px 16px;margin:18px 0;color:var(--muted)}
+.tip b{color:var(--paper)}
+table{border-collapse:collapse;width:100%;margin:16px 0;font-size:.95rem}
+th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{color:var(--muted);font-weight:500}
+td.mono,th.mono{font-family:'IBM Plex Mono',monospace}
+button,.btn{font:inherit;font-size:.9rem;background:var(--ink-3);color:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:7px 13px;cursor:pointer}
+button:hover{border-color:var(--accent)}
+button.primary{background:var(--accent);color:#111;border-color:var(--accent);font-weight:600}
+button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+input[type=range]{accent-color:var(--accent)}
+input[type=text],input[type=number],select{font:inherit;background:#0f1424;color:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:6px 10px}
+.controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:10px 0}
+.controls label{font-size:.9rem;color:var(--muted)}
+details{border:1px solid var(--line);border-radius:var(--radius);margin:10px 0;background:var(--ink-2)}
+summary{cursor:pointer;padding:12px 16px;font-weight:600;list-style:none}
+summary::before{content:"+";display:inline-block;width:1.2em;color:var(--accent)}
+details[open] summary::before{content:"–"}
+details>div{padding:0 16px 14px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;margin:16px 0}
+.card{perspective:900px;min-height:140px;cursor:pointer}
+.card .inner{position:relative;width:100%;height:100%;min-height:140px;transition:transform .45s;transform-style:preserve-3d}
+.card.flipped .inner{transform:rotateY(180deg)}
+.card .face{position:absolute;inset:0;padding:14px;border-radius:var(--radius);border:1px solid var(--line);background:var(--ink-2);backface-visibility:hidden;display:flex;align-items:center;justify-content:center;text-align:center;font-size:.95rem}
+.card .back{transform:rotateY(180deg);background:var(--ink-3);border-color:var(--accent);font-size:.88rem;line-height:1.45}
+.card .front{font-weight:600}
+@media (prefers-reduced-motion:reduce){.card .inner{transition:none}}
+.quiz .q{border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin:12px 0;background:var(--ink-2)}
+.quiz .q p{margin:0 0 10px;font-weight:600}
+.quiz .opts{display:grid;gap:8px}
+.quiz .opt{text-align:left;background:var(--ink);width:100%}
+.quiz .opt.right{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 15%,var(--ink))}
+.quiz .opt.wrong{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 15%,var(--ink))}
+.quiz .why{margin-top:10px;color:var(--muted);font-size:.93rem;display:none}
+.quiz .q.done .why{display:block}
+.quiz .score{margin-top:12px;font-weight:600}
+.stepper .stage{min-height:60px;background:#0f1424;border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin:10px 0}
+.stepper .idx{color:var(--muted);font-size:.85rem}
+.gantt{display:grid;gap:6px;margin:10px 0}
+.gantt .row{display:grid;grid-template-columns:60px 1fr;align-items:center;gap:8px;font-size:.85rem}
+.gantt .track{position:relative;height:26px;background:#0f1424;border-radius:4px;overflow:hidden}
+.gantt .seg{position:absolute;top:0;bottom:0;display:flex;align-items:center;justify-content:center;font-size:.75rem;color:#111;font-weight:600;border-right:1px solid rgba(0,0,0,.3)}
+.cells{display:grid;gap:4px;margin:10px 0}
+.cell{background:#0f1424;border:1px solid var(--line);border-radius:4px;padding:6px;text-align:center;font-family:'IBM Plex Mono',monospace;font-size:.8rem;min-height:36px;display:flex;align-items:center;justify-content:center}
+.cell.hit{background:color-mix(in srgb,var(--ok) 35%,#0f1424);border-color:var(--ok)}
+.cell.miss{background:color-mix(in srgb,var(--bad) 35%,#0f1424);border-color:var(--bad)}
+.cell.active{outline:2px solid var(--accent)}
+.cell.free{opacity:.45}
+.hl{background:color-mix(in srgb,var(--accent) 30%,transparent);padding:1px 5px;border-radius:3px}
+.k{color:var(--accent);font-weight:600}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media (max-width:760px){.two{grid-template-columns:1fr}.topbar{gap:10px}h1{font-size:2rem}}
+.nav-bottom{display:flex;justify-content:space-between;gap:16px;margin-top:56px;padding-top:20px;border-top:1px solid var(--line)}
+.nav-bottom a{text-decoration:none;padding:12px 16px;border:1px solid var(--line);border-radius:var(--radius);color:var(--paper)}
+.source{background:var(--ink-2);border-radius:var(--radius);padding:14px 18px;margin:22px 0;font-size:.95rem}
+.source b{color:var(--accent)}
+.objectives li{list-style:none;margin:6px 0}
+.objectives input{margin-right:8px;accent-color:var(--accent)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.85rem;color:var(--muted)}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:5px;vertical-align:-2px}
+.tag{display:inline-block;font-size:.75rem;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted);margin-right:6px}
+.log{font-family:'IBM Plex Mono',monospace;font-size:.82rem;background:#0f1424;border:1px solid var(--line);border-radius:var(--radius);padding:10px 12px;max-height:220px;overflow:auto;white-space:pre-wrap}
+@media print{body{background:#fff;color:#111}.topbar,.nav-bottom,button{display:none}.fig,.crux,details,.source{border-color:#bbb;background:#fff}pre{background:#f5f5f5;color:#111}}
+
+/* ---------- site chrome: sticky header + directory drawer ---------- */
+.topbar{position:sticky;top:0;z-index:30;display:flex;gap:14px;align-items:center;padding:10px 16px;background:color-mix(in srgb,var(--ink) 92%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);font-size:.9rem}
+.topbar .menu{display:flex;align-items:center;gap:8px;padding:8px 12px;font-size:1rem}
+.topbar .menu span{font-size:.85rem}
+.topbar .brand{color:var(--paper);text-decoration:none;font-weight:600;display:flex;align-items:center;gap:8px}
+.topbar .dot{width:10px;height:10px;border-radius:50%;background:var(--accent);display:inline-block}
+.topbar .links{display:flex;gap:16px;margin-left:8px}
+.topbar .links a{color:var(--muted);text-decoration:none}
+.topbar .links a:hover{color:var(--paper)}
+.topbar .where{margin-left:auto;color:var(--faint);font-variant-numeric:tabular-nums}
+.drawer{position:fixed;top:0;left:0;bottom:0;width:min(340px,88vw);background:var(--ink-2);border-right:1px solid var(--line);z-index:50;transform:translateX(-102%);transition:transform .25s;overflow-y:auto;padding:0 0 24px;box-shadow:0 0 40px rgba(0,0,0,.5)}
+.drawer-open .drawer{transform:none}
+.scrim{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:40;opacity:0;pointer-events:none;transition:opacity .2s}
+.drawer-open .scrim{opacity:1;pointer-events:auto}
+.drawer .dhead{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--ink-2)}
+.drawer .close,.notes-sheet .close{font-size:1.3rem;line-height:1;padding:4px 10px}
+.drawer .dgroup{padding:8px 0 4px}
+.drawer .dname{padding:8px 16px 4px;color:var(--accent);font-family:'Fraunces',serif;font-weight:700}
+.drawer .ditem{display:flex;gap:10px;align-items:center;padding:9px 16px;color:var(--paper);text-decoration:none;border-left:3px solid transparent;font-size:.92rem}
+.drawer .ditem:hover{background:var(--ink-3)}
+.drawer .ditem.cur{border-left-color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
+.drawer .ditem .n{color:var(--faint);min-width:1.4em;font-variant-numeric:tabular-nums}
+.drawer .ditem .t{flex:1;line-height:1.25}
+.drawer .ditem .t small{display:block;color:var(--faint);font-size:.75rem}
+.drawer .badges{display:flex;gap:6px;align-items:center}
+.drawer .badges i{font-style:normal;color:var(--accent)}
+.drawer .badges em{font-style:normal;font-size:.75rem;padding:1px 6px;border-radius:999px;background:var(--ink-3);color:var(--muted);font-variant-numeric:tabular-nums}
+.drawer .dfoot{padding:16px;color:var(--faint);font-size:.8rem}
+/* ---------- notes: floating button + bottom sheet ---------- */
+.notes-fab{position:fixed;right:16px;bottom:16px;z-index:35;display:flex;gap:8px;align-items:center;padding:12px 16px;border-radius:999px;background:var(--accent);color:#111;border:none;font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,.4)}
+.notes-sheet{position:fixed;left:0;right:0;bottom:0;z-index:45;background:var(--ink-2);border-top:1px solid var(--line);border-radius:14px 14px 0 0;transform:translateY(105%);transition:transform .25s;box-shadow:0 -10px 40px rgba(0,0,0,.5);max-width:900px;margin:0 auto;padding-bottom:env(safe-area-inset-bottom)}
+.notes-open .notes-sheet{transform:none}
+.notes-open .notes-fab{display:none}
+.notes-sheet .nhead{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line)}
+.notes-sheet .nhead b{flex:1;font-size:.95rem}
+.notes-sheet .nstatus{color:var(--faint);font-size:.8rem}
+.notes-sheet textarea{display:block;width:100%;min-height:36vh;max-height:60vh;resize:vertical;border:none;background:#0f1424;color:var(--paper);font:inherit;font-size:1rem;line-height:1.5;padding:14px 16px;outline:none}
+.notes-sheet .nfoot{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;font-size:.85rem;color:var(--muted)}
+/* ---------- wide widgets scroll sideways instead of breaking the page ---------- */
+.tw{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:16px 0}
+.tw table{margin:0;min-width:520px}
+.fig{overflow-x:auto}
+@media (prefers-reduced-motion:reduce){.drawer,.notes-sheet,.scrim{transition:none}}
+/* ---------- phones ---------- */
+@media (max-width:760px){
+  body{font-size:16px}
+  .wrap{padding:0 16px 110px}
+  h1{font-size:1.85rem} h2{font-size:1.45rem;margin-top:2rem} h3{font-size:1.15rem}
+  .lede{font-size:1.05rem}
+  .topbar{padding:8px 12px;gap:10px}
+  .topbar .links{display:none}
+  .topbar .menu span{display:none}
+  .topbar .menu{padding:8px 11px}
+  .fig{padding:12px 12px;margin:16px -4px;border-radius:8px}
+  .crux,.source{padding:12px 14px}
+  pre{font-size:.8em;padding:12px 12px}
+  button,.btn{padding:10px 14px;font-size:.92rem}
+  .controls{gap:8px}
+  .controls label{display:flex;align-items:center;gap:6px}
+  input[type=number]{max-width:96px}
+  .cards{grid-template-columns:1fr 1fr;gap:8px}
+  .card,.card .inner{min-height:120px}
+  .card .face{font-size:.88rem;padding:10px}
+  .cells{min-width:420px}
+  .quiz .opt{padding:12px 12px;line-height:1.35}
+  .nav-bottom{flex-direction:column}
+  .nav-bottom a{text-align:center}
+  .notes-fab span{display:none}
+  .notes-fab{padding:14px;right:12px;bottom:12px}
+  .notes-sheet textarea{min-height:44vh}
+  .stepper .stage{padding:12px}
+  .gantt .row{grid-template-columns:44px 1fr;font-size:.75rem}
+  /* lesson-specific grids collapse */
+  .lde,.il,.two,.cry,.flash,.dl,.fdt,.how,.cards.wide,.vm{grid-template-columns:1fr}
+  .map{grid-template-columns:1fr}
+  .net{grid-template-columns:1fr}.net .arrow{padding:0;transform:rotate(90deg)}
+  .phil{grid-template-columns:repeat(2,1fr)}
+  .jobs{max-width:100%}
+  .trace{min-width:620px}.tl{min-width:720px}.disk{min-width:560px}
+}
+@media (max-width:420px){.cards{grid-template-columns:1fr}}
+
+/* ---------- runnable Python ---------- */
+.pyrun{border:1px solid var(--line);border-radius:var(--radius);background:#0f1424;margin:18px 0;overflow:hidden}
+.pyrun .pyhead{display:flex;gap:10px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--line);font-size:.85rem;color:var(--muted);background:var(--ink-2)}
+.pyrun .pyhead span:first-child{flex:1;font-weight:600;color:var(--paper)}
+.pyrun .pystatus{font-size:.78rem}
+.pyrun textarea{display:block;width:100%;border:none;background:#0f1424;color:var(--paper);font-family:'IBM Plex Mono',monospace;font-size:.86rem;line-height:1.5;padding:12px 14px;resize:vertical;outline:none;min-height:60px;tab-size:4}
+.pyrun .pyout{font-family:'IBM Plex Mono',monospace;font-size:.86rem;line-height:1.5;padding:12px 14px;margin:0;border:none;border-top:1px solid var(--line);border-left:none;border-radius:0;background:#0a0e1a;color:#cfe3ff;max-height:none;overflow:auto}
+
+</style>
+<style>.jeps{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}.jeps div{background:#0f1424;border:1px solid var(--line);border-radius:6px;padding:10px;font-size:.85rem;border-top:3px solid var(--accent)}.jeps div.pv{border-top-color:var(--muted)}.jeps b{display:block;color:var(--accent)}.jeps small{color:var(--muted)}.pm{display:grid;grid-template-columns:1fr 1fr;gap:12px}.pm pre{margin:0}.seq td{font-family:'IBM Plex Mono',monospace;font-size:.8rem}.seq td:first-child{font-family:'IBM Plex Sans',sans-serif;color:var(--muted)}@media(max-width:800px){.jeps{grid-template-columns:1fr}.pm{grid-template-columns:1fr}}</style></head>
+<body class="piece-loom"><div class="wrap">
+<header class="hero"><div class="chapters">JDK 21 GA (September 2023) · the fifteen JEPs · JEP 440 Record Patterns · JEP 441 Pattern Matching for switch · JEP 431 Sequenced Collections · previews 430, 442, 443, 445, 446, 453</div>
+<h1>What Java 21 adds, feature by feature</h1>
+<p class="lede">JDK 21 is the LTS release after 17 and ships fifteen JEPs: three that finish multi-release efforts (virtual threads, record patterns, pattern matching for switch), a collections fix twenty years overdue (sequenced collections), a new GC mode, a security API, two deprecation warnings, and six previews/incubators that show where the language is heading. This lesson is the map; the language JEPs get worked examples and an exhaustiveness checker.</p></header>
+<div class="source"><b>Primary sources:</b> the JDK 21 GA announcement on jdk-dev (list of 15 JEPs) and Oracle's <a href="https://docs.oracle.com/en/java/javase/21/migrate/significant-changes-jdk-21.html">Significant Changes in JDK 21</a>; <a href="https://openjdk.org/jeps/441">JEP 441</a> (full text fetched — dominance, exhaustiveness, null, guards); <a href="https://openjdk.org/jeps/440">JEP 440</a>; <code>java.util.SequencedCollection</code> source (JEP 431); JEPs 444/439/446/453 as covered in lessons 12–15.</div>
+<h2>What you'll be able to do</h2><ul id="obj"></ul>
+
+<h2>The fifteen</h2>
+<div class="jeps">
+<div><b>431 Sequenced Collections</b>Final. New interfaces <code>SequencedCollection</code>, <code>SequencedSet</code>, <code>SequencedMap</code> retrofitted onto List, Deque, LinkedHashSet, SortedSet, LinkedHashMap, SortedMap…: <code>reversed()</code>, <code>getFirst/getLast</code>, <code>addFirst/addLast</code>, <code>removeFirst/removeLast</code>, <code>firstEntry/pollFirstEntry/putFirst…</code>. <small>Lesson 17 §Sequenced</small></div>
+<div><b>439 Generational ZGC</b>Final (opt-in via <code>-XX:+ZGenerational</code>). <small>Lesson 12</small></div>
+<div><b>440 Record Patterns</b>Final. Deconstruct records in <code>instanceof</code> and <code>switch</code>, nested arbitrarily; removed from enhanced-for headers. <small>below</small></div>
+<div><b>441 Pattern Matching for switch</b>Final. Type/record patterns as case labels, guards, <code>case null</code>, exhaustiveness; parenthesized patterns dropped, qualified enum constants allowed. <small>below</small></div>
+<div><b>444 Virtual Threads</b>Final. <small>Lessons 13–14</small></div>
+<div><b>449 Deprecate Windows 32-bit x86 port</b>Final: configure errors unless overridden; removal planned. <small>platform</small></div>
+<div><b>451 Prepare to disallow dynamic agent loading</b>Final: a warning is printed when an agent is loaded into a running JVM (attach API); a future release will make it an error unless <code>-XX:+EnableDynamicAgentLoading</code>. Serviceability tools that use attach must plan for it. <small>integrity</small></div>
+<div><b>452 Key Encapsulation Mechanism API</b>Final: <code>javax.crypto.KEM</code> for encapsulating symmetric keys with public-key crypto (basis for post-quantum schemes); provider-pluggable. <small>security</small></div>
+<div class="pv"><b>430 String Templates</b>Preview: <code>STR."Hello \{name}"</code>, template processors (<code>STR</code>, <code>FMT</code>, <code>RAW</code>) for safe interpolation. (Withdrawn after JDK 22 for redesign — treat as historical.)</div>
+<div class="pv"><b>442 Foreign Function &amp; Memory API</b>Third preview: <code>java.lang.foreign</code> — <code>Arena</code>, <code>MemorySegment</code>, <code>Linker</code>, <code>SymbolLookup</code> to call native code and manage off-heap memory without JNI. Finalized in 22.</div>
+<div class="pv"><b>443 Unnamed Patterns and Variables</b>Preview: <code>_</code> for unused pattern components and variables: <code>case Point(int x, _)</code>, <code>catch (Exception _)</code>. Final in 22.</div>
+<div class="pv"><b>445 Unnamed Classes and Instance Main Methods</b>Preview: <code>void main() { println("hi"); }</code> in a file with no class declaration; launch protocol picks instance/no-arg main. (Evolved into "Simple Source Files and Instance Main Methods", final in 25.)</div>
+<div class="pv"><b>446 Scoped Values</b>Preview. <small>Lesson 15</small></div>
+<div class="pv"><b>448 Vector API</b>Sixth incubator: <code>jdk.incubator.vector</code> SIMD computations that compile to vector instructions.</div>
+<div class="pv"><b>453 Structured Concurrency</b>Preview. <small>Lesson 15</small></div></div>
+
+<h2>Record patterns (JEP 440)</h2>
+<p>A record pattern <code>Point(int x, int y)</code> matches a value that is an instance of the record and binds the components by calling the accessors — it is <em>deconstruction</em>, the inverse of the canonical constructor. Patterns nest: <code>Line(Point(var x1, var y1), Point(var x2, var y2))</code>. <code>var</code> infers component types; generic records infer type arguments (<code>Box(String s)</code> matches <code>Box&lt;String&gt;</code>). A record pattern <em>never matches null</em> (unlike a type pattern in a total position), and a null component still matches a nested <code>var</code>/type pattern only if the type pattern is unconditional for that component. If an accessor throws, matching completes abruptly with <code>MatchException</code> (from JEP 441's error rules). Exhaustiveness handles nesting recursively: a switch over <code>Pair&lt;S&gt;</code> where S is sealed with A and B needs <code>Pair(A a, A b)</code>, <code>Pair(A a, B b)</code>, <code>Pair(B a, A b)</code>, <code>Pair(B a, B b)</code> — or a wildcard-ish <code>Pair(A a, S b)</code> + <code>Pair(B a, S b)</code>.</p>
+
+<h2>Pattern matching for switch (JEP 441)</h2>
+<div class="pm"><pre><code>// selector may be any reference type (or int/char/short/byte)
+static String describe(Object o) {
+    return switch (o) {
+        case null            -> "null";                        // without it: NullPointerException
+        case Integer i when i > 0 -> "positive int " + i;      // guarded label
+        case Integer i       -> "int " + i;                    // unguarded after guarded
+        case String s        -> "string of length " + s.length();
+        case Point(int x, int y) -> "point " + x + "," + y;    // record pattern
+        case int[] a         -> "ints x" + a.length;
+        default              -> o.toString();                  // one match-all only
+    };
+}
+sealed interface Shape permits Circle, Square {}
+record Circle(double r) implements Shape {}
+record Square(double s) implements Shape {}
+static double area(Shape s) {                                   // exhaustive without default:
+    return switch (s) {                                         // permits clause = type coverage
+        case Circle c -> Math.PI * c.r() * c.r();
+        case Square q -> q.s() * q.s();
+    };                                                          // compiler adds a throwing default
+}</code></pre><div><div class="fig"><h4>Dominance &amp; exhaustiveness checker</h4><p class="cap">Order the labels for a switch over <code>Object o</code>; the checker applies JEP 441's rules.</p><div class="controls"><select id="lbl"><option>case CharSequence cs</option><option>case String s</option><option>case String s when s.isEmpty()</option><option>case Integer i</option><option>case 42</option><option>case null</option><option>default</option><option>case Object x</option></select><button class="primary" id="addl">add</button><button id="clrl">clear</button></div><ol id="labels"></ol><div class="cap" id="lmsg"></div></div></div></div>
+<div class="crux"><b>The rules, from the JEP.</b> (1) Labels are tried <em>in order</em>; the first applicable one wins. (2) A label <em>dominated</em> by an earlier one is a compile error: <code>case CharSequence cs</code> before <code>case String s</code>; an unguarded pattern before the same guarded pattern; a pattern before a constant of its type (<code>case Integer i</code> before <code>case 42</code>). Guards are not analysed (undecidable) except a constant <code>true</code>. Hence the natural order: constants → guarded patterns → unguarded patterns. (3) At most one <em>match-all</em> label (<code>default</code>, or a pattern unconditional for the selector type). (4) <b>Exhaustiveness</b> is required for switch expressions and for switch statements that use patterns or <code>null</code> or a non-legacy selector type; type coverage uses <code>sealed</code> permits and generic refinement; legacy switch statements compile unchanged. Prefer exhaustive switches <em>without</em> <code>default</code> so adding a permitted subtype breaks the build instead of failing at run time; the compiler inserts a synthetic default that throws <code>MatchException</code> for separately-compiled drift. (5) <b>null</b>: only <code>case null</code> (or <code>case null, default</code>) matches null; <code>default</code> alone does not. (6) Pattern variables are flow-scoped; falling through a pattern label is an error, and a label cannot bind several patterns. (7) Enum switch expressions now throw <code>MatchException</code> (not <code>IncompatibleClassChangeError</code>) when no constant matches at run time.</div>
+
+<h2>Sequenced collections (JEP 431)</h2>
+<table class="seq"><tr><th>Operation</th><th>SequencedCollection</th><th>SequencedMap</th></tr><tr><td>first / last</td><td>getFirst(), getLast()</td><td>firstEntry(), lastEntry()</td></tr><tr><td>add at ends</td><td>addFirst(e), addLast(e)  (UnsupportedOperationException on immutable; on LinkedHashSet/Map they <em>move</em> an existing element)</td><td>putFirst(k, v), putLast(k, v)</td></tr><tr><td>remove at ends</td><td>removeFirst(), removeLast()</td><td>pollFirstEntry(), pollLastEntry()</td></tr><tr><td>reverse view</td><td>reversed()  — a live view; iterate, stream, or pass to APIs</td><td>reversed(); sequencedKeySet/Values/EntrySet()</td></tr></table>
+<p>Before 21 there was no type expressing "has an encounter order": <code>List</code> had <code>get(size()-1)</code>, <code>Deque</code> <code>getLast()</code>, <code>LinkedHashSet</code> nothing, and no uniform way to iterate backwards. The default implementations in <code>SequencedCollection</code> are built on <code>iterator()</code> and <code>reversed()</code> (e.g. <code>getLast()</code> is <code>reversed().iterator().next()</code>), so custom collections get them for free once they implement <code>reversed()</code>. Watch for conflicts: a class that already had <code>getFirst()</code> with a different return type won't compile against 21 (the famous <code>Vector</code>/JavaFX <code>ObservableList</code> incidents).</p>
+<div id="py1"></div>
+
+<h2>Reading the trajectory</h2>
+<p>Three themes tie the release together. <b>Data-oriented programming</b>: records (16) + sealed types (17) + record patterns and pattern switch (21) let you model data as algebraic types and process it with exhaustive, compiler-checked switches instead of visitors. <b>Project Loom</b>: virtual threads (final) with structured concurrency and scoped values (preview) restore blocking, thread-per-request code as the scalable default. <b>Project Panama</b>: the FFM API and Vector API continue toward JNI-free native interop and SIMD. Plus "integrity by default" (JEP 451 is the first step toward requiring explicit opt-in for agents, following the encapsulation work of JDK 9–17).</p>
+
+<h2>Flash cards</h2><div id="cards"></div>
+<h2>Retrieval practice</h2><div id="quiz"></div>
+<p class="tip">That's the end of the course. Ask me in the chat for a capstone: rewrite a visitor-based expression evaluator with sealed records and pattern switch, then serve it from a virtual-thread HTTP handler and profile it with JFR.</p>
+</div>
+<script>
+/* Java 21 course — shared components (from the OSTEP course). Every page loads this file (inlined by build.py). */
+window.OS = (function () {
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+  /* ---------- persistent storage (localStorage on a real site; in-memory fallback in sandboxes) ---------- */
+  const mem = {};
+  const store = {
+    get(k) { try { const v = localStorage.getItem('java21:' + k); return v === null ? (mem[k] ?? null) : JSON.parse(v); } catch (e) { return mem[k] ?? null; } },
+    set(k, v) { mem[k] = v; try { localStorage.setItem('java21:' + k, JSON.stringify(v)); } catch (e) {} },
+    del(k) { delete mem[k]; try { localStorage.removeItem('java21:' + k); } catch (e) {} },
+    keys(prefix) { const out = new Set(Object.keys(mem).filter(k => k.startsWith(prefix))); try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith('java21:' + prefix)) out.add(k.slice(6)); } } catch (e) {} return [...out]; },
+    available() { try { localStorage.setItem('java21:test', '1'); localStorage.removeItem('java21:test'); return true; } catch (e) { return false; } }
+  };
+
+  /* ---------- course structure ---------- */
+  const PIECES = [
+    ['lang', 'The language, as specified (JLS 21)', [
+      ['0001-types-values-variables', 'Types, values, variables', 'JLS ch 4, 5'],
+      ['0002-classes-objects-initialization', 'Classes, objects, initialization order', 'JLS ch 8, 12'],
+      ['0003-records-sealed-interfaces', 'Records, sealed types, interfaces', 'JLS §8.10, §8.1.1.2, ch 9'],
+      ['0004-generics-and-erasure', 'Generics, wildcards, erasure', 'JLS §4.5–4.10, §8.4.8.3'],
+      ['0005-expressions-exceptions-switch', 'Expressions, exceptions, switch & patterns', 'JLS ch 11, 14, 15; JEPs 440/441'],
+      ['0006-lambdas-streams', 'Lambdas, method references, streams', 'JLS §15.27, §15.13, java.util.stream'],
+      ['0007-java-memory-model', 'The Java memory model', 'JLS ch 17']]],
+    ['jvm', 'The JVM (JVMS 21 + HotSpot)', [
+      ['0008-class-files-and-bytecode', 'Class files and bytecode', 'JVMS ch 4, 6'],
+      ['0009-loading-linking-initialization', 'Loading, linking, initialization, class loaders', 'JVMS ch 5'],
+      ['0010-execution-frames-invokedynamic', 'Execution: frames, invoke*, invokedynamic', 'JVMS ch 2, 5.4.3, 6'],
+      ['0011-hotspot-jit', 'HotSpot: interpreter, C1/C2, deoptimization', 'compilationPolicy.cpp, c2_globals.hpp'],
+      ['0012-heap-gc-generational-zgc', 'Objects, heap, GC, Generational ZGC', 'markWord.hpp, gcConfig.cpp, JEP 439']]],
+    ['loom', 'Java 21: virtual threads and new features', [
+      ['0013-virtual-threads-model', 'Virtual threads: the model (JEP 444)', 'JEP 444'],
+      ['0014-virtual-threads-internals', 'Virtual threads: continuations, carriers, scheduler', 'VirtualThread.java, Continuation.java, freeze/thaw'],
+      ['0015-structured-concurrency-scoped-values', 'Structured concurrency & scoped values', 'StructuredTaskScope, ScopedValue (preview)'],
+      ['0016-concurrency-toolkit', 'The concurrency toolkit: monitors, locks, executors', 'JLS §17.1–17.3, java.util.concurrent'],
+      ['0017-java-21-features', 'What Java 21 adds', 'JEPs 431, 440, 441, 442, 443, 445, 446, 453']]]
+  ];
+  const LESSONS = PIECES.flatMap(p => p[2].map(l => [l[0], l[1], p[0], l[2]]));
+  const title = id => (LESSONS.find(l => l[0] === id) || [])[1] || id;
+  let pageId = null, root = '../';
+
+  /* ---------- chrome: sticky header, slide-out directory, notes drawer, prev/next ---------- */
+  function chrome(id, rootPath) {
+    pageId = id; root = rootPath === undefined ? '../' : rootPath;
+    const i = LESSONS.findIndex(l => l[0] === id);
+    const isLesson = i >= 0;
+    const top = document.createElement('header'); top.className = 'topbar';
+    top.innerHTML = `<button class="menu" aria-label="Open directory" aria-expanded="false">☰<span>Directory</span></button>
+      <a class="brand" href="${root}index.html"><span class="dot"></span>Java 21 course</a>
+      <nav class="links"><a href="${root}reference/glossary.html">Glossary</a><a href="${root}reference/cheatsheets.html">Cheat sheets</a><a href="${root}notes.html">My notes</a></nav>
+      ${isLesson ? `<span class="where">${i+1} / ${LESSONS.length}</span>` : ''}`;
+    document.body.prepend(top);
+    // directory drawer
+    const drawer = document.createElement('aside'); drawer.className = 'drawer'; drawer.setAttribute('aria-label', 'Course directory');
+    const scores = Object.fromEntries(LESSONS.map(l => [l[0], store.get('quiz:' + l[0])]));
+    const notes = new Set(store.keys('notes:').map(k => k.slice(6)).filter(k => (store.get('notes:' + k) || {}).text));
+    drawer.innerHTML = `<div class="dhead"><b>Directory</b><button class="close" aria-label="Close">×</button></div>
+      <a class="ditem ${id === 'index' ? 'cur' : ''}" href="${root}index.html">Course hub</a>
+      ${PIECES.map(([cls, name, ls]) => `<div class="dgroup piece-${cls}"><div class="dname">${name}</div>${ls.map(l => {
+        const n = LESSONS.findIndex(x => x[0] === l[0]) + 1, s = scores[l[0]];
+        return `<a class="ditem ${l[0] === id ? 'cur' : ''}" href="${root}lessons/${l[0]}.html"><span class="n">${n}</span><span class="t">${l[1]}<small>${l[3]}</small></span><span class="badges">${notes.has(l[0]) ? '<i title="you have notes">✎</i>' : ''}${s ? `<em title="best quiz score">${s.score}/${s.total}</em>` : ''}</span></a>`; }).join('')}</div>`).join('')}
+      <div class="dgroup piece-intro"><div class="dname">Reference</div>
+        <a class="ditem ${id === 'glossary' ? 'cur' : ''}" href="${root}reference/glossary.html"><span class="t">Glossary</span></a>
+        <a class="ditem ${id === 'cheatsheets' ? 'cur' : ''}" href="${root}reference/cheatsheets.html"><span class="t">Cheat sheets</span></a>
+        <a class="ditem ${id === 'notes' ? 'cur' : ''}" href="${root}notes.html"><span class="t">My notes &amp; progress</span></a></div>
+      <div class="dfoot">${store.available() ? 'Notes and scores are saved in this browser.' : 'Notes and scores are kept for this session only (storage unavailable here).'}</div>`;
+    document.body.append(drawer);
+    const scrim = document.createElement('div'); scrim.className = 'scrim'; document.body.append(scrim);
+    const open = o => { document.body.classList.toggle('drawer-open', o); top.querySelector('.menu').setAttribute('aria-expanded', o); if (o) drawer.querySelector('.cur, .ditem')?.focus(); };
+    top.querySelector('.menu').onclick = () => open(!document.body.classList.contains('drawer-open'));
+    drawer.querySelector('.close').onclick = () => open(false); scrim.onclick = () => open(false);
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') { open(false); notesOpen(false); } });
+    // prev/next for lessons
+    if (isLesson) {
+      const nav = document.createElement('div'); nav.className = 'nav-bottom';
+      const prev = LESSONS[i-1], next = LESSONS[i+1];
+      nav.innerHTML = (prev ? `<a href="${prev[0]}.html">← ${i}. ${prev[1]}</a>` : '<span></span>') +
+                      (next ? `<a href="${next[0]}.html">${i+2}. ${next[1]} →</a>` : `<a href="${root}index.html">Back to course hub →</a>`);
+      document.querySelector('.wrap').append(nav);
+    }
+    // wrap tables so they scroll sideways on phones
+    document.querySelectorAll('.wrap table').forEach(t => { if (t.parentElement.classList.contains('tw')) return; const w = document.createElement('div'); w.className = 'tw'; t.replaceWith(w); w.append(t); });
+    // notes drawer (every page except the notes page itself)
+    if (id !== 'notes') notesUI(id, isLesson ? `${i+1}. ${LESSONS[i][1]}` : (document.title.split(' — ')[0]));
+  }
+
+  /* ---------- notes: floating button + bottom sheet, autosaved ---------- */
+  let notesOpen = () => {};
+  function notesUI(id, label) {
+    const btn = document.createElement('button'); btn.className = 'notes-fab'; btn.innerHTML = '✎ <span>Notes</span>'; btn.setAttribute('aria-label', 'Open notes');
+    const sheet = document.createElement('section'); sheet.className = 'notes-sheet'; sheet.setAttribute('aria-label', 'Notes for this page');
+    const saved = store.get('notes:' + id) || {};
+    sheet.innerHTML = `<div class="nhead"><b>Notes · ${esc(label)}</b><span class="nstatus"></span><button class="close" aria-label="Close notes">×</button></div>
+      <textarea placeholder="Your notes for this page. Markdown is fine. Saved automatically.">${esc(saved.text || '')}</textarea>
+      <div class="nfoot"><span class="ncount"></span><a href="${root}notes.html">All notes &amp; export →</a></div>`;
+    document.body.append(btn, sheet);
+    const ta = sheet.querySelector('textarea'), status = sheet.querySelector('.nstatus'), count = sheet.querySelector('.ncount');
+    const upd = () => { count.textContent = ta.value.trim() ? ta.value.trim().split(/\s+/).length + ' words' : ''; };
+    let t; ta.addEventListener('input', () => { status.textContent = 'saving…'; clearTimeout(t); t = setTimeout(() => { store.set('notes:' + id, { text: ta.value, title: label, updated: new Date().toISOString() }); status.textContent = 'saved'; upd(); }, 400); });
+    upd();
+    notesOpen = o => { document.body.classList.toggle('notes-open', o); if (o) ta.focus(); };
+    btn.onclick = () => notesOpen(!document.body.classList.contains('notes-open'));
+    sheet.querySelector('.close').onclick = () => notesOpen(false);
+  }
+
+  /* ---------- quiz: immediate feedback; best score persisted ---------- */
+  function quiz(el, qs) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('quiz');
+    let score = 0, answered = 0;
+    const best = pageId ? store.get('quiz:' + pageId) : null;
+    el.innerHTML = qs.map((q, i) => `<div class="q" data-i="${i}"><p>${i+1}. ${q.q}</p>
+      <div class="opts">${q.o.map((o, j) => `<button class="opt" data-j="${j}">${esc(o)}</button>`).join('')}</div>
+      <div class="why">${q.why}</div></div>`).join('') + `<div class="score">${best ? `Best so far: ${best.score}/${best.total} (${new Date(best.date).toLocaleDateString()})` : ''}</div>`;
+    el.querySelectorAll('.q').forEach(qd => {
+      const q = qs[+qd.dataset.i];
+      qd.querySelectorAll('.opt').forEach(b => b.addEventListener('click', () => {
+        if (qd.classList.contains('done')) return;
+        qd.classList.add('done'); answered++;
+        const j = +b.dataset.j;
+        if (j === q.a) { b.classList.add('right'); score++; }
+        else { b.classList.add('wrong'); qd.querySelectorAll('.opt')[q.a].classList.add('right'); }
+        const s = el.querySelector('.score');
+        s.textContent = `${score} / ${answered} correct`;
+        if (answered === qs.length) {
+          s.textContent += score === qs.length ? ' — all of them. Retry from memory in two days.' : ' — reread the sections you missed, then retry.';
+          if (pageId && (!best || score >= best.score)) store.set('quiz:' + pageId, { score, total: qs.length, date: new Date().toISOString() });
+        }
+      }));
+    });
+  }
+
+
+  /* ---------- Java code blocks: annotated, copyable, with a jshell hint (no JVM in the browser) ---------- */
+  function py(el, code, opts) {
+    el = typeof el === 'string' ? document.getElementById(el) : el; opts = opts || {};
+    el.classList.add('pyrun');
+    const src = code.trim();
+    const preview = /--enable-preview|StructuredTaskScope|ScopedValue|STR\./.test(src);
+    el.innerHTML = `<div class="pyhead"><span>Java 21${preview ? ' · needs --enable-preview' : ''}${opts.note ? ' · ' + esc(opts.note) : ''}</span><span class="pystatus">paste into jshell or a scratch file</span><button class="primary copy">Copy</button></div><pre class="pyout" style="display:block;white-space:pre-wrap;margin:0"><code>${esc(src)}</code></pre>`;
+    el.querySelector('.copy').onclick = () => { navigator.clipboard && navigator.clipboard.writeText(src).then(() => { el.querySelector('.pystatus').textContent = 'copied'; }).catch(() => {}); };
+  }
+
+  /* ---------- flip cards ---------- */
+  function cards(el, list) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('cards');
+    el.innerHTML = list.map(([f, b]) => `<div class="card" tabindex="0" role="button" aria-label="flip card"><div class="inner"><div class="face front">${f}</div><div class="face back">${b}</div></div></div>`).join('');
+    el.querySelectorAll('.card').forEach(c => {
+      const t = () => c.classList.toggle('flipped');
+      c.addEventListener('click', t);
+      c.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); t(); } });
+    });
+  }
+
+  /* ---------- stepper ---------- */
+  function stepper(el, steps, render) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('stepper');
+    let i = 0;
+    el.innerHTML = `<div class="controls"><button class="prev">← Back</button><button class="next primary">Next step →</button><span class="idx"></span></div><div class="stage"></div><div class="extra"></div>`;
+    const stage = el.querySelector('.stage'), idx = el.querySelector('.idx'), extra = el.querySelector('.extra');
+    const draw = () => { stage.innerHTML = steps[i]; idx.textContent = `step ${i+1} / ${steps.length}`; if (render) render(i, extra); };
+    el.querySelector('.prev').onclick = () => { i = Math.max(0, i-1); draw(); };
+    el.querySelector('.next').onclick = () => { i = Math.min(steps.length-1, i+1); draw(); };
+    draw();
+  }
+
+  /* ---------- gantt ---------- */
+  function gantt(el, rows, total, colors) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('gantt');
+    const pal = colors || ['#e8b84a','#5bc8f5','#6bcb77','#f47fa0','#c9a8ff','#ffb86b'];
+    el.innerHTML = rows.map((r, i) => `<div class="row"><span>${esc(r.name)}</span><div class="track">${r.segs.map(s =>
+      `<div class="seg" style="left:${100*s.start/total}%;width:${100*(s.end-s.start)/total}%;background:${pal[i%pal.length]}" title="${s.start}–${s.end}">${(s.end-s.start)/total > .06 ? (s.end-s.start) : ''}</div>`).join('')}</div></div>`).join('') +
+      `<div class="row"><span></span><div style="display:flex;justify-content:space-between;font-size:.75rem;color:var(--muted)"><span>0</span><span>${total}</span></div></div>`;
+  }
+
+  /* ---------- objectives checklist (persisted) ---------- */
+  function objectives(el, items) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('objectives');
+    const saved = (pageId && store.get('obj:' + pageId)) || [];
+    el.innerHTML = items.map((t, i) => `<li><label><input type="checkbox" data-i="${i}" ${saved.includes(i) ? 'checked' : ''}>${t}</label></li>`).join('');
+    el.querySelectorAll('input').forEach(c => c.onchange = () => { const s = [...el.querySelectorAll('input:checked')].map(x => +x.dataset.i); if (pageId) store.set('obj:' + pageId, s); });
+  }
+
+  return { chrome, quiz, cards, stepper, gantt, objectives, py, esc, store, LESSONS, PIECES, title };
+})();
+
+</script>
+<script>
+OS.chrome('0017-java-21-features');
+OS.objectives('obj',['List the 15 JDK 21 JEPs and classify them as final, preview or incubator.','Use record patterns, including nesting, var, generics, null behaviour and MatchException.','Apply JEP 441\'s dominance, match-all, exhaustiveness and null rules to order and complete a pattern switch.','Use the SequencedCollection/SequencedMap operations and explain why they were added and what can break.','Explain the release\'s themes: data-oriented programming, Loom, Panama, integrity by default.']);
+const labels=[];function ren(){const ol=document.getElementById('labels');ol.innerHTML=labels.map(l=>`<li><code>${l}</code></li>`).join('');const msgs=[];const isPat=l=>/^case [A-Z][A-Za-z]* [a-z]/.test(l);const type=l=>{const m=l.match(/^case ([A-Z][A-Za-z]*) /);return m?m[1]:null;};const guarded=l=>/ when /.test(l);const sub={String:['CharSequence','Object'],Integer:['Object'],CharSequence:['Object'],Object:[]};
+ for(let i=0;i<labels.length;i++){const l=labels[i];for(let j=0;j<i;j++){const p=labels[j];if(isPat(p)&&!guarded(p)&&isPat(l)){const tp=type(p),tl=type(l);if(tp===tl||(sub[tl]||[]).includes(tp))msgs.push(`✗ "${l}" is dominated by "${p}" (every ${tl} matches ${tp}${tp===tl&&guarded(l)?', and an unguarded pattern dominates the guarded one':''}) → compile error`);}
+  if(isPat(p)&&!guarded(p)&&l==='case 42'&&type(p)==='Integer')msgs.push(`✗ "case 42" is dominated by "${p}" → compile error`);
+  if(isPat(p)&&guarded(p)&&l==='case 42'&&type(p)==='Integer')msgs.push(`✗ "case 42" is dominated by "${p}" (guards are not analysed) → compile error`);
+  if((p==='default'||p==='case Object x')&&(l==='default'||l==='case Object x'))msgs.push('✗ more than one match-all label → compile error');
+  if((p==='default'||p==='case Object x')&&l!=='case null'&&!msgs.some(m=>m.includes(l)))msgs.push(`✗ "${l}" after a match-all label is dominated → compile error`);}}
+ const hasAll=labels.includes('default')||labels.includes('case Object x');const hasNull=labels.includes('case null');
+ if(!labels.length)msgs.push('Add labels to check.');else{if(hasAll)msgs.push('✓ exhaustive for Object (match-all present).');else msgs.push('✗ not exhaustive for selector type Object: as a switch expression this is a compile error (add default or an unconditional pattern).');msgs.push(hasNull?'✓ null handled by case null.':'• no case null → a null selector throws NullPointerException (default does not match null).');if(labels.length>1&&labels.every((l,i)=>i===0||!isPat(labels[i-1])||isPat(l)||l==='default'))msgs.push('✓ order constants → guarded → unguarded looks right.');}
+ document.getElementById('lmsg').innerHTML=msgs.join('<br>');}
+document.getElementById('addl').onclick=()=>{labels.push(document.getElementById('lbl').value);ren();};document.getElementById('clrl').onclick=()=>{labels.length=0;ren();};ren();
+OS.py('py1',`// JDK 21, no preview flags needed for records/sealed/patterns/sequenced collections
+sealed interface Expr permits Num, Add, Mul, Neg {}
+record Num(int v) implements Expr {}
+record Add(Expr l, Expr r) implements Expr {}
+record Mul(Expr l, Expr r) implements Expr {}
+record Neg(Expr e) implements Expr {}
+
+static int eval(Expr e) {
+    return switch (e) {                                   // exhaustive: permits = Num, Add, Mul, Neg — no default
+        case Num(var v)          -> v;
+        case Add(var l, var r)   -> eval(l) + eval(r);    // nested record patterns deconstruct
+        case Mul(Num(var a), Num(var b)) -> a * b;        // more specific first (else dominated → error)
+        case Mul(var l, var r)   -> eval(l) * eval(r);
+        case Neg(var x)          -> -eval(x);
+    };
+}
+static String show(Object o) {
+    return switch (o) {
+        case null, default -> "?";                        // combined null+default label
+        // case String s -> ...  would be dominated by the match-all above → move it before
+    };
+}
+// Sequenced collections
+var list = new ArrayList<>(List.of(1, 2, 3));
+list.addFirst(0); list.getLast();                          // 3
+for (int x : list.reversed()) System.out.print(x);         // 3210 — live view
+var lhs = new LinkedHashSet<>(List.of("a", "b", "c"));
+lhs.addFirst("c");                                         // moves c to the front: [c, a, b]
+var lhm = new LinkedHashMap<String, Integer>(); lhm.put("x", 1); lhm.putFirst("w", 0);
+System.out.println(lhm.firstEntry() + " " + lhm.reversed().keySet());   // w=0 [x, w]
+// Previews (need --enable-preview): _ for unused (JEP 443), void main() (JEP 445), STR."..." (JEP 430), ScopedValue (446), StructuredTaskScope (453), Arena/MemorySegment (442)`);
+OS.cards('cards',[['JDK 21 finals','431 Sequenced Collections, 439 Generational ZGC, 440 Record Patterns, 441 Pattern Matching for switch, 444 Virtual Threads, 449, 451, 452 KEM.'],['JDK 21 previews/incubators','430 String Templates, 442 FFM (3rd), 443 Unnamed Patterns/Variables, 445 Unnamed Classes & Instance Main, 446 Scoped Values, 453 Structured Concurrency, 448 Vector API (incubator).'],['Record pattern','Point(int x, int y): instance test + accessor-based deconstruction; nests; var infers; never matches null; accessor exception → MatchException.'],['Dominance','A label is a compile error if an earlier label matches everything it matches: supertype before subtype, unguarded before guarded, pattern before its constants.'],['Match-all','default or an unconditional pattern; at most one; default does not match null.'],['Exhaustiveness','Required for switch expressions and pattern/null/non-legacy-type switch statements; sealed permits provide type coverage; synthetic throwing default for drift.'],['case null','The only way a switch accepts null; case null, default combines both; otherwise NullPointerException.'],['SequencedCollection','reversed(), getFirst/getLast, addFirst/addLast, removeFirst/removeLast; SequencedMap adds firstEntry/putFirst/pollLastEntry…'],['Themes','Data-oriented programming (records + sealed + patterns), Loom (virtual threads, structured concurrency, scoped values), Panama (FFM, Vector), integrity (agents).']]);
+OS.quiz('quiz',[
+{q:'Which of these is FINAL in JDK 21?',o:['Scoped Values','Structured Concurrency','Record Patterns','String Templates'],a:2,why:'JEP 440 record patterns and JEP 441 pattern switch finalized in 21; 446/453/430 were previews.'},
+{q:'Writing case CharSequence cs before case String s in one switch causes:',o:['String never matches at run time','a compile error: the String label is dominated','a warning','case String s runs first anyway'],a:1,why:'JEP 441: a label dominated by a preceding label is a compile-time error, like unreachable code.'},
+{q:'A switch over a sealed interface with cases for every permitted subtype and no default: what happens if a new permitted subtype is added and the switch class is NOT recompiled?',o:['returns null','the synthetic default throws MatchException','falls through','IncompatibleClassChangeError'],a:1,why:'The compiler inserts a throwing default for separately-compiled drift; recompiling reveals the missing case as an error.'},
+{q:'A pattern switch without case null receives null. Result:',o:['default runs','NullPointerException','the first pattern matches','MatchException'],a:1,why:'Only case null matches null; default does not, preserving the historical null-hostility.'},
+{q:'Record pattern Point(int x, int y) applied to a null value:',o:['matches with x = y = 0','does not match','throws MatchException','depends on the switch'],a:1,why:'Record patterns never match null; use case null to handle it.'},
+{q:'Which operation did JEP 431 add to LinkedHashSet?',o:['sort()','addFirst/addLast/getFirst/getLast/reversed (with addFirst moving an existing element)','binarySearch','subList'],a:1,why:'SequencedSet retrofits ordered operations; for LinkedHashSet addFirst repositions an element already present.'},
+{q:'JEP 451 in JDK 21:',o:['disallows agents entirely','prints a warning when an agent is loaded dynamically into a running JVM','removes the attach API','requires signed agents'],a:1,why:'It prepares for a future error; -XX:+EnableDynamicAgentLoading suppresses the warning.'},
+{q:'What does JEP 449 do?',o:['removes the 32-bit Windows port','deprecates the Windows 32-bit x86 port for removal','adds ARM32 support','drops Windows entirely'],a:1,why:'Deprecation for removal; configuring the port errors out unless overridden.'}]);
+</script></body></html>

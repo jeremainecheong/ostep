@@ -1,0 +1,473 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>9 · Loading, linking, initialization — Java 21 course</title><style>
+/* OSTEP course — shared stylesheet. Three pieces, three hues. */
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+:root{
+  --ink:#151b2f; --ink-2:#1e2540; --ink-3:#28304f; --line:#3a4368;
+  --paper:#eef0f7; --muted:#a9b1cf; --faint:#6e779a;
+  --virt:#e8b84a; --conc:#5bc8f5; --pers:#6bcb77; --sec:#f47fa0; --intro:#c9a8ff; --spec:#ffd166; --internals:#5bc8f5; --data:#6bcb77;
+  --ok:#6bcb77; --bad:#ff6b6b;
+  --accent:var(--virt);
+  --radius:6px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--ink);color:var(--paper);font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:17px;line-height:1.6}
+a{color:var(--accent)}
+code,pre,kbd,.mono{font-family:'IBM Plex Mono',ui-monospace,monospace}
+code{background:var(--ink-3);padding:1px 5px;border-radius:4px;font-size:.9em}
+pre{background:#0f1424;border:1px solid var(--line);border-left:4px solid var(--accent);padding:14px 16px;overflow:auto;border-radius:var(--radius);font-size:.86em;line-height:1.5}
+pre code{background:none;padding:0;font-size:inherit}
+h1,h2,h3,h4{font-family:'Fraunces',Georgia,serif;font-weight:700;line-height:1.15;margin:0 0 .4em}
+h1{font-size:2.6rem;letter-spacing:-.01em}
+h2{font-size:1.9rem;margin-top:2.6rem;padding-top:1.2rem;border-top:1px solid var(--line)}
+h3{font-size:1.3rem;margin-top:1.8rem;color:var(--accent)}
+h4{font-size:1.05rem;margin-top:1.2rem}
+p,li{max-width:72ch}
+.wrap{max-width:1100px;margin:0 auto;padding:0 28px 96px}
+.hero{padding:44px 0 16px}
+.hero .chapters{color:var(--muted);font-size:.95rem;margin-bottom:6px}
+.lede{font-size:1.2rem;color:var(--muted);max-width:66ch}
+.piece-lang{--accent:var(--spec)} .piece-jvm{--accent:var(--internals)} .piece-loom{--accent:var(--data)} .piece-spec{--accent:var(--spec)} .piece-internals{--accent:var(--internals)} .piece-data{--accent:var(--data)} .piece-virt{--accent:var(--virt)} .piece-conc{--accent:var(--conc)} .piece-pers{--accent:var(--pers)} .piece-sec{--accent:var(--sec)} .piece-intro{--accent:var(--intro)}
+.fig{background:var(--ink-2);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;margin:22px 0}
+.fig figcaption,.cap{color:var(--muted);font-size:.9rem;margin-top:10px}
+.fig svg{max-width:100%;height:auto;display:block}
+svg text{font-family:'IBM Plex Sans',sans-serif}
+svg .mono{font-family:'IBM Plex Mono',monospace}
+.crux{border:1px solid var(--accent);border-radius:var(--radius);padding:14px 18px;margin:22px 0;background:color-mix(in srgb,var(--accent) 8%,transparent)}
+.crux b{color:var(--accent)}
+.tip{border-left:4px solid var(--muted);padding:6px 16px;margin:18px 0;color:var(--muted)}
+.tip b{color:var(--paper)}
+table{border-collapse:collapse;width:100%;margin:16px 0;font-size:.95rem}
+th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{color:var(--muted);font-weight:500}
+td.mono,th.mono{font-family:'IBM Plex Mono',monospace}
+button,.btn{font:inherit;font-size:.9rem;background:var(--ink-3);color:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:7px 13px;cursor:pointer}
+button:hover{border-color:var(--accent)}
+button.primary{background:var(--accent);color:#111;border-color:var(--accent);font-weight:600}
+button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+input[type=range]{accent-color:var(--accent)}
+input[type=text],input[type=number],select{font:inherit;background:#0f1424;color:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:6px 10px}
+.controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:10px 0}
+.controls label{font-size:.9rem;color:var(--muted)}
+details{border:1px solid var(--line);border-radius:var(--radius);margin:10px 0;background:var(--ink-2)}
+summary{cursor:pointer;padding:12px 16px;font-weight:600;list-style:none}
+summary::before{content:"+";display:inline-block;width:1.2em;color:var(--accent)}
+details[open] summary::before{content:"–"}
+details>div{padding:0 16px 14px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;margin:16px 0}
+.card{perspective:900px;min-height:140px;cursor:pointer}
+.card .inner{position:relative;width:100%;height:100%;min-height:140px;transition:transform .45s;transform-style:preserve-3d}
+.card.flipped .inner{transform:rotateY(180deg)}
+.card .face{position:absolute;inset:0;padding:14px;border-radius:var(--radius);border:1px solid var(--line);background:var(--ink-2);backface-visibility:hidden;display:flex;align-items:center;justify-content:center;text-align:center;font-size:.95rem}
+.card .back{transform:rotateY(180deg);background:var(--ink-3);border-color:var(--accent);font-size:.88rem;line-height:1.45}
+.card .front{font-weight:600}
+@media (prefers-reduced-motion:reduce){.card .inner{transition:none}}
+.quiz .q{border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin:12px 0;background:var(--ink-2)}
+.quiz .q p{margin:0 0 10px;font-weight:600}
+.quiz .opts{display:grid;gap:8px}
+.quiz .opt{text-align:left;background:var(--ink);width:100%}
+.quiz .opt.right{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 15%,var(--ink))}
+.quiz .opt.wrong{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 15%,var(--ink))}
+.quiz .why{margin-top:10px;color:var(--muted);font-size:.93rem;display:none}
+.quiz .q.done .why{display:block}
+.quiz .score{margin-top:12px;font-weight:600}
+.stepper .stage{min-height:60px;background:#0f1424;border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin:10px 0}
+.stepper .idx{color:var(--muted);font-size:.85rem}
+.gantt{display:grid;gap:6px;margin:10px 0}
+.gantt .row{display:grid;grid-template-columns:60px 1fr;align-items:center;gap:8px;font-size:.85rem}
+.gantt .track{position:relative;height:26px;background:#0f1424;border-radius:4px;overflow:hidden}
+.gantt .seg{position:absolute;top:0;bottom:0;display:flex;align-items:center;justify-content:center;font-size:.75rem;color:#111;font-weight:600;border-right:1px solid rgba(0,0,0,.3)}
+.cells{display:grid;gap:4px;margin:10px 0}
+.cell{background:#0f1424;border:1px solid var(--line);border-radius:4px;padding:6px;text-align:center;font-family:'IBM Plex Mono',monospace;font-size:.8rem;min-height:36px;display:flex;align-items:center;justify-content:center}
+.cell.hit{background:color-mix(in srgb,var(--ok) 35%,#0f1424);border-color:var(--ok)}
+.cell.miss{background:color-mix(in srgb,var(--bad) 35%,#0f1424);border-color:var(--bad)}
+.cell.active{outline:2px solid var(--accent)}
+.cell.free{opacity:.45}
+.hl{background:color-mix(in srgb,var(--accent) 30%,transparent);padding:1px 5px;border-radius:3px}
+.k{color:var(--accent);font-weight:600}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media (max-width:760px){.two{grid-template-columns:1fr}.topbar{gap:10px}h1{font-size:2rem}}
+.nav-bottom{display:flex;justify-content:space-between;gap:16px;margin-top:56px;padding-top:20px;border-top:1px solid var(--line)}
+.nav-bottom a{text-decoration:none;padding:12px 16px;border:1px solid var(--line);border-radius:var(--radius);color:var(--paper)}
+.source{background:var(--ink-2);border-radius:var(--radius);padding:14px 18px;margin:22px 0;font-size:.95rem}
+.source b{color:var(--accent)}
+.objectives li{list-style:none;margin:6px 0}
+.objectives input{margin-right:8px;accent-color:var(--accent)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.85rem;color:var(--muted)}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:5px;vertical-align:-2px}
+.tag{display:inline-block;font-size:.75rem;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted);margin-right:6px}
+.log{font-family:'IBM Plex Mono',monospace;font-size:.82rem;background:#0f1424;border:1px solid var(--line);border-radius:var(--radius);padding:10px 12px;max-height:220px;overflow:auto;white-space:pre-wrap}
+@media print{body{background:#fff;color:#111}.topbar,.nav-bottom,button{display:none}.fig,.crux,details,.source{border-color:#bbb;background:#fff}pre{background:#f5f5f5;color:#111}}
+
+/* ---------- site chrome: sticky header + directory drawer ---------- */
+.topbar{position:sticky;top:0;z-index:30;display:flex;gap:14px;align-items:center;padding:10px 16px;background:color-mix(in srgb,var(--ink) 92%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);font-size:.9rem}
+.topbar .menu{display:flex;align-items:center;gap:8px;padding:8px 12px;font-size:1rem}
+.topbar .menu span{font-size:.85rem}
+.topbar .brand{color:var(--paper);text-decoration:none;font-weight:600;display:flex;align-items:center;gap:8px}
+.topbar .dot{width:10px;height:10px;border-radius:50%;background:var(--accent);display:inline-block}
+.topbar .links{display:flex;gap:16px;margin-left:8px}
+.topbar .links a{color:var(--muted);text-decoration:none}
+.topbar .links a:hover{color:var(--paper)}
+.topbar .where{margin-left:auto;color:var(--faint);font-variant-numeric:tabular-nums}
+.drawer{position:fixed;top:0;left:0;bottom:0;width:min(340px,88vw);background:var(--ink-2);border-right:1px solid var(--line);z-index:50;transform:translateX(-102%);transition:transform .25s;overflow-y:auto;padding:0 0 24px;box-shadow:0 0 40px rgba(0,0,0,.5)}
+.drawer-open .drawer{transform:none}
+.scrim{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:40;opacity:0;pointer-events:none;transition:opacity .2s}
+.drawer-open .scrim{opacity:1;pointer-events:auto}
+.drawer .dhead{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--ink-2)}
+.drawer .close,.notes-sheet .close{font-size:1.3rem;line-height:1;padding:4px 10px}
+.drawer .dgroup{padding:8px 0 4px}
+.drawer .dname{padding:8px 16px 4px;color:var(--accent);font-family:'Fraunces',serif;font-weight:700}
+.drawer .ditem{display:flex;gap:10px;align-items:center;padding:9px 16px;color:var(--paper);text-decoration:none;border-left:3px solid transparent;font-size:.92rem}
+.drawer .ditem:hover{background:var(--ink-3)}
+.drawer .ditem.cur{border-left-color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
+.drawer .ditem .n{color:var(--faint);min-width:1.4em;font-variant-numeric:tabular-nums}
+.drawer .ditem .t{flex:1;line-height:1.25}
+.drawer .ditem .t small{display:block;color:var(--faint);font-size:.75rem}
+.drawer .badges{display:flex;gap:6px;align-items:center}
+.drawer .badges i{font-style:normal;color:var(--accent)}
+.drawer .badges em{font-style:normal;font-size:.75rem;padding:1px 6px;border-radius:999px;background:var(--ink-3);color:var(--muted);font-variant-numeric:tabular-nums}
+.drawer .dfoot{padding:16px;color:var(--faint);font-size:.8rem}
+/* ---------- notes: floating button + bottom sheet ---------- */
+.notes-fab{position:fixed;right:16px;bottom:16px;z-index:35;display:flex;gap:8px;align-items:center;padding:12px 16px;border-radius:999px;background:var(--accent);color:#111;border:none;font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,.4)}
+.notes-sheet{position:fixed;left:0;right:0;bottom:0;z-index:45;background:var(--ink-2);border-top:1px solid var(--line);border-radius:14px 14px 0 0;transform:translateY(105%);transition:transform .25s;box-shadow:0 -10px 40px rgba(0,0,0,.5);max-width:900px;margin:0 auto;padding-bottom:env(safe-area-inset-bottom)}
+.notes-open .notes-sheet{transform:none}
+.notes-open .notes-fab{display:none}
+.notes-sheet .nhead{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line)}
+.notes-sheet .nhead b{flex:1;font-size:.95rem}
+.notes-sheet .nstatus{color:var(--faint);font-size:.8rem}
+.notes-sheet textarea{display:block;width:100%;min-height:36vh;max-height:60vh;resize:vertical;border:none;background:#0f1424;color:var(--paper);font:inherit;font-size:1rem;line-height:1.5;padding:14px 16px;outline:none}
+.notes-sheet .nfoot{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;font-size:.85rem;color:var(--muted)}
+/* ---------- wide widgets scroll sideways instead of breaking the page ---------- */
+.tw{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:16px 0}
+.tw table{margin:0;min-width:520px}
+.fig{overflow-x:auto}
+@media (prefers-reduced-motion:reduce){.drawer,.notes-sheet,.scrim{transition:none}}
+/* ---------- phones ---------- */
+@media (max-width:760px){
+  body{font-size:16px}
+  .wrap{padding:0 16px 110px}
+  h1{font-size:1.85rem} h2{font-size:1.45rem;margin-top:2rem} h3{font-size:1.15rem}
+  .lede{font-size:1.05rem}
+  .topbar{padding:8px 12px;gap:10px}
+  .topbar .links{display:none}
+  .topbar .menu span{display:none}
+  .topbar .menu{padding:8px 11px}
+  .fig{padding:12px 12px;margin:16px -4px;border-radius:8px}
+  .crux,.source{padding:12px 14px}
+  pre{font-size:.8em;padding:12px 12px}
+  button,.btn{padding:10px 14px;font-size:.92rem}
+  .controls{gap:8px}
+  .controls label{display:flex;align-items:center;gap:6px}
+  input[type=number]{max-width:96px}
+  .cards{grid-template-columns:1fr 1fr;gap:8px}
+  .card,.card .inner{min-height:120px}
+  .card .face{font-size:.88rem;padding:10px}
+  .cells{min-width:420px}
+  .quiz .opt{padding:12px 12px;line-height:1.35}
+  .nav-bottom{flex-direction:column}
+  .nav-bottom a{text-align:center}
+  .notes-fab span{display:none}
+  .notes-fab{padding:14px;right:12px;bottom:12px}
+  .notes-sheet textarea{min-height:44vh}
+  .stepper .stage{padding:12px}
+  .gantt .row{grid-template-columns:44px 1fr;font-size:.75rem}
+  /* lesson-specific grids collapse */
+  .lde,.il,.two,.cry,.flash,.dl,.fdt,.how,.cards.wide,.vm{grid-template-columns:1fr}
+  .map{grid-template-columns:1fr}
+  .net{grid-template-columns:1fr}.net .arrow{padding:0;transform:rotate(90deg)}
+  .phil{grid-template-columns:repeat(2,1fr)}
+  .jobs{max-width:100%}
+  .trace{min-width:620px}.tl{min-width:720px}.disk{min-width:560px}
+}
+@media (max-width:420px){.cards{grid-template-columns:1fr}}
+
+/* ---------- runnable Python ---------- */
+.pyrun{border:1px solid var(--line);border-radius:var(--radius);background:#0f1424;margin:18px 0;overflow:hidden}
+.pyrun .pyhead{display:flex;gap:10px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--line);font-size:.85rem;color:var(--muted);background:var(--ink-2)}
+.pyrun .pyhead span:first-child{flex:1;font-weight:600;color:var(--paper)}
+.pyrun .pystatus{font-size:.78rem}
+.pyrun textarea{display:block;width:100%;border:none;background:#0f1424;color:var(--paper);font-family:'IBM Plex Mono',monospace;font-size:.86rem;line-height:1.5;padding:12px 14px;resize:vertical;outline:none;min-height:60px;tab-size:4}
+.pyrun .pyout{font-family:'IBM Plex Mono',monospace;font-size:.86rem;line-height:1.5;padding:12px 14px;margin:0;border:none;border-top:1px solid var(--line);border-left:none;border-radius:0;background:#0a0e1a;color:#cfe3ff;max-height:none;overflow:auto}
+
+</style>
+<style>.ld{display:grid;grid-template-columns:1fr 1fr;gap:12px}.ld pre{margin:0}.tri td:first-child{font-family:'IBM Plex Mono',monospace;color:var(--accent)}.log{font-family:'IBM Plex Mono',monospace;font-size:.8rem;background:#0f1424;border:1px solid var(--line);border-radius:6px;padding:10px;min-height:150px;white-space:pre-wrap}@media(max-width:700px){.ld{grid-template-columns:1fr}}</style></head>
+<body class="piece-jvm"><div class="wrap">
+<header class="hero"><div class="chapters">JVMS 21 Chapter 5 Loading, Linking, and Initializing · JLS §12.4 Initialization of Classes and Interfaces</div>
+<h1>From bytes to a live class: loading, linking, initialization</h1>
+<p class="lede">A class file becomes a usable class in three phases the JVMS specifies precisely — <em>loading</em> (find bytes, create the class in the method area, via a class loader), <em>linking</em> (verify, prepare, resolve symbolic references, lazily), and <em>initialization</em> (run <code>&lt;clinit&gt;</code> exactly once, under a per-class lock, superclass first). Class loaders make a class's identity <em>&lt;name, defining loader&gt;</em>, which is what enables plugins, hot-swapping frameworks and modules — and what produces "ClassCastException: X cannot be cast to X".</p></header>
+<div class="source"><b>Primary source:</b> <a href="https://docs.oracle.com/javase/specs/jvms/se21/html/jvms-5.html">JVMS §5</a>, fetched in full — §5.3 creation and loading (bootstrap vs user-defined loaders, defining vs initiating loaders, loading constraints, derivation steps), §5.4 linking (verification, preparation, resolution, access control, method overriding/selection), §5.5 initialization (triggers and the 12-step procedure), §5.7 termination. JLS §12.4.1 for the language-level triggers.</div>
+<h2>What you'll be able to do</h2><ul id="obj"></ul>
+
+<h2>Loading: class loaders and identity</h2>
+<p>Creation of class C named N is triggered by some class D whose constant pool references N (or by reflection). For a non-array class the JVM asks a <b>class loader</b> to locate the bytes: the <b>bootstrap</b> loader (built into the JVM; <code>ClassNotFoundException</code> → <code>NoClassDefFoundError</code>) or a <b>user-defined</b> loader, an instance of a <code>ClassLoader</code> subclass whose <code>loadClass(N)</code> either loads C <em>directly</em> — obtains bytes and calls <code>defineClass</code> — or <em>delegates</em> to another loader. The loader that calls <code>defineClass</code> is C's <b>defining loader</b>; every loader on the delegation path that the JVM asked is an <b>initiating loader</b>. Array classes have no bytes; the JVM creates them, with the component type's defining loader.</p>
+<div class="crux"><b>Identity.</b> After creation a class is determined by the pair <em>&lt;binary name, defining loader&gt;</em>, and its <b>run-time package</b> by <em>&lt;package name, defining loader&gt;</em>. Two loaders that each define <code>com.x.Foo</code> from the same bytes produce two distinct classes; instances of one cannot be cast to the other. <b>Loading constraints</b> (§5.3.4) make this safe: when class C (loader L1) references a field/method of D (loader L2), every type name T in the descriptor must denote the same class through L1 and L2 (T<sup>L1</sup> = T<sup>L2</sup>); a violation is a <code>LinkageError</code>. Well-behaved loaders return the same <code>Class</code> for the same name every time.</div>
+<p><b>Derivation</b> (§5.3.5): the JVM parses the bytes (<code>ClassFormatError</code>; <code>UnsupportedClassVersionError</code>; <code>NoClassDefFoundError</code> if <code>this_class</code> ≠ N), resolves the superclass (<code>ClassCircularityError</code> if C is its own ancestor; <code>IncompatibleClassChangeError</code> if the superclass is an interface or final, if C is not among a sealed superclass's <code>PermittedSubclasses</code>, or if C overrides a final method), resolves superinterfaces, then marks L as defining loader and records L as initiating. <b>Modules</b> (§5.3.6): every class is in exactly one run-time package and thus one run-time module; unnamed modules read everything and export everything; access control is by module, not by loader. Since JDK 9 the platform loaders are bootstrap → platform → application (system), delegating parent-first by default.</p>
+<div class="fig"><h4>Delegation walk</h4><div class="controls"><select id="who"><option value="app">app code references java.util.List</option><option value="plugin">plugin loader (child of app) loads com.plugin.Main</option><option value="dup">two sibling loaders each define com.shared.Model</option></select></div><div class="ld"><div class="log" id="llog"></div><div class="cap" id="lmsg"></div></div></div>
+
+<h2>Linking: verify, prepare, resolve</h2>
+<p><b>Verification</b> (§5.4.1) checks the structural constraints of §4.9/4.10 (the StackMapTable type-checker from lesson 8); failure is a <code>VerifyError</code>, remembered so later attempts fail the same way. <b>Preparation</b> (§5.4.2) creates static fields with <em>default</em> values (no code runs — explicit initializers belong to initialization) and imposes loader constraints for overriding methods. <b>Resolution</b> (§5.4.3) turns symbolic references into concrete ones for <code>new</code>, <code>getfield</code>, <code>invoke*</code>, <code>checkcast</code>, <code>ldc</code>…; the spec allows lazy (per use) or eager strategies, and HotSpot is lazy: the first execution of an instruction resolves its constant-pool entry, and the result — or the error — is <b>memoized</b> (an <code>IllegalAccessError</code> stays even if the package is later exported dynamically). Field lookup: C, then superinterfaces recursively, then the superclass. Method lookup: C, then superclasses, then the <em>maximally-specific</em> superinterface methods (private and static interface methods are ignored); one non-abstract match wins, otherwise the choice is arbitrary. <code>invokedynamic</code> call sites are resolved <em>per instruction</em> by running the bootstrap method once (lesson 10). Then access control (§5.4.4): public + same module, or public + read/exported; package-private in the same run-time package; protected for subclasses; <b>private for nestmates</b> (NestHost/NestMembers — inner classes no longer need synthetic accessors).</p>
+<p>Three properties hold whatever the strategy: a class is completely loaded before it is linked; completely verified and prepared before it is initialized; and link errors are thrown where the program actually uses the class.</p>
+
+<h2>Initialization: exactly once, under a lock, parents first</h2>
+<table class="tri"><tr><th>Trigger (§5.5)</th><th>Which class</th></tr><tr><td>new</td><td>the class being instantiated</td></tr><tr><td>getstatic / putstatic / invokestatic</td><td>the class or interface that <em>declares</em> the resolved field/method (not the one named in source)</td></tr><tr><td>first invocation of a method handle</td><td>of kind REF_getStatic, putStatic, invokeStatic or newInvokeSpecial — so bootstrap classes are initialized when an invokedynamic site is linked</td></tr><tr><td>reflection</td><td><code>Class.forName</code>, <code>java.lang.reflect</code></td></tr><tr><td>initialization of a subclass</td><td>the superclass (recursively)</td></tr><tr><td>initialization of an implementing class</td><td>only superinterfaces that declare a <em>default</em> method</td></tr><tr><td>JVM startup</td><td>the initial class</td></tr></table>
+<p>Not triggers (JLS §12.4.1): reading a <em>constant variable</em> (inlined at compile time), referencing a static field declared in a <em>superclass</em> through a subclass name (only the declaring class initializes), array creation <code>new C[10]</code>, <code>C.class</code> literals, and <code>Class.forName(name, false, loader)</code>.</p>
+<div class="fig"><h4>The initialization procedure (§5.5), as a state machine</h4><div class="controls"><button class="primary" data-i="first">first use by thread T1</button><button data-i="concurrent">T2 arrives while T1 is initializing</button><button data-i="recursive">T1 re-enters during its own &lt;clinit&gt;</button><button data-i="error">&lt;clinit&gt; throws</button></div><div id="isteps"></div></div>
+<p>Two consequences worth memorizing. Because <code>&lt;clinit&gt;</code> runs under the class's initialization lock and a second thread <em>blocks</em> until it completes, the <b>lazy holder idiom</b> (<code>static class Holder { static final X INSTANCE = new X(); }</code>) is a correct, lock-free-after-the-first-time singleton. And because recursive requests from the initializing thread return immediately, a static initializer that (through another class) reads its own not-yet-assigned static field sees the <em>default</em> value — the source of "static field is null" mysteries in class-initialization cycles. If <code>&lt;clinit&gt;</code> throws, the class is marked <b>erroneous</b>: the first caller gets <code>ExceptionInInitializerError</code>, every later one <code>NoClassDefFoundError</code>.</p>
+<div id="py1"></div>
+
+<h2>Flash cards</h2><div id="cards"></div>
+<h2>Retrieval practice</h2><div id="quiz"></div>
+<p class="tip">Ask me in the chat to trace a real class-initialization deadlock, or to design a child-first class loader and explain which loading constraints it would trip.</p>
+</div>
+<script>
+/* Java 21 course — shared components (from the OSTEP course). Every page loads this file (inlined by build.py). */
+window.OS = (function () {
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+  /* ---------- persistent storage (localStorage on a real site; in-memory fallback in sandboxes) ---------- */
+  const mem = {};
+  const store = {
+    get(k) { try { const v = localStorage.getItem('java21:' + k); return v === null ? (mem[k] ?? null) : JSON.parse(v); } catch (e) { return mem[k] ?? null; } },
+    set(k, v) { mem[k] = v; try { localStorage.setItem('java21:' + k, JSON.stringify(v)); } catch (e) {} },
+    del(k) { delete mem[k]; try { localStorage.removeItem('java21:' + k); } catch (e) {} },
+    keys(prefix) { const out = new Set(Object.keys(mem).filter(k => k.startsWith(prefix))); try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith('java21:' + prefix)) out.add(k.slice(6)); } } catch (e) {} return [...out]; },
+    available() { try { localStorage.setItem('java21:test', '1'); localStorage.removeItem('java21:test'); return true; } catch (e) { return false; } }
+  };
+
+  /* ---------- course structure ---------- */
+  const PIECES = [
+    ['lang', 'The language, as specified (JLS 21)', [
+      ['0001-types-values-variables', 'Types, values, variables', 'JLS ch 4, 5'],
+      ['0002-classes-objects-initialization', 'Classes, objects, initialization order', 'JLS ch 8, 12'],
+      ['0003-records-sealed-interfaces', 'Records, sealed types, interfaces', 'JLS §8.10, §8.1.1.2, ch 9'],
+      ['0004-generics-and-erasure', 'Generics, wildcards, erasure', 'JLS §4.5–4.10, §8.4.8.3'],
+      ['0005-expressions-exceptions-switch', 'Expressions, exceptions, switch & patterns', 'JLS ch 11, 14, 15; JEPs 440/441'],
+      ['0006-lambdas-streams', 'Lambdas, method references, streams', 'JLS §15.27, §15.13, java.util.stream'],
+      ['0007-java-memory-model', 'The Java memory model', 'JLS ch 17']]],
+    ['jvm', 'The JVM (JVMS 21 + HotSpot)', [
+      ['0008-class-files-and-bytecode', 'Class files and bytecode', 'JVMS ch 4, 6'],
+      ['0009-loading-linking-initialization', 'Loading, linking, initialization, class loaders', 'JVMS ch 5'],
+      ['0010-execution-frames-invokedynamic', 'Execution: frames, invoke*, invokedynamic', 'JVMS ch 2, 5.4.3, 6'],
+      ['0011-hotspot-jit', 'HotSpot: interpreter, C1/C2, deoptimization', 'compilationPolicy.cpp, c2_globals.hpp'],
+      ['0012-heap-gc-generational-zgc', 'Objects, heap, GC, Generational ZGC', 'markWord.hpp, gcConfig.cpp, JEP 439']]],
+    ['loom', 'Java 21: virtual threads and new features', [
+      ['0013-virtual-threads-model', 'Virtual threads: the model (JEP 444)', 'JEP 444'],
+      ['0014-virtual-threads-internals', 'Virtual threads: continuations, carriers, scheduler', 'VirtualThread.java, Continuation.java, freeze/thaw'],
+      ['0015-structured-concurrency-scoped-values', 'Structured concurrency & scoped values', 'StructuredTaskScope, ScopedValue (preview)'],
+      ['0016-concurrency-toolkit', 'The concurrency toolkit: monitors, locks, executors', 'JLS §17.1–17.3, java.util.concurrent'],
+      ['0017-java-21-features', 'What Java 21 adds', 'JEPs 431, 440, 441, 442, 443, 445, 446, 453']]]
+  ];
+  const LESSONS = PIECES.flatMap(p => p[2].map(l => [l[0], l[1], p[0], l[2]]));
+  const title = id => (LESSONS.find(l => l[0] === id) || [])[1] || id;
+  let pageId = null, root = '../';
+
+  /* ---------- chrome: sticky header, slide-out directory, notes drawer, prev/next ---------- */
+  function chrome(id, rootPath) {
+    pageId = id; root = rootPath === undefined ? '../' : rootPath;
+    const i = LESSONS.findIndex(l => l[0] === id);
+    const isLesson = i >= 0;
+    const top = document.createElement('header'); top.className = 'topbar';
+    top.innerHTML = `<button class="menu" aria-label="Open directory" aria-expanded="false">☰<span>Directory</span></button>
+      <a class="brand" href="${root}index.html"><span class="dot"></span>Java 21 course</a>
+      <nav class="links"><a href="${root}reference/glossary.html">Glossary</a><a href="${root}reference/cheatsheets.html">Cheat sheets</a><a href="${root}notes.html">My notes</a></nav>
+      ${isLesson ? `<span class="where">${i+1} / ${LESSONS.length}</span>` : ''}`;
+    document.body.prepend(top);
+    // directory drawer
+    const drawer = document.createElement('aside'); drawer.className = 'drawer'; drawer.setAttribute('aria-label', 'Course directory');
+    const scores = Object.fromEntries(LESSONS.map(l => [l[0], store.get('quiz:' + l[0])]));
+    const notes = new Set(store.keys('notes:').map(k => k.slice(6)).filter(k => (store.get('notes:' + k) || {}).text));
+    drawer.innerHTML = `<div class="dhead"><b>Directory</b><button class="close" aria-label="Close">×</button></div>
+      <a class="ditem ${id === 'index' ? 'cur' : ''}" href="${root}index.html">Course hub</a>
+      ${PIECES.map(([cls, name, ls]) => `<div class="dgroup piece-${cls}"><div class="dname">${name}</div>${ls.map(l => {
+        const n = LESSONS.findIndex(x => x[0] === l[0]) + 1, s = scores[l[0]];
+        return `<a class="ditem ${l[0] === id ? 'cur' : ''}" href="${root}lessons/${l[0]}.html"><span class="n">${n}</span><span class="t">${l[1]}<small>${l[3]}</small></span><span class="badges">${notes.has(l[0]) ? '<i title="you have notes">✎</i>' : ''}${s ? `<em title="best quiz score">${s.score}/${s.total}</em>` : ''}</span></a>`; }).join('')}</div>`).join('')}
+      <div class="dgroup piece-intro"><div class="dname">Reference</div>
+        <a class="ditem ${id === 'glossary' ? 'cur' : ''}" href="${root}reference/glossary.html"><span class="t">Glossary</span></a>
+        <a class="ditem ${id === 'cheatsheets' ? 'cur' : ''}" href="${root}reference/cheatsheets.html"><span class="t">Cheat sheets</span></a>
+        <a class="ditem ${id === 'notes' ? 'cur' : ''}" href="${root}notes.html"><span class="t">My notes &amp; progress</span></a></div>
+      <div class="dfoot">${store.available() ? 'Notes and scores are saved in this browser.' : 'Notes and scores are kept for this session only (storage unavailable here).'}</div>`;
+    document.body.append(drawer);
+    const scrim = document.createElement('div'); scrim.className = 'scrim'; document.body.append(scrim);
+    const open = o => { document.body.classList.toggle('drawer-open', o); top.querySelector('.menu').setAttribute('aria-expanded', o); if (o) drawer.querySelector('.cur, .ditem')?.focus(); };
+    top.querySelector('.menu').onclick = () => open(!document.body.classList.contains('drawer-open'));
+    drawer.querySelector('.close').onclick = () => open(false); scrim.onclick = () => open(false);
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') { open(false); notesOpen(false); } });
+    // prev/next for lessons
+    if (isLesson) {
+      const nav = document.createElement('div'); nav.className = 'nav-bottom';
+      const prev = LESSONS[i-1], next = LESSONS[i+1];
+      nav.innerHTML = (prev ? `<a href="${prev[0]}.html">← ${i}. ${prev[1]}</a>` : '<span></span>') +
+                      (next ? `<a href="${next[0]}.html">${i+2}. ${next[1]} →</a>` : `<a href="${root}index.html">Back to course hub →</a>`);
+      document.querySelector('.wrap').append(nav);
+    }
+    // wrap tables so they scroll sideways on phones
+    document.querySelectorAll('.wrap table').forEach(t => { if (t.parentElement.classList.contains('tw')) return; const w = document.createElement('div'); w.className = 'tw'; t.replaceWith(w); w.append(t); });
+    // notes drawer (every page except the notes page itself)
+    if (id !== 'notes') notesUI(id, isLesson ? `${i+1}. ${LESSONS[i][1]}` : (document.title.split(' — ')[0]));
+  }
+
+  /* ---------- notes: floating button + bottom sheet, autosaved ---------- */
+  let notesOpen = () => {};
+  function notesUI(id, label) {
+    const btn = document.createElement('button'); btn.className = 'notes-fab'; btn.innerHTML = '✎ <span>Notes</span>'; btn.setAttribute('aria-label', 'Open notes');
+    const sheet = document.createElement('section'); sheet.className = 'notes-sheet'; sheet.setAttribute('aria-label', 'Notes for this page');
+    const saved = store.get('notes:' + id) || {};
+    sheet.innerHTML = `<div class="nhead"><b>Notes · ${esc(label)}</b><span class="nstatus"></span><button class="close" aria-label="Close notes">×</button></div>
+      <textarea placeholder="Your notes for this page. Markdown is fine. Saved automatically.">${esc(saved.text || '')}</textarea>
+      <div class="nfoot"><span class="ncount"></span><a href="${root}notes.html">All notes &amp; export →</a></div>`;
+    document.body.append(btn, sheet);
+    const ta = sheet.querySelector('textarea'), status = sheet.querySelector('.nstatus'), count = sheet.querySelector('.ncount');
+    const upd = () => { count.textContent = ta.value.trim() ? ta.value.trim().split(/\s+/).length + ' words' : ''; };
+    let t; ta.addEventListener('input', () => { status.textContent = 'saving…'; clearTimeout(t); t = setTimeout(() => { store.set('notes:' + id, { text: ta.value, title: label, updated: new Date().toISOString() }); status.textContent = 'saved'; upd(); }, 400); });
+    upd();
+    notesOpen = o => { document.body.classList.toggle('notes-open', o); if (o) ta.focus(); };
+    btn.onclick = () => notesOpen(!document.body.classList.contains('notes-open'));
+    sheet.querySelector('.close').onclick = () => notesOpen(false);
+  }
+
+  /* ---------- quiz: immediate feedback; best score persisted ---------- */
+  function quiz(el, qs) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('quiz');
+    let score = 0, answered = 0;
+    const best = pageId ? store.get('quiz:' + pageId) : null;
+    el.innerHTML = qs.map((q, i) => `<div class="q" data-i="${i}"><p>${i+1}. ${q.q}</p>
+      <div class="opts">${q.o.map((o, j) => `<button class="opt" data-j="${j}">${esc(o)}</button>`).join('')}</div>
+      <div class="why">${q.why}</div></div>`).join('') + `<div class="score">${best ? `Best so far: ${best.score}/${best.total} (${new Date(best.date).toLocaleDateString()})` : ''}</div>`;
+    el.querySelectorAll('.q').forEach(qd => {
+      const q = qs[+qd.dataset.i];
+      qd.querySelectorAll('.opt').forEach(b => b.addEventListener('click', () => {
+        if (qd.classList.contains('done')) return;
+        qd.classList.add('done'); answered++;
+        const j = +b.dataset.j;
+        if (j === q.a) { b.classList.add('right'); score++; }
+        else { b.classList.add('wrong'); qd.querySelectorAll('.opt')[q.a].classList.add('right'); }
+        const s = el.querySelector('.score');
+        s.textContent = `${score} / ${answered} correct`;
+        if (answered === qs.length) {
+          s.textContent += score === qs.length ? ' — all of them. Retry from memory in two days.' : ' — reread the sections you missed, then retry.';
+          if (pageId && (!best || score >= best.score)) store.set('quiz:' + pageId, { score, total: qs.length, date: new Date().toISOString() });
+        }
+      }));
+    });
+  }
+
+
+  /* ---------- Java code blocks: annotated, copyable, with a jshell hint (no JVM in the browser) ---------- */
+  function py(el, code, opts) {
+    el = typeof el === 'string' ? document.getElementById(el) : el; opts = opts || {};
+    el.classList.add('pyrun');
+    const src = code.trim();
+    const preview = /--enable-preview|StructuredTaskScope|ScopedValue|STR\./.test(src);
+    el.innerHTML = `<div class="pyhead"><span>Java 21${preview ? ' · needs --enable-preview' : ''}${opts.note ? ' · ' + esc(opts.note) : ''}</span><span class="pystatus">paste into jshell or a scratch file</span><button class="primary copy">Copy</button></div><pre class="pyout" style="display:block;white-space:pre-wrap;margin:0"><code>${esc(src)}</code></pre>`;
+    el.querySelector('.copy').onclick = () => { navigator.clipboard && navigator.clipboard.writeText(src).then(() => { el.querySelector('.pystatus').textContent = 'copied'; }).catch(() => {}); };
+  }
+
+  /* ---------- flip cards ---------- */
+  function cards(el, list) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('cards');
+    el.innerHTML = list.map(([f, b]) => `<div class="card" tabindex="0" role="button" aria-label="flip card"><div class="inner"><div class="face front">${f}</div><div class="face back">${b}</div></div></div>`).join('');
+    el.querySelectorAll('.card').forEach(c => {
+      const t = () => c.classList.toggle('flipped');
+      c.addEventListener('click', t);
+      c.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); t(); } });
+    });
+  }
+
+  /* ---------- stepper ---------- */
+  function stepper(el, steps, render) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('stepper');
+    let i = 0;
+    el.innerHTML = `<div class="controls"><button class="prev">← Back</button><button class="next primary">Next step →</button><span class="idx"></span></div><div class="stage"></div><div class="extra"></div>`;
+    const stage = el.querySelector('.stage'), idx = el.querySelector('.idx'), extra = el.querySelector('.extra');
+    const draw = () => { stage.innerHTML = steps[i]; idx.textContent = `step ${i+1} / ${steps.length}`; if (render) render(i, extra); };
+    el.querySelector('.prev').onclick = () => { i = Math.max(0, i-1); draw(); };
+    el.querySelector('.next').onclick = () => { i = Math.min(steps.length-1, i+1); draw(); };
+    draw();
+  }
+
+  /* ---------- gantt ---------- */
+  function gantt(el, rows, total, colors) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('gantt');
+    const pal = colors || ['#e8b84a','#5bc8f5','#6bcb77','#f47fa0','#c9a8ff','#ffb86b'];
+    el.innerHTML = rows.map((r, i) => `<div class="row"><span>${esc(r.name)}</span><div class="track">${r.segs.map(s =>
+      `<div class="seg" style="left:${100*s.start/total}%;width:${100*(s.end-s.start)/total}%;background:${pal[i%pal.length]}" title="${s.start}–${s.end}">${(s.end-s.start)/total > .06 ? (s.end-s.start) : ''}</div>`).join('')}</div></div>`).join('') +
+      `<div class="row"><span></span><div style="display:flex;justify-content:space-between;font-size:.75rem;color:var(--muted)"><span>0</span><span>${total}</span></div></div>`;
+  }
+
+  /* ---------- objectives checklist (persisted) ---------- */
+  function objectives(el, items) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('objectives');
+    const saved = (pageId && store.get('obj:' + pageId)) || [];
+    el.innerHTML = items.map((t, i) => `<li><label><input type="checkbox" data-i="${i}" ${saved.includes(i) ? 'checked' : ''}>${t}</label></li>`).join('');
+    el.querySelectorAll('input').forEach(c => c.onchange = () => { const s = [...el.querySelectorAll('input:checked')].map(x => +x.dataset.i); if (pageId) store.set('obj:' + pageId, s); });
+  }
+
+  return { chrome, quiz, cards, stepper, gantt, objectives, py, esc, store, LESSONS, PIECES, title };
+})();
+
+</script>
+<script>
+OS.chrome('0009-loading-linking-initialization');
+OS.objectives('obj',['Distinguish bootstrap vs user-defined loaders, defining vs initiating loaders, and why identity is <name, loader>.','List the derivation checks and the errors they raise; explain loading constraints and run-time packages/modules.','Describe verification, preparation and lazy memoized resolution, plus field/method lookup order and access control.','Enumerate initialization triggers and non-triggers, and the 12-step locked procedure including recursion and erroneous state.','Explain why the lazy holder idiom is thread-safe and why cyclic static initialization can read defaults.']);
+const L={app:{log:`app loader: loadClass("java.util.List")
+  → already recorded as initiating loader? no
+  → delegate to parent (platform loader)
+     → delegate to parent (bootstrap)
+        → bootstrap finds java.base's List; defines it
+  → platform records itself as initiating loader
+→ app records itself as initiating loader
+result: <java.util.List, bootstrap>`,m:'Parent-first delegation: all three loaders are initiating loaders, only bootstrap is the defining loader. Two applications therefore share one java.util.List class.'},plugin:{log:`plugin loader: loadClass("com.plugin.Main")
+  → parent (app loader) → parent (platform) → bootstrap: not found
+  ← ClassNotFoundException bubbles back to plugin loader
+  → plugin loader locates plugin.jar!/com/plugin/Main.class
+  → defineClass(bytes) → JVM derives the class (§5.3.5)
+      parse, version check, resolve superclass/superinterfaces,
+      PermittedSubclasses/final checks
+result: <com.plugin.Main, plugin loader>; run-time package (com.plugin, plugin loader)`,m:'The plugin\'s classes can see the app\'s (via delegation) but not vice versa. Its run-time package is distinct from any com.plugin defined by another loader.'},dup:{log:`loader A: defineClass("com.shared.Model") → <Model, A>
+loader B: defineClass("com.shared.Model") → <Model, B>
+app code: Model m = (Model) objFromB;   // Model resolved via loader A
+  → checkcast <Model, A> against an instance of <Model, B>
+  → ClassCastException: com.shared.Model cannot be cast to com.shared.Model
+If A's class passes a Model to a method in B's class:
+  → loading constraint Model^A = Model^B imposed at resolution
+  → violated → LinkageError (loader constraint violation)`,m:'Same name, different defining loaders = different classes. Share such types through a common parent loader instead.'}};
+function ll(){const k=document.getElementById('who').value;document.getElementById('llog').textContent=L[k].log;document.getElementById('lmsg').textContent=L[k].m;}document.getElementById('who').onchange=ll;ll();
+const IS={first:['1. T1 acquires the class\'s init lock LC.','2–5. State is "verified & prepared, not initialized" → 6. mark "in progress by T1", release LC.','6b. Set each static final with a ConstantValue attribute (constant variables).','7. Initialize the superclass, then superinterfaces that declare default methods (recursively, same procedure).','8. Determine whether assertions are enabled (from the defining loader).','9. Execute <clinit>: static field initializers and static blocks in textual order.','10. Acquire LC, mark "fully initialized", notify waiters, release LC.'],concurrent:['1. T2 acquires LC.','2. State says "in progress by T1 (another thread)" → T2 releases LC and BLOCKS until notified.','… T1 finishes step 10 and notifies all waiters …','T2 repeats the procedure: step 4 "already initialized" → release LC, proceed. (This is the guarantee behind the lazy holder singleton idiom.)'],recursive:['1. T1 (already initializing C) triggers C again — e.g. C\'s <clinit> touches class D whose <clinit> reads C.FIELD.','3. State says "in progress by the CURRENT thread" → treated as a recursive request: release LC and return normally at once.','D therefore reads C.FIELD before C\'s initializer assigned it: it sees the DEFAULT value (0/null/false). No error is raised.'],error:['9. <clinit> throws exception E.','11. If E is not an Error, wrap it: new ExceptionInInitializerError(E) (or an OutOfMemoryError if that allocation fails).','12. Acquire LC, mark the class ERRONEOUS, notify waiters, release LC, complete abruptly with E.','Later attempts: step 5 finds the erroneous state → NoClassDefFoundError (with no useful message — look for the earlier ExceptionInInitializerError).']};
+document.querySelectorAll('[data-i]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-i]').forEach(x=>x.classList.remove('primary'));b.classList.add('primary');OS.stepper('isteps',IS[b.dataset.i]);});OS.stepper('isteps',IS.first);
+OS.py('py1',`// Paste into a scratch project to observe initialization order and triggers (java -verbose:class shows loading).
+class Parent { static { System.out.println("Parent <clinit>"); } static int P = 1; static final int K = 7; }
+class Child extends Parent { static { System.out.println("Child <clinit>"); } static int C = 2; }
+public class Demo {
+    public static void main(String[] a) throws Exception {
+        System.out.println(Parent.K);      // 7 — constant variable inlined: NO initialization
+        Object o = new Child[3];           // array creation: NO initialization
+        Class<?> c = Child.class;          // literal: NO initialization
+        System.out.println(Child.P);       // getstatic resolves to Parent.P → only "Parent <clinit>" prints
+        System.out.println(Child.C);       // now "Child <clinit>" (superclass already done)
+        Class.forName("Lazy");             // reflection initializes; forName(name, false, loader) would not
+    }
+}
+class Lazy {
+    private static final Lazy INSTANCE = new Lazy();        // thread-safe: <clinit> runs once under the init lock
+    static { System.out.println("Lazy <clinit>"); }
+    static Lazy get() { return INSTANCE; }
+}
+class Cycle { static int x = Other.y + 1; }                 // Cycle.<clinit> → Other.<clinit> → reads Cycle.x
+class Other { static int y = Cycle.x + 1; }                 //   recursive request returns at once: Cycle.x is 0 here`);
+OS.cards('cards',[['Defining vs initiating loader','The loader that calls defineClass defines the class; every loader the JVM asked (including delegators that were asked) initiates it.'],['Class identity','<binary name, defining loader>; run-time package = <package, loader>; same bytes in two loaders = two classes.'],['Loading constraint','T^L1 = T^L2 for types in field/method descriptors shared across loaders; violation → LinkageError.'],['Derivation errors','ClassFormatError, UnsupportedClassVersionError, NoClassDefFoundError (name mismatch), ClassCircularityError, IncompatibleClassChangeError (final/interface superclass, sealed, final override).'],['Preparation','Static fields created with default values; no code runs; loader constraints imposed for overriding methods.'],['Resolution','Lazy or eager; symbolic → concrete for new/getfield/invoke*/ldc…; results and errors memoized; invokedynamic per instruction.'],['Access control','public+same module or read/exported; package-private same run-time package; protected subclass; private nestmates.'],['Initialization triggers','new; getstatic/putstatic/invokestatic on the declaring class; static method handles; reflection; subclass init; implementing class of an interface with default methods; initial class.'],['Init lock procedure','Wait if another thread is initializing; return if recursive; NoClassDefFoundError if erroneous; ConstantValues → superclass → <clinit> → done; exception ⇒ ExceptionInInitializerError + erroneous.']]);
+OS.quiz('quiz',[
+{q:'Two class loaders each define com.x.Foo from identical bytes. How many classes exist?',o:['one, they are deduplicated','two distinct classes; casting between them fails','one, plus an alias','it depends on the parent'],a:1,why:'A class is identified by name and defining loader (§5.3); different loaders yield different classes and run-time packages.'},
+{q:'Reading Child.P where P is declared in Parent triggers initialization of:',o:['Child only','Parent only','both','neither'],a:1,why:'getstatic initializes the class that declares the resolved field (§5.5), so only Parent runs <clinit>.'},
+{q:'During preparation, a static int field with initializer 42 holds:',o:['42','0 (default); the initializer runs in <clinit>','an uninitialized marker','42 only if final'],a:1,why:'Preparation creates statics with default values; explicit initializers execute during initialization — unless it is a constant variable set via ConstantValue in step 6.'},
+{q:'Thread T2 requests initialization of a class that T1 is currently initializing. T2:',o:['runs <clinit> concurrently','blocks on the init lock until T1 completes','gets an IllegalStateException','skips initialization'],a:1,why:'Step 2 of §5.5: release LC and block until informed that the in-progress initialization completed; then re-run the procedure.'},
+{q:'A class\'s static initializer indirectly reads one of its own static fields before assigning it. The read returns:',o:['an ExceptionInInitializerError','the default value (recursive request returns immediately)','the initializer\'s value','a compile error'],a:1,why:'Step 3: a recursive request by the initializing thread completes normally at once, so the partially initialized class is observed.'},
+{q:'<clinit> throws a RuntimeException. The first caller sees X and later callers see Y:',o:['X = RuntimeException, Y = RuntimeException','X = ExceptionInInitializerError, Y = NoClassDefFoundError','X = NoClassDefFoundError, Y = ExceptionInInitializerError','both see LinkageError'],a:1,why:'Non-Error exceptions are wrapped in ExceptionInInitializerError; the class is marked erroneous, and step 5 later throws NoClassDefFoundError.'},
+{q:'A resolution attempt fails with IllegalAccessError; the package is then exported dynamically. Retrying:',o:['succeeds now','fails with the same error (resolution errors are memoized)','throws LinkageError','re-runs class loading'],a:1,why:'§5.4.3: subsequent attempts to resolve a symbolic reference always fail with the same error as the initial attempt.'},
+{q:'Which superinterfaces are initialized when a class is initialized?',o:['all superinterfaces','only those declaring a non-abstract, non-static (default) method','none','only direct superinterfaces'],a:1,why:'Step 7 initializes the superclass and superinterfaces that declare default methods; interfaces with only abstract/static members are skipped.'}]);
+</script></body></html>

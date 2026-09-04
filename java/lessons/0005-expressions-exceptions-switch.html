@@ -1,11 +1,11 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>OSTEP course — Operating Systems: Three Easy Pieces, taught interactively</title><style>
+<title>5 · Expressions, exceptions, pattern switch — Java 21 course</title><style>
 /* OSTEP course — shared stylesheet. Three pieces, three hues. */
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
 :root{
   --ink:#151b2f; --ink-2:#1e2540; --ink-3:#28304f; --line:#3a4368;
   --paper:#eef0f7; --muted:#a9b1cf; --faint:#6e779a;
-  --virt:#e8b84a; --conc:#5bc8f5; --pers:#6bcb77; --sec:#f47fa0; --intro:#c9a8ff;
+  --virt:#e8b84a; --conc:#5bc8f5; --pers:#6bcb77; --sec:#f47fa0; --intro:#c9a8ff; --spec:#ffd166; --internals:#5bc8f5; --data:#6bcb77;
   --ok:#6bcb77; --bad:#ff6b6b;
   --accent:var(--virt);
   --radius:6px;
@@ -28,7 +28,7 @@ p,li{max-width:72ch}
 .hero{padding:44px 0 16px}
 .hero .chapters{color:var(--muted);font-size:.95rem;margin-bottom:6px}
 .lede{font-size:1.2rem;color:var(--muted);max-width:66ch}
-.piece-virt{--accent:var(--virt)} .piece-conc{--accent:var(--conc)} .piece-pers{--accent:var(--pers)} .piece-sec{--accent:var(--sec)} .piece-intro{--accent:var(--intro)}
+.piece-lang{--accent:var(--spec)} .piece-jvm{--accent:var(--internals)} .piece-loom{--accent:var(--data)} .piece-spec{--accent:var(--spec)} .piece-internals{--accent:var(--internals)} .piece-data{--accent:var(--data)} .piece-virt{--accent:var(--virt)} .piece-conc{--accent:var(--conc)} .piece-pers{--accent:var(--pers)} .piece-sec{--accent:var(--sec)} .piece-intro{--accent:var(--intro)}
 .fig{background:var(--ink-2);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;margin:22px 0}
 .fig figcaption,.cap{color:var(--muted);font-size:.9rem;margin-top:10px}
 .fig svg{max-width:100%;height:auto;display:block}
@@ -182,69 +182,111 @@ details>div{padding:0 16px 14px}
 }
 @media (max-width:420px){.cards{grid-template-columns:1fr}}
 
+/* ---------- runnable Python ---------- */
+.pyrun{border:1px solid var(--line);border-radius:var(--radius);background:#0f1424;margin:18px 0;overflow:hidden}
+.pyrun .pyhead{display:flex;gap:10px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--line);font-size:.85rem;color:var(--muted);background:var(--ink-2)}
+.pyrun .pyhead span:first-child{flex:1;font-weight:600;color:var(--paper)}
+.pyrun .pystatus{font-size:.78rem}
+.pyrun textarea{display:block;width:100%;border:none;background:#0f1424;color:var(--paper);font-family:'IBM Plex Mono',monospace;font-size:.86rem;line-height:1.5;padding:12px 14px;resize:vertical;outline:none;min-height:60px;tab-size:4}
+.pyrun .pyout{font-family:'IBM Plex Mono',monospace;font-size:.86rem;line-height:1.5;padding:12px 14px;margin:0;border:none;border-top:1px solid var(--line);border-left:none;border-radius:0;background:#0a0e1a;color:#cfe3ff;max-height:none;overflow:auto}
+
 </style>
-<style>.map{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:24px 0}.piece{border:1px solid var(--line);border-radius:8px;padding:16px;background:var(--ink-2);border-top:4px solid var(--accent)}.piece h3{margin:0 0 4px;color:var(--accent)}.piece p{font-size:.9rem;color:var(--muted);margin:0 0 10px}.piece a{display:block;text-decoration:none;color:var(--paper);padding:6px 0;border-top:1px solid var(--line);font-size:.92rem}.piece a:hover{color:var(--accent)}.piece a small{display:block;color:var(--faint);font-size:.78rem}.piece a.done::after{content:" ✓";color:var(--ok)}.how{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}.how .fig{margin:0}.how h4{margin:0 0 6px}@media(max-width:900px){.map{grid-template-columns:1fr 1fr}.how{grid-template-columns:1fr}}@media(max-width:600px){.map{grid-template-columns:1fr}}.big{font-size:1.05rem}</style></head>
-<body class="piece-intro"><div class="wrap">
-<header class="hero"><div class="chapters">Operating Systems: Three Easy Pieces · Remzi H. and Andrea C. Arpaci-Dusseau (v1.10, 2023) · security chapters by Peter Reiher</div>
-<h1>The whole book, as sixteen interactive lessons</h1>
-<p class="lede big">Built from the text of all 57 chapters plus the VMM appendix — every "crux", every summary, every number in the figures was extracted from the chapter PDFs, not recalled. Each lesson is short, visual, and ends in retrieval practice. Do them in order; the book's pieces build on each other.</p></header>
+<style>.sw{display:grid;grid-template-columns:1fr 1fr;gap:12px}.sw pre{margin:0}.lbl{display:grid;gap:5px}.lbl div{padding:7px 10px;border:1px solid var(--line);border-radius:6px;background:#0f1424;font-family:'IBM Plex Mono',monospace;font-size:.82rem}.lbl div.hit{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 15%,#0f1424)}.lbl div.dom{border-color:var(--bad);text-decoration:line-through;opacity:.7}.exc{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;font-size:.85rem}.exc div{background:#0f1424;border:1px solid var(--line);border-radius:6px;padding:8px}.exc b{display:block;color:var(--accent)}@media(max-width:700px){.sw,.exc{grid-template-columns:1fr}}</style></head>
+<body class="piece-lang"><div class="wrap">
+<header class="hero"><div class="chapters">JLS SE 21 · Chapter 15 Expressions (§15.7 evaluation order, §15.26 assignment) · Chapter 14 Statements (§14.11 switch, §14.20 try, §14.30 patterns) · Chapter 11 Exceptions · JEP 441 Pattern Matching for switch · JEP 440 Record Patterns</div>
+<h1>Expressions, exceptions, and the new switch</h1>
+<p class="lede">Three things the JLS pins down that other languages leave loose: the exact left-to-right evaluation order of every expression, the checked/unchecked exception discipline with <code>try</code>'s precise semantics, and — since Java 21 — <code>switch</code> as a full pattern-matching construct with type patterns, record patterns, guards, <code>null</code> handling, dominance rules and compile-time exhaustiveness. This lesson uses JEP 441's own examples, fetched from the JEP text.</p></header>
+<div class="source"><b>Primary sources:</b> <a href="https://docs.oracle.com/javase/specs/jls/se21/html/jls-15.html">JLS ch 15</a> (§15.7 Evaluation Order, §15.7.1 left operand first, §15.7.4 argument lists), <a href="https://docs.oracle.com/javase/specs/jls/se21/html/jls-14.html#jls-14.20">§14.20 try</a>, <a href="https://docs.oracle.com/javase/specs/jls/se21/html/jls-11.html">ch 11 Exceptions</a> (§11.1.1 kinds, §11.2 compile-time checking), <a href="https://openjdk.org/jeps/441">JEP 441</a> and <a href="https://openjdk.org/jeps/440">JEP 440</a> (text read from the JDK bug tracker mirror).</div>
+<h2>What you'll be able to do</h2><ul id="obj"></ul>
 
-<figure class="fig"><svg viewBox="0 0 900 150" role="img" aria-label="three pieces">
-<rect x="20" y="30" width="270" height="90" rx="8" fill="#e8b84a"/><text x="155" y="68" text-anchor="middle" fill="#111" font-size="20" font-weight="700" font-family="Fraunces,serif">Virtualization</text><text x="155" y="95" text-anchor="middle" fill="#111" font-size="13">CPU (ch 4–10) · Memory (ch 13–23)</text>
-<rect x="315" y="30" width="270" height="90" rx="8" fill="#5bc8f5"/><text x="450" y="68" text-anchor="middle" fill="#111" font-size="20" font-weight="700" font-family="Fraunces,serif">Concurrency</text><text x="450" y="95" text-anchor="middle" fill="#111" font-size="13">threads, locks, CVs, semaphores, bugs (ch 26–33)</text>
-<rect x="610" y="30" width="270" height="90" rx="8" fill="#6bcb77"/><text x="745" y="68" text-anchor="middle" fill="#111" font-size="20" font-weight="700" font-family="Fraunces,serif">Persistence</text><text x="745" y="95" text-anchor="middle" fill="#111" font-size="13">devices, disks, file systems, distributed (ch 36–50)</text>
-<text x="450" y="140" text-anchor="middle" fill="#a9b1cf" font-size="13">+ Security (ch 53–57) and Virtual Machine Monitors (Appendix B)</text></svg></figure>
+<h2>Evaluation order (§15.7)</h2>
+<div class="crux">"The Java programming language guarantees that the operands of operators appear to be evaluated in a specific evaluation order, namely, from left to right." The left operand is fully evaluated before any part of the right (§15.7.1) — including saving its value before a side effect on the right changes the variable: <code>i = 2; j = (i = 3) * i;</code> gives 9, and <code>a[i] = i = 3</code> uses the old <code>i</code> for the index (§15.26.1 evaluates the array reference and index first). Arguments are evaluated left to right, all of them, before the invocation (§15.7.4). Operands are evaluated before the operation (§15.7.2) — so <code>x / 0</code> evaluates <code>x</code> before throwing. Only <code>&amp;&amp;</code>, <code>||</code>, <code>?:</code> and <code>switch</code> skip operands.</div>
+<pre><code>int i = 2;
+int j = (i = 3) * i;             // 9: left operand assigns 3, then right reads 3
+int k = i + (i = 10);            // 13: left operand's value 3 was saved before the assignment
+int[] a = {0, 0, 0};
+int n = 1; a[n] = n = 2;         // a[1] = 2: index evaluated before the right-hand side
+String s = null;
+System.out.println(s + "!" + 1 / 0);   // ArithmeticException: operands left to right, then the operator</code></pre>
 
-<h2>Course map</h2>
-<div class="map" id="map"></div>
+<h2>Exceptions (ch 11) and try (§14.20)</h2>
+<div class="exc"><div><b>Checked</b><code>Throwable</code> minus <code>RuntimeException</code> and <code>Error</code> subclasses (§11.1.1). A method must declare them in <code>throws</code> or catch them (§11.2); the compiler verifies. For recoverable conditions the caller can be expected to handle (<code>IOException</code>).</div><div><b>Unchecked: RuntimeException</b>Programming errors and precondition violations: <code>NullPointerException</code> (with helpful messages since 14), <code>IllegalArgumentException</code>, <code>ClassCastException</code>, <code>IndexOutOfBounds</code>, <code>ArithmeticException</code>, <code>MatchException</code> (21).</div><div><b>Unchecked: Error</b>Serious problems the program should not catch: <code>OutOfMemoryError</code>, <code>StackOverflowError</code>, <code>LinkageError</code> family (lesson 9), <code>AssertionError</code>.</div></div>
+<ul><li><b>try/catch/finally (§14.20):</b> catch clauses are tried in order and a clause catching a superclass may not precede one catching its subclass (unreachable → compile error, the same "dominance" idea as pattern switch). Multi-catch <code>catch (A | B e)</code> makes <code>e</code> implicitly final. <code>finally</code> runs whenever the try block or a catch completes, normally or abruptly; a <code>return</code>/<code>throw</code> in <code>finally</code> <em>overrides</em> the try's completion (§14.20.2 — the reason for the "return in finally" warning).</li><li><b>try-with-resources (§14.20.3):</b> resources (<code>AutoCloseable</code>, effectively final variables allowed since 9) are closed in <em>reverse</em> order of initialization, even on exceptions; an exception from <code>close()</code> during exception propagation is attached as a <em>suppressed</em> exception (<code>getSuppressed()</code>), while the primary one propagates. Translation: nested try/finally per resource.</li><li><b>Precise rethrow (§11.2.2):</b> <code>catch (Exception e) { throw e; }</code> may declare only the checked types the try body can throw, if <code>e</code> is effectively final. Exceptions chain with a <code>cause</code>; stack traces are captured at construction (<code>fillInStackTrace</code>), which is the cost of using exceptions for control flow.</li></ul>
 
-<h2>How to use this course</h2>
-<div class="how">
-<div class="fig"><h4>1. One lesson per sitting</h4><p>Each takes 25–45 minutes: read, play with the simulator until you can predict its output, flip the cards, then do the quiz <em>from memory</em>. Check off the objectives at the top only when you could explain them to someone else.</p></div>
-<div class="fig"><h4>2. Then read the chapter</h4><p>Every lesson links its primary source — the free chapter PDFs at <a href="https://pages.cs.wisc.edu/~remzi/OSTEP/">ostep.org</a>. The lesson gives you the map; the chapter has the jokes, the asides, and the homework simulators (<code>ostep-homework</code>) which are the best practice there is.</p></div>
-<div class="fig"><h4>3. Space it out</h4><p>Long-term retention comes from re-testing later, not from feeling fluent now. Redo a lesson's quiz two days later and again after a week; the <a href="reference/cheatsheets.html">cheat sheets</a> are for the fast pass, the <a href="reference/glossary.html">glossary</a> for vocabulary. Ask me in the chat for mixed quizzes across lessons.</p></div></div>
+<h2>Pattern matching for switch (JEP 441) and record patterns (JEP 440)</h2>
+<p>Java 21 finalizes the feature previewed since 17. Selector: any reference type, or <code>char</code>/<code>byte</code>/<code>short</code>/<code>int</code> (no <code>long</code>/<code>float</code>/<code>double</code>/<code>boolean</code> yet). Case labels: constants, <b><code>case null</code></b> (optionally <code>case null, default</code>), and <b>patterns</b> — type patterns <code>Integer i</code>, record patterns <code>Point(int x, var y)</code> (nested arbitrarily, JEP 440), optionally with a <b>guard</b> <code>when expr</code>. Rules from the JEP:</p>
+<ul><li><b>First applicable label wins</b>, top to bottom. A label <b>dominated</b> by an earlier one is a compile error: <code>case CharSequence cs</code> before <code>case String s</code>; an unguarded pattern dominates the same guarded pattern; a pattern label dominates constants of its type (<code>case Integer i</code> before <code>case 42</code>). Recommended order: constants → guarded patterns → unguarded patterns. Only one match-all (<code>default</code> or an unconditional pattern).</li><li><b>Exhaustiveness</b> is required for every switch <em>expression</em>, and for switch <em>statements</em> that use patterns or <code>null</code> labels or a non-legacy selector type. Sealed hierarchies and enums count as covered without <code>default</code> — the JEP argues an exhaustive switch <em>without</em> a match-all clause is better, because a new subtype then fails compilation instead of running silently. The compiler adds a synthetic default that throws <b><code>MatchException</code></b> for separately-compiled drift; enum switch expressions now throw <code>MatchException</code> rather than <code>IncompatibleClassChangeError</code>.</li><li><b>null:</b> <code>case null</code> matches null; without it the switch throws <code>NullPointerException</code> as before — <code>default</code> does <em>not</em> match null.</li><li><b>Scope</b> of pattern variables is flow-sensitive: the guard and the rule body; falling through into a label that declares a pattern variable is a compile error, so <code>case A a, B b</code> is not allowed. A guard that throws, or a record accessor that throws inside a pattern, makes the switch throw (<code>MatchException</code> for the accessor case).</li></ul>
+<div class="fig"><h4>Which label applies? (from JEP 441's examples)</h4><div class="sw"><pre><code>static String test(Object obj) {
+    return switch (obj) {
+        case null            -&gt; "null!";
+        case -1, 1           -&gt; "special int";
+        case Integer i
+             when i &gt; 0      -&gt; "positive int";
+        case Integer i       -&gt; "other int";
+        case String s
+             when s.isEmpty()-&gt; "empty string";
+        case String s        -&gt; "string";
+        case CharSequence cs -&gt; "char sequence";
+        default              -&gt; "something else";
+    };
+}</code></pre><div><div class="controls"><select id="sel"><option value="null">null</option><option value="1">Integer 1</option><option value="42">Integer 42</option><option value="-7">Integer -7</option><option value="empty">String ""</option><option value="hi">String "hi"</option><option value="sb">StringBuilder</option><option value="3.5">Double 3.5</option></select></div><div class="lbl" id="lbl"></div><div class="cap" id="smsg"></div></div></div></div>
+<pre><code>sealed interface Shape permits Circle, Rect {}
+record Circle(double r) implements Shape {}
+record Rect(Point tl, Point br) implements Shape {}
+record Point(int x, int y) {}
+double area(Shape s) {
+    return switch (s) {                                            // exhaustive via permits — no default
+        case Circle(double r) when r == 0 -&gt; 0;                    // record pattern + guard
+        case Circle(var r)               -&gt; Math.PI * r * r;       // var in a record pattern
+        case Rect(Point(var x1, var y1), Point(var x2, var y2)) -&gt; Math.abs((x2 - x1) * (y2 - y1));   // nested
+    };
+}
+if (s instanceof Rect(Point tl, var br) &amp;&amp; tl.x() &lt; br.x()) { … }   // patterns in instanceof too (JEP 394/440)</code></pre>
 
-<h2>What the book covers that this course does too</h2>
-<p>Chapters 1–2 (dialogue, introduction) → lesson 1. Chapters 3, 11, 12, 24, 25, 34, 35, 46, 47, 51, 52 are the book's short dialogues that open and close each part; their content is folded into the neighbouring lessons. The lab appendices (tutorial, systems and xv6 projects) and the deprecated monitors appendix are referenced in RESOURCES.md rather than taught.</p>
-<h2>Sister courses</h2><div class="how"><div class="fig"><h4><a href="python/index.html">Python 3.13</a></h4><p>The Language Reference, CPython internals (specializing interpreter, JIT, GC, GIL and free-threading), and pandas vs Polars — 20 interactive lessons with Python running in the browser.</p></div><div class="fig"><h4><a href="java/index.html">Java 21</a></h4><p>The JLS and JVMS, HotSpot (class loading, bytecode, tiered JIT, Generational ZGC), and virtual threads from JEP 444 down to VirtualThread.java — 17 interactive lessons with simulators.</p></div></div>
-<p class="tip">This workspace follows the <code>teach</code> skill layout: <code>MISSION.md</code> (why you're learning this), <code>RESOURCES.md</code> (sources), <code>NOTES.md</code>, <code>learning-records/</code>, <code>lessons/</code>, <code>reference/</code>, <code>assets/</code>. Tell me in the chat how a lesson landed and I'll adapt the next ones.</p>
+<h2>Switch details worth knowing</h2>
+<p>Arrow form (<code>case X -&gt;</code>) never falls through; the colon form does, and pattern labels forbid fall-through into them. A switch <em>expression</em> must complete with a value via <code>-&gt; expr</code>, a block with <code>yield</code>, or <code>throw</code>. Enum constants may be written qualified (<code>case Suit.HEARTS</code>) and the selector may be a supertype of the enum (JEP 441). String switches compare with <code>equals</code> after hashing (compiled to <code>hashCode</code> lookupswitch + equals); pattern switches compile to <code>invokedynamic</code> on <code>SwitchBootstraps.typeSwitch</code> (lesson 10).</p>
+
+<h2>Flash cards</h2><div id="cards"></div>
+<h2>Retrieval practice</h2><div id="quiz"></div>
+<p class="tip">Want a set of dominance/exhaustiveness puzzles, or to trace try-with-resources suppressed exceptions through a two-resource example? Ask me in the chat.</p>
 </div>
 <script>
-/* OSTEP course — shared components. Every page loads this file (inlined by build.py). */
+/* Java 21 course — shared components (from the OSTEP course). Every page loads this file (inlined by build.py). */
 window.OS = (function () {
   const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
   /* ---------- persistent storage (localStorage on a real site; in-memory fallback in sandboxes) ---------- */
   const mem = {};
   const store = {
-    get(k) { try { const v = localStorage.getItem('ostep:' + k); return v === null ? (mem[k] ?? null) : JSON.parse(v); } catch (e) { return mem[k] ?? null; } },
-    set(k, v) { mem[k] = v; try { localStorage.setItem('ostep:' + k, JSON.stringify(v)); } catch (e) {} },
-    del(k) { delete mem[k]; try { localStorage.removeItem('ostep:' + k); } catch (e) {} },
-    keys(prefix) { const out = new Set(Object.keys(mem).filter(k => k.startsWith(prefix))); try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith('ostep:' + prefix)) out.add(k.slice(6)); } } catch (e) {} return [...out]; },
-    available() { try { localStorage.setItem('ostep:test', '1'); localStorage.removeItem('ostep:test'); return true; } catch (e) { return false; } }
+    get(k) { try { const v = localStorage.getItem('java21:' + k); return v === null ? (mem[k] ?? null) : JSON.parse(v); } catch (e) { return mem[k] ?? null; } },
+    set(k, v) { mem[k] = v; try { localStorage.setItem('java21:' + k, JSON.stringify(v)); } catch (e) {} },
+    del(k) { delete mem[k]; try { localStorage.removeItem('java21:' + k); } catch (e) {} },
+    keys(prefix) { const out = new Set(Object.keys(mem).filter(k => k.startsWith(prefix))); try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith('java21:' + prefix)) out.add(k.slice(6)); } } catch (e) {} return [...out]; },
+    available() { try { localStorage.setItem('java21:test', '1'); localStorage.removeItem('java21:test'); return true; } catch (e) { return false; } }
   };
 
   /* ---------- course structure ---------- */
   const PIECES = [
-    ['intro', 'Introduction', [['0001-three-easy-pieces', 'Three easy pieces', 'ch 1–2']]],
-    ['virt', 'Virtualization', [
-      ['0002-processes', 'Processes & the process API', 'ch 4–5'],
-      ['0003-limited-direct-execution', 'Limited direct execution', 'ch 6'],
-      ['0004-scheduling', 'Scheduling', 'ch 7–10'],
-      ['0005-address-spaces', 'Address spaces & segments', 'ch 13–16'],
-      ['0006-paging-and-tlbs', 'Paging & TLBs', 'ch 17–20'],
-      ['0007-swapping', 'Swapping & policies', 'ch 21–23']]],
-    ['conc', 'Concurrency', [
-      ['0008-threads-and-locks', 'Threads & locks', 'ch 26–28'],
-      ['0009-cvs-and-semaphores', 'CVs & semaphores', 'ch 29–31'],
-      ['0010-bugs-and-events', 'Bugs & events', 'ch 32–33']]],
-    ['pers', 'Persistence', [
-      ['0011-devices-disks-raid', 'Devices, disks, RAID', 'ch 36–38'],
-      ['0012-files-and-vsfs', 'Files & a simple FS', 'ch 39–40'],
-      ['0013-ffs-journaling-lfs', 'FFS, journaling, LFS', 'ch 41–43'],
-      ['0014-ssd-and-integrity', 'SSDs & integrity', 'ch 44–45'],
-      ['0015-distributed-nfs-afs', 'Distributed FS', 'ch 48–50']]],
-    ['sec', 'Security', [['0016-security-and-vmms', 'Security & VMMs', 'ch 53–57, App B']]]
+    ['lang', 'The language, as specified (JLS 21)', [
+      ['0001-types-values-variables', 'Types, values, variables', 'JLS ch 4, 5'],
+      ['0002-classes-objects-initialization', 'Classes, objects, initialization order', 'JLS ch 8, 12'],
+      ['0003-records-sealed-interfaces', 'Records, sealed types, interfaces', 'JLS §8.10, §8.1.1.2, ch 9'],
+      ['0004-generics-and-erasure', 'Generics, wildcards, erasure', 'JLS §4.5–4.10, §8.4.8.3'],
+      ['0005-expressions-exceptions-switch', 'Expressions, exceptions, switch & patterns', 'JLS ch 11, 14, 15; JEPs 440/441'],
+      ['0006-lambdas-streams', 'Lambdas, method references, streams', 'JLS §15.27, §15.13, java.util.stream'],
+      ['0007-java-memory-model', 'The Java memory model', 'JLS ch 17']]],
+    ['jvm', 'The JVM (JVMS 21 + HotSpot)', [
+      ['0008-class-files-and-bytecode', 'Class files and bytecode', 'JVMS ch 4, 6'],
+      ['0009-loading-linking-initialization', 'Loading, linking, initialization, class loaders', 'JVMS ch 5'],
+      ['0010-execution-frames-invokedynamic', 'Execution: frames, invoke*, invokedynamic', 'JVMS ch 2, 5.4.3, 6'],
+      ['0011-hotspot-jit', 'HotSpot: interpreter, C1/C2, deoptimization', 'compilationPolicy.cpp, c2_globals.hpp'],
+      ['0012-heap-gc-generational-zgc', 'Objects, heap, GC, Generational ZGC', 'markWord.hpp, gcConfig.cpp, JEP 439']]],
+    ['loom', 'Java 21: virtual threads and new features', [
+      ['0013-virtual-threads-model', 'Virtual threads: the model (JEP 444)', 'JEP 444'],
+      ['0014-virtual-threads-internals', 'Virtual threads: continuations, carriers, scheduler', 'VirtualThread.java, Continuation.java, freeze/thaw'],
+      ['0015-structured-concurrency-scoped-values', 'Structured concurrency & scoped values', 'StructuredTaskScope, ScopedValue (preview)'],
+      ['0016-concurrency-toolkit', 'The concurrency toolkit: monitors, locks, executors', 'JLS §17.1–17.3, java.util.concurrent'],
+      ['0017-java-21-features', 'What Java 21 adds', 'JEPs 431, 440, 441, 442, 443, 445, 446, 453']]]
   ];
   const LESSONS = PIECES.flatMap(p => p[2].map(l => [l[0], l[1], p[0], l[2]]));
   const title = id => (LESSONS.find(l => l[0] === id) || [])[1] || id;
@@ -257,7 +299,7 @@ window.OS = (function () {
     const isLesson = i >= 0;
     const top = document.createElement('header'); top.className = 'topbar';
     top.innerHTML = `<button class="menu" aria-label="Open directory" aria-expanded="false">☰<span>Directory</span></button>
-      <a class="brand" href="${root}index.html"><span class="dot"></span>OSTEP course</a>
+      <a class="brand" href="${root}index.html"><span class="dot"></span>Java 21 course</a>
       <nav class="links"><a href="${root}reference/glossary.html">Glossary</a><a href="${root}reference/cheatsheets.html">Cheat sheets</a><a href="${root}notes.html">My notes</a></nav>
       ${isLesson ? `<span class="where">${i+1} / ${LESSONS.length}</span>` : ''}`;
     document.body.prepend(top);
@@ -341,6 +383,17 @@ window.OS = (function () {
     });
   }
 
+
+  /* ---------- Java code blocks: annotated, copyable, with a jshell hint (no JVM in the browser) ---------- */
+  function py(el, code, opts) {
+    el = typeof el === 'string' ? document.getElementById(el) : el; opts = opts || {};
+    el.classList.add('pyrun');
+    const src = code.trim();
+    const preview = /--enable-preview|StructuredTaskScope|ScopedValue|STR\./.test(src);
+    el.innerHTML = `<div class="pyhead"><span>Java 21${preview ? ' · needs --enable-preview' : ''}${opts.note ? ' · ' + esc(opts.note) : ''}</span><span class="pystatus">paste into jshell or a scratch file</span><button class="primary copy">Copy</button></div><pre class="pyout" style="display:block;white-space:pre-wrap;margin:0"><code>${esc(src)}</code></pre>`;
+    el.querySelector('.copy').onclick = () => { navigator.clipboard && navigator.clipboard.writeText(src).then(() => { el.querySelector('.pystatus').textContent = 'copied'; }).catch(() => {}); };
+  }
+
   /* ---------- flip cards ---------- */
   function cards(el, list) {
     el = typeof el === 'string' ? document.getElementById(el) : el;
@@ -385,17 +438,24 @@ window.OS = (function () {
     el.querySelectorAll('input').forEach(c => c.onchange = () => { const s = [...el.querySelectorAll('input:checked')].map(x => +x.dataset.i); if (pageId) store.set('obj:' + pageId, s); });
   }
 
-  return { chrome, quiz, cards, stepper, gantt, objectives, esc, store, LESSONS, PIECES, title };
+  return { chrome, quiz, cards, stepper, gantt, objectives, py, esc, store, LESSONS, PIECES, title };
 })();
 
 </script>
 <script>
-OS.chrome('index','');
-const P=[['intro','Introduction','What an OS is: the three pieces, design goals, history.',['0001-three-easy-pieces','Three easy pieces','ch 1–2']],
-['virt','Virtualization','The CPU and memory made private and plentiful.',['0002-processes','Processes & the process API','ch 4–5'],['0003-limited-direct-execution','Limited direct execution','ch 6'],['0004-scheduling','Scheduling: FIFO to CFS and multi-CPU','ch 7–10'],['0005-address-spaces','Address spaces, base/bounds, segments','ch 13–16'],['0006-paging-and-tlbs','Free space, paging, TLBs, small tables','ch 17–20'],['0007-swapping','Swapping, replacement, VAX/VMS & Linux','ch 21–23']],
-['conc','Concurrency','Threads and the primitives that make them safe.',['0008-threads-and-locks','Threads, thread API, locks','ch 26–28'],['0009-cvs-and-semaphores','Locked structures, CVs, semaphores','ch 29–31'],['0010-bugs-and-events','Concurrency bugs & event-based servers','ch 32–33']],
-['pers','Persistence + Security','Storage from the device up; then protecting it all.',['0011-devices-disks-raid','Devices, disks, RAID','ch 36–38'],['0012-files-and-vsfs','Files, directories, a simple file system','ch 39–40'],['0013-ffs-journaling-lfs','FFS, crash consistency, LFS','ch 41–43'],['0014-ssd-and-integrity','SSDs & data integrity','ch 44–45'],['0015-distributed-nfs-afs','Distributed systems, NFS, AFS','ch 48–50'],['0016-security-and-vmms','Security (ch 53–57) & VMMs','ch 53–57, App B']]];
-const m=document.getElementById('map');let idx=0;const S=OS.store;
-m.innerHTML=P.map(([cls,name,desc,...ls])=>`<div class="piece piece-${cls}"><h3>${name}</h3><p>${desc}</p>${ls.map(l=>{idx++;const q=S.get('quiz:'+l[0]),nt=(S.get('notes:'+l[0])||{}).text;return `<a href="lessons/${l[0]}.html" data-id="${l[0]}" class="${q&&q.score===q.total?'done':''}">${idx}. ${l[1]}<small>${l[2]}${q?` · quiz ${q.score}/${q.total}`:''}${nt?' · ✎ notes':''}</small></a>`;}).join('')}</div>`).join('');
-const done=OS.LESSONS.filter(l=>S.get('quiz:'+l[0])).length;const ph=document.createElement('p');ph.className='cap';ph.textContent=done?`${done} of 16 lesson quizzes attempted — see My notes & progress for details.`:'Quiz scores, checked objectives and notes are saved in this browser as you go.';document.getElementById('map').after(ph);
+OS.chrome('0005-expressions-exceptions-switch');
+OS.objectives('obj',['State the left-to-right evaluation guarantee and apply it to assignment-in-expression puzzles.','Classify exceptions as checked/unchecked and explain try/catch/finally ordering, try-with-resources closing order and suppressed exceptions.','List the pattern-switch label kinds and the dominance rules, and order labels correctly.','Explain exhaustiveness for switch expressions/statements, sealed types, MatchException and null handling.','Write nested record patterns with guards, in switch and instanceof.']);
+const LABELS=['case null','case -1, 1','case Integer i when i > 0','case Integer i','case String s when s.isEmpty()','case String s','case CharSequence cs','default'];
+const PICK={null:[0,'null matches only case null; without that label the switch would throw NullPointerException (default never matches null).'],'1':[1,'Constant labels are tried first in this ordering; 1 matches before the Integer patterns (a pattern label placed before the constant would dominate it — compile error).'],'42':[2,'Not a listed constant; Integer i when i > 0 applies first. Order matters: the unguarded Integer i would dominate the guarded one if written earlier.'],'-7':[3,'Guard fails (not > 0), so the unguarded Integer i applies.'],empty:[4,'String with the guard satisfied.'],hi:[5,'String s: the guarded label\'s guard is false, the unguarded String label applies before CharSequence (subtype first, or the String label would be dominated).'],sb:[6,'StringBuilder is a CharSequence but not a String.'],'3.5':[7,'No pattern covers Double; default.']};
+function sw(){const [i,m]=PICK[document.getElementById('sel').value];document.getElementById('lbl').innerHTML=LABELS.map((l,j)=>`<div class="${j===i?'hit':''}">${OS.esc(l)}</div>`).join('');document.getElementById('smsg').textContent=m;}
+document.getElementById('sel').onchange=sw;sw();
+OS.cards('cards',[['Left to right','Operands and arguments are evaluated fully left to right, before the operation; only &&, ||, ?: and switch skip evaluation.'],['Checked vs unchecked','Checked = must be declared or caught; RuntimeException and Error subclasses are unchecked.'],['finally overrides','A return/throw inside finally discards the try block\'s completion, including a pending exception.'],['try-with-resources','Resources closed in reverse order; close() exceptions during propagation become suppressed exceptions.'],['Dominance','A case label dominated by an earlier one (supertype pattern, unguarded before guarded, pattern before its constants) is a compile error.'],['Exhaustiveness','Required for switch expressions and pattern/null/non-legacy switch statements; sealed and enum coverage counts; synthetic default throws MatchException.'],['case null','Only case null matches null; otherwise NullPointerException. Combine with default as case null, default.'],['Record pattern','Point(int x, var y): deconstructs via accessors, nests, works in switch and instanceof (JEP 440).'],['Pattern variable scope','Flow-sensitive: guard + body; no fall-through into a label declaring a pattern variable.']]);
+OS.quiz('quiz',[
+{q:'int i = 2; int j = (i = 3) * i; j is:',o:['6','9','4','undefined'],a:1,why:'§15.7.1: the left operand (assigning 3) is fully evaluated before the right operand reads i.'},
+{q:'Which is a checked exception?',o:['IllegalStateException','IOException','StackOverflowError','ClassCastException'],a:1,why:'Checked = Throwable except RuntimeException and Error subclasses; IOException extends Exception directly.'},
+{q:'In try-with-resources with resources r1 then r2, and the body throws, the order of close() calls is:',o:['r1 then r2','r2 then r1','only r1','neither; closing is skipped on exceptions'],a:1,why:'§14.20.3: resources are closed in the reverse order of their initialization, even when the body throws.'},
+{q:'case CharSequence cs -> … followed by case String s -> …:',o:['fine; first match wins','compile error: String label is dominated','runtime MatchException','the String label is preferred as more specific'],a:1,why:'JEP 441: a label whose values are all matched by an earlier label is unreachable, hence a compile-time error.'},
+{q:'A pattern switch over a sealed interface with all permitted subtypes covered, no default. A new subtype is added and only the interface recompiled. At run time an unmatched value causes:',o:['the default branch','MatchException from the synthetic default','NullPointerException','silent fall-through'],a:1,why:'The compiler inserts a throwing default to cover separate-compilation drift; enum switches also moved to MatchException.'},
+{q:'switch (s) { case String t -> …; default -> …; } where s is a String:',o:['valid','compile error: two match-all labels','valid only with case null','runtime error'],a:1,why:'String t is an unconditional pattern for a String selector, so default is dominated — only one match-all label is allowed.'},
+{q:'What happens for a null selector in a pattern switch without case null?',o:['default runs','NullPointerException','MatchException','the first pattern label runs'],a:1,why:'JEP 441 keeps the traditional NPE unless case null is present; default does not match null.'}]);
 </script></body></html>

@@ -1,11 +1,11 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>OSTEP course — Operating Systems: Three Easy Pieces, taught interactively</title><style>
+<title>6 · Lambdas, method references, streams — Java 21 course</title><style>
 /* OSTEP course — shared stylesheet. Three pieces, three hues. */
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
 :root{
   --ink:#151b2f; --ink-2:#1e2540; --ink-3:#28304f; --line:#3a4368;
   --paper:#eef0f7; --muted:#a9b1cf; --faint:#6e779a;
-  --virt:#e8b84a; --conc:#5bc8f5; --pers:#6bcb77; --sec:#f47fa0; --intro:#c9a8ff;
+  --virt:#e8b84a; --conc:#5bc8f5; --pers:#6bcb77; --sec:#f47fa0; --intro:#c9a8ff; --spec:#ffd166; --internals:#5bc8f5; --data:#6bcb77;
   --ok:#6bcb77; --bad:#ff6b6b;
   --accent:var(--virt);
   --radius:6px;
@@ -28,7 +28,7 @@ p,li{max-width:72ch}
 .hero{padding:44px 0 16px}
 .hero .chapters{color:var(--muted);font-size:.95rem;margin-bottom:6px}
 .lede{font-size:1.2rem;color:var(--muted);max-width:66ch}
-.piece-virt{--accent:var(--virt)} .piece-conc{--accent:var(--conc)} .piece-pers{--accent:var(--pers)} .piece-sec{--accent:var(--sec)} .piece-intro{--accent:var(--intro)}
+.piece-lang{--accent:var(--spec)} .piece-jvm{--accent:var(--internals)} .piece-loom{--accent:var(--data)} .piece-spec{--accent:var(--spec)} .piece-internals{--accent:var(--internals)} .piece-data{--accent:var(--data)} .piece-virt{--accent:var(--virt)} .piece-conc{--accent:var(--conc)} .piece-pers{--accent:var(--pers)} .piece-sec{--accent:var(--sec)} .piece-intro{--accent:var(--intro)}
 .fig{background:var(--ink-2);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;margin:22px 0}
 .fig figcaption,.cap{color:var(--muted);font-size:.9rem;margin-top:10px}
 .fig svg{max-width:100%;height:auto;display:block}
@@ -182,69 +182,91 @@ details>div{padding:0 16px 14px}
 }
 @media (max-width:420px){.cards{grid-template-columns:1fr}}
 
+/* ---------- runnable Python ---------- */
+.pyrun{border:1px solid var(--line);border-radius:var(--radius);background:#0f1424;margin:18px 0;overflow:hidden}
+.pyrun .pyhead{display:flex;gap:10px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--line);font-size:.85rem;color:var(--muted);background:var(--ink-2)}
+.pyrun .pyhead span:first-child{flex:1;font-weight:600;color:var(--paper)}
+.pyrun .pystatus{font-size:.78rem}
+.pyrun textarea{display:block;width:100%;border:none;background:#0f1424;color:var(--paper);font-family:'IBM Plex Mono',monospace;font-size:.86rem;line-height:1.5;padding:12px 14px;resize:vertical;outline:none;min-height:60px;tab-size:4}
+.pyrun .pyout{font-family:'IBM Plex Mono',monospace;font-size:.86rem;line-height:1.5;padding:12px 14px;margin:0;border:none;border-top:1px solid var(--line);border-left:none;border-radius:0;background:#0a0e1a;color:#cfe3ff;max-height:none;overflow:auto}
+
 </style>
-<style>.map{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:24px 0}.piece{border:1px solid var(--line);border-radius:8px;padding:16px;background:var(--ink-2);border-top:4px solid var(--accent)}.piece h3{margin:0 0 4px;color:var(--accent)}.piece p{font-size:.9rem;color:var(--muted);margin:0 0 10px}.piece a{display:block;text-decoration:none;color:var(--paper);padding:6px 0;border-top:1px solid var(--line);font-size:.92rem}.piece a:hover{color:var(--accent)}.piece a small{display:block;color:var(--faint);font-size:.78rem}.piece a.done::after{content:" ✓";color:var(--ok)}.how{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}.how .fig{margin:0}.how h4{margin:0 0 6px}@media(max-width:900px){.map{grid-template-columns:1fr 1fr}.how{grid-template-columns:1fr}}@media(max-width:600px){.map{grid-template-columns:1fr}}.big{font-size:1.05rem}</style></head>
-<body class="piece-intro"><div class="wrap">
-<header class="hero"><div class="chapters">Operating Systems: Three Easy Pieces · Remzi H. and Andrea C. Arpaci-Dusseau (v1.10, 2023) · security chapters by Peter Reiher</div>
-<h1>The whole book, as sixteen interactive lessons</h1>
-<p class="lede big">Built from the text of all 57 chapters plus the VMM appendix — every "crux", every summary, every number in the figures was extracted from the chapter PDFs, not recalled. Each lesson is short, visual, and ends in retrieval practice. Do them in order; the book's pieces build on each other.</p></header>
+<style>.pipe{display:grid;grid-template-columns:1fr 1fr;gap:12px}.pipe pre{margin:0}.st{background:#0f1424;border:1px solid var(--line);border-radius:6px;padding:10px;font-family:'IBM Plex Mono',monospace;font-size:.8rem;line-height:1.7;min-height:180px}.st .lazy{color:var(--muted)}.st .now{color:var(--accent)}.fi td:first-child{font-family:'IBM Plex Mono',monospace;color:var(--accent)}@media(max-width:700px){.pipe{grid-template-columns:1fr}}</style></head>
+<body class="piece-lang"><div class="wrap">
+<header class="hero"><div class="chapters">JLS SE 21 · §15.27 Lambda Expressions · §15.13 Method Reference Expressions · §9.8 Functional Interfaces · §15.2 poly expressions · java.util.function · java.util.stream (JDK 21 package documentation)</div>
+<h1>Lambdas, method references, and streams</h1>
+<p class="lede">A lambda is not an anonymous class in disguise: the JLS makes it a <em>poly expression</em> whose type comes from the context, and the JVM compiles it through <code>invokedynamic</code> with no class file (lesson 10). Streams build on lambdas to describe data pipelines that are <em>lazy</em> until a terminal operation runs. This lesson is about the rules that make both predictable: target typing, effectively final capture, the stream pipeline model, and where parallel streams help.</p></header>
+<div class="source"><b>Primary sources:</b> <a href="https://docs.oracle.com/javase/specs/jls/se21/html/jls-15.html#jls-15.27">JLS §15.27 Lambda Expressions</a> (§15.27.2 body, §15.27.3 type, §15.27.4 run-time evaluation), <a href="https://docs.oracle.com/javase/specs/jls/se21/html/jls-15.html#jls-15.13">§15.13 Method References</a>, <a href="https://docs.oracle.com/javase/specs/jls/se21/html/jls-9.html#jls-9.8">§9.8</a>, the <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/stream/package-summary.html">java.util.stream package summary</a> (laziness, non-interference, statelessness, ordering, parallelism) and <code>java.util.function</code>.</div>
+<h2>What you'll be able to do</h2><ul id="obj"></ul>
 
-<figure class="fig"><svg viewBox="0 0 900 150" role="img" aria-label="three pieces">
-<rect x="20" y="30" width="270" height="90" rx="8" fill="#e8b84a"/><text x="155" y="68" text-anchor="middle" fill="#111" font-size="20" font-weight="700" font-family="Fraunces,serif">Virtualization</text><text x="155" y="95" text-anchor="middle" fill="#111" font-size="13">CPU (ch 4–10) · Memory (ch 13–23)</text>
-<rect x="315" y="30" width="270" height="90" rx="8" fill="#5bc8f5"/><text x="450" y="68" text-anchor="middle" fill="#111" font-size="20" font-weight="700" font-family="Fraunces,serif">Concurrency</text><text x="450" y="95" text-anchor="middle" fill="#111" font-size="13">threads, locks, CVs, semaphores, bugs (ch 26–33)</text>
-<rect x="610" y="30" width="270" height="90" rx="8" fill="#6bcb77"/><text x="745" y="68" text-anchor="middle" fill="#111" font-size="20" font-weight="700" font-family="Fraunces,serif">Persistence</text><text x="745" y="95" text-anchor="middle" fill="#111" font-size="13">devices, disks, file systems, distributed (ch 36–50)</text>
-<text x="450" y="140" text-anchor="middle" fill="#a9b1cf" font-size="13">+ Security (ch 53–57) and Virtual Machine Monitors (Appendix B)</text></svg></figure>
+<h2>Lambdas as specified</h2>
+<ul><li><b>Target typing (§15.27.3):</b> a lambda has no type of its own; it is compatible with a <em>functional interface</em> (§9.8: exactly one abstract method) inferred from the assignment, argument, return or cast context. <code>Runnable r = () -&gt; {};</code> and <code>Callable&lt;Void&gt; c = () -&gt; null;</code> differ only by target. Overloads that accept different functional interfaces can be ambiguous; an explicit cast or typed parameters disambiguate.</li><li><b>Body rules (§15.27.2):</b> parameters may be typed, inferred, or <code>var</code> (to attach annotations); local variables of the enclosing scope may be used only if <b>effectively final</b> — never reassigned — so captured values are copies, not shared variables; the body's <code>this</code> is the enclosing instance (unlike anonymous classes); lambda parameters may not shadow enclosing locals.</li><li><b>Run-time evaluation (§15.27.4):</b> "either a new instance of a class with the properties below is allocated and initialized, or an existing instance … is referenced" — the identity of the object is unspecified. In practice <code>javac</code> desugars the body to a private synthetic method and emits <code>invokedynamic</code> bound to <code>LambdaMetafactory</code>, which spins a hidden class at first use; a non-capturing lambda evaluates to a single cached instance.</li><li><b>Exceptions:</b> a lambda can throw checked exceptions only if its functional interface's method declares them — hence the ubiquitous wrapping in <code>UncheckedIOException</code> or custom <code>ThrowingFunction</code> interfaces.</li></ul>
+<table class="fi"><tr><th>Interface</th><th>Method</th><th>Typical use</th></tr><tr><td>Supplier&lt;T&gt;</td><td>T get()</td><td>lazy values, factories</td></tr><tr><td>Consumer&lt;T&gt;</td><td>void accept(T)</td><td>forEach</td></tr><tr><td>Function&lt;T,R&gt;</td><td>R apply(T)</td><td>map; andThen/compose</td></tr><tr><td>Predicate&lt;T&gt;</td><td>boolean test(T)</td><td>filter; and/or/negate, Predicate.not</td></tr><tr><td>UnaryOperator&lt;T&gt; / BinaryOperator&lt;T&gt;</td><td>T apply(T[, T])</td><td>reduce, replaceAll</td></tr><tr><td>BiFunction, BiConsumer, BiPredicate</td><td>two arguments</td><td>Map.forEach, merge</td></tr><tr><td>IntFunction, ToIntFunction, IntPredicate, IntUnaryOperator…</td><td>primitive specializations</td><td>avoid boxing in IntStream/LongStream/DoubleStream</td></tr><tr><td>Comparator&lt;T&gt;</td><td>int compare(T, T)</td><td>comparing, thenComparing, reversed, nullsFirst</td></tr></table>
 
-<h2>Course map</h2>
-<div class="map" id="map"></div>
+<h2>Method references (§15.13)</h2>
+<p>Four forms, each equivalent to a lambda with the same target type: <code>Type::staticMethod</code> (<code>Integer::parseInt</code> ≡ <code>s -&gt; Integer.parseInt(s)</code>); <code>expr::instanceMethod</code> — bound receiver, evaluated <em>once</em> when the reference is created (<code>System.out::println</code>); <code>Type::instanceMethod</code> — unbound, the first parameter becomes the receiver (<code>String::length</code> ≡ <code>s -&gt; s.length()</code>); <code>Type::new</code> / <code>int[]::new</code> constructors. Resolution follows the overload rules with the functional interface's parameter types; <code>Integer::compare</code> vs <code>Integer::compareTo</code> both typecheck as <code>Comparator&lt;Integer&gt;</code> (static two-arg vs unbound one-arg).</p>
 
-<h2>How to use this course</h2>
-<div class="how">
-<div class="fig"><h4>1. One lesson per sitting</h4><p>Each takes 25–45 minutes: read, play with the simulator until you can predict its output, flip the cards, then do the quiz <em>from memory</em>. Check off the objectives at the top only when you could explain them to someone else.</p></div>
-<div class="fig"><h4>2. Then read the chapter</h4><p>Every lesson links its primary source — the free chapter PDFs at <a href="https://pages.cs.wisc.edu/~remzi/OSTEP/">ostep.org</a>. The lesson gives you the map; the chapter has the jokes, the asides, and the homework simulators (<code>ostep-homework</code>) which are the best practice there is.</p></div>
-<div class="fig"><h4>3. Space it out</h4><p>Long-term retention comes from re-testing later, not from feeling fluent now. Redo a lesson's quiz two days later and again after a week; the <a href="reference/cheatsheets.html">cheat sheets</a> are for the fast pass, the <a href="reference/glossary.html">glossary</a> for vocabulary. Ask me in the chat for mixed quizzes across lessons.</p></div></div>
+<h2>Streams: the pipeline model</h2>
+<div class="crux"><b>From the package summary:</b> a stream pipeline is a <em>source</em>, zero or more <em>intermediate</em> operations (which are <b>lazy</b> and return a new stream), and one <em>terminal</em> operation that triggers execution and consumes the stream. Streams are not data structures, are single-use, and process elements <em>one at a time through the whole pipeline</em> — not stage by stage. Behavioural parameters must be <b>non-interfering</b> (don't modify the source) and, for predictable results, <b>stateless</b>; side effects are discouraged; some operations (<code>sorted</code>, <code>distinct</code>) are <em>stateful</em> and may buffer.</div>
+<div class="fig"><h4>Watch elements flow one at a time</h4><div class="pipe"><pre><code>List.of(1, 2, 3, 4, 5, 6).stream()
+    .filter(n -&gt; { log("filter " + n); return n % 2 == 0; })
+    .map(n -&gt; { log("map " + n); return n * 10; })
+    .limit(2)                       // short-circuits
+    .forEach(n -&gt; log("consume " + n));</code></pre><div><div class="controls"><button class="primary" id="sstep">next element</button><button id="sreset">reset</button></div><div class="st" id="slog"></div></div></div><div class="cap" id="scap"></div></div>
+<ul><li><b>Sources:</b> <code>Collection.stream()</code>, <code>Stream.of</code>, <code>Arrays.stream</code>, <code>IntStream.range</code>, <code>Stream.iterate/generate</code> (infinite; needs <code>limit</code>/<code>takeWhile</code>), <code>Files.lines</code>, <code>String.chars</code>, <code>Random.ints</code>.</li><li><b>Intermediate:</b> <code>filter map flatMap mapMulti(16) distinct sorted peek limit skip takeWhile dropWhile boxed mapToInt</code>. <b>Terminal:</b> <code>forEach collect reduce count sum min max anyMatch allMatch noneMatch findFirst findAny toList(16) toArray iterator</code>. Short-circuiting ones (<code>limit</code>, <code>findFirst</code>, <code>anyMatch</code>) can finish infinite streams.</li><li><b>Collectors:</b> <code>toList</code> (mutable, vs <code>Stream.toList()</code> unmodifiable), <code>toSet</code>, <code>toMap(k, v, merge)</code> (throws on duplicate keys without a merge function), <code>groupingBy(classifier, downstream)</code>, <code>partitioningBy</code>, <code>joining</code>, <code>counting</code>, <code>summingInt</code>, <code>teeing</code> (12). <code>reduce(identity, accumulator, combiner)</code> must be associative for parallel correctness.</li><li><b>Ordering:</b> an <em>ordered</em> stream (List, arrays, sorted) preserves encounter order through operations like <code>map</code> and into ordered collectors; <code>HashSet</code> sources are unordered; <code>unordered()</code> can speed up parallel <code>distinct</code>/<code>limit</code>; <code>forEachOrdered</code> vs <code>forEach</code>.</li><li><b>Parallel:</b> <code>parallelStream()</code>/<code>parallel()</code> splits the source with a <code>Spliterator</code> and runs on the <b>common ForkJoinPool</b> (LIFO work-stealing, parallelism = cores − 1 by default; the virtual-thread scheduler in lesson 14 is a <em>separate</em> FIFO pool). Worth it only for large, cheaply splittable sources (ArrayList, arrays, ranges) with CPU-heavy, stateless, non-interfering operations; <code>LinkedList</code>, <code>iterate</code>, and I/O-bound work parallelize badly. Correctness needs associative reductions and thread-safe collectors (<code>collect</code>'s three-argument form handles the merging).</li></ul>
+<pre><code>record Emp(String name, String dept, double salary) {}
+Map&lt;String, Double&gt; avgByDept = emps.stream()
+    .collect(Collectors.groupingBy(Emp::dept, TreeMap::new, Collectors.averagingDouble(Emp::salary)));
+Optional&lt;Emp&gt; top = emps.stream().max(Comparator.comparingDouble(Emp::salary));
+List&lt;String&gt; names = emps.stream().filter(e -&gt; e.salary() &gt; 50_000).map(Emp::name).sorted().toList();
+int total = IntStream.rangeClosed(1, 100).filter(i -&gt; i % 3 == 0).sum();       // no boxing
+String csv = Stream.of("a", "b", "c").collect(Collectors.joining(",", "[", "]"));   // "[a,b,c]"
+long evens = Stream.iterate(0, i -&gt; i + 2).takeWhile(i -&gt; i &lt; 20).count();        // infinite source, bounded</code></pre>
 
-<h2>What the book covers that this course does too</h2>
-<p>Chapters 1–2 (dialogue, introduction) → lesson 1. Chapters 3, 11, 12, 24, 25, 34, 35, 46, 47, 51, 52 are the book's short dialogues that open and close each part; their content is folded into the neighbouring lessons. The lab appendices (tutorial, systems and xv6 projects) and the deprecated monitors appendix are referenced in RESOURCES.md rather than taught.</p>
-<h2>Sister courses</h2><div class="how"><div class="fig"><h4><a href="python/index.html">Python 3.13</a></h4><p>The Language Reference, CPython internals (specializing interpreter, JIT, GC, GIL and free-threading), and pandas vs Polars — 20 interactive lessons with Python running in the browser.</p></div><div class="fig"><h4><a href="java/index.html">Java 21</a></h4><p>The JLS and JVMS, HotSpot (class loading, bytecode, tiered JIT, Generational ZGC), and virtual threads from JEP 444 down to VirtualThread.java — 17 interactive lessons with simulators.</p></div></div>
-<p class="tip">This workspace follows the <code>teach</code> skill layout: <code>MISSION.md</code> (why you're learning this), <code>RESOURCES.md</code> (sources), <code>NOTES.md</code>, <code>learning-records/</code>, <code>lessons/</code>, <code>reference/</code>, <code>assets/</code>. Tell me in the chat how a lesson landed and I'll adapt the next ones.</p>
+<h2>Optional</h2>
+<p><code>Optional&lt;T&gt;</code> is a value container for "may be absent" return values — the API notes it is not meant for fields or parameters. Prefer <code>map</code>/<code>flatMap</code>/<code>filter</code>/<code>orElse</code>/<code>orElseGet</code>/<code>orElseThrow</code>/<code>ifPresentOrElse</code> over <code>isPresent</code> + <code>get</code>; <code>orElse(expensive())</code> always evaluates its argument, <code>orElseGet</code> doesn't. Primitive variants <code>OptionalInt</code> etc. avoid boxing.</p>
+
+<h2>Flash cards</h2><div id="cards"></div>
+<h2>Retrieval practice</h2><div id="quiz"></div>
+<p class="tip">Want to see the invokedynamic/LambdaMetafactory bytecode for a lambda (lesson 10 covers it), or design a custom Collector? Ask me in the chat.</p>
 </div>
 <script>
-/* OSTEP course — shared components. Every page loads this file (inlined by build.py). */
+/* Java 21 course — shared components (from the OSTEP course). Every page loads this file (inlined by build.py). */
 window.OS = (function () {
   const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
   /* ---------- persistent storage (localStorage on a real site; in-memory fallback in sandboxes) ---------- */
   const mem = {};
   const store = {
-    get(k) { try { const v = localStorage.getItem('ostep:' + k); return v === null ? (mem[k] ?? null) : JSON.parse(v); } catch (e) { return mem[k] ?? null; } },
-    set(k, v) { mem[k] = v; try { localStorage.setItem('ostep:' + k, JSON.stringify(v)); } catch (e) {} },
-    del(k) { delete mem[k]; try { localStorage.removeItem('ostep:' + k); } catch (e) {} },
-    keys(prefix) { const out = new Set(Object.keys(mem).filter(k => k.startsWith(prefix))); try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith('ostep:' + prefix)) out.add(k.slice(6)); } } catch (e) {} return [...out]; },
-    available() { try { localStorage.setItem('ostep:test', '1'); localStorage.removeItem('ostep:test'); return true; } catch (e) { return false; } }
+    get(k) { try { const v = localStorage.getItem('java21:' + k); return v === null ? (mem[k] ?? null) : JSON.parse(v); } catch (e) { return mem[k] ?? null; } },
+    set(k, v) { mem[k] = v; try { localStorage.setItem('java21:' + k, JSON.stringify(v)); } catch (e) {} },
+    del(k) { delete mem[k]; try { localStorage.removeItem('java21:' + k); } catch (e) {} },
+    keys(prefix) { const out = new Set(Object.keys(mem).filter(k => k.startsWith(prefix))); try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith('java21:' + prefix)) out.add(k.slice(6)); } } catch (e) {} return [...out]; },
+    available() { try { localStorage.setItem('java21:test', '1'); localStorage.removeItem('java21:test'); return true; } catch (e) { return false; } }
   };
 
   /* ---------- course structure ---------- */
   const PIECES = [
-    ['intro', 'Introduction', [['0001-three-easy-pieces', 'Three easy pieces', 'ch 1–2']]],
-    ['virt', 'Virtualization', [
-      ['0002-processes', 'Processes & the process API', 'ch 4–5'],
-      ['0003-limited-direct-execution', 'Limited direct execution', 'ch 6'],
-      ['0004-scheduling', 'Scheduling', 'ch 7–10'],
-      ['0005-address-spaces', 'Address spaces & segments', 'ch 13–16'],
-      ['0006-paging-and-tlbs', 'Paging & TLBs', 'ch 17–20'],
-      ['0007-swapping', 'Swapping & policies', 'ch 21–23']]],
-    ['conc', 'Concurrency', [
-      ['0008-threads-and-locks', 'Threads & locks', 'ch 26–28'],
-      ['0009-cvs-and-semaphores', 'CVs & semaphores', 'ch 29–31'],
-      ['0010-bugs-and-events', 'Bugs & events', 'ch 32–33']]],
-    ['pers', 'Persistence', [
-      ['0011-devices-disks-raid', 'Devices, disks, RAID', 'ch 36–38'],
-      ['0012-files-and-vsfs', 'Files & a simple FS', 'ch 39–40'],
-      ['0013-ffs-journaling-lfs', 'FFS, journaling, LFS', 'ch 41–43'],
-      ['0014-ssd-and-integrity', 'SSDs & integrity', 'ch 44–45'],
-      ['0015-distributed-nfs-afs', 'Distributed FS', 'ch 48–50']]],
-    ['sec', 'Security', [['0016-security-and-vmms', 'Security & VMMs', 'ch 53–57, App B']]]
+    ['lang', 'The language, as specified (JLS 21)', [
+      ['0001-types-values-variables', 'Types, values, variables', 'JLS ch 4, 5'],
+      ['0002-classes-objects-initialization', 'Classes, objects, initialization order', 'JLS ch 8, 12'],
+      ['0003-records-sealed-interfaces', 'Records, sealed types, interfaces', 'JLS §8.10, §8.1.1.2, ch 9'],
+      ['0004-generics-and-erasure', 'Generics, wildcards, erasure', 'JLS §4.5–4.10, §8.4.8.3'],
+      ['0005-expressions-exceptions-switch', 'Expressions, exceptions, switch & patterns', 'JLS ch 11, 14, 15; JEPs 440/441'],
+      ['0006-lambdas-streams', 'Lambdas, method references, streams', 'JLS §15.27, §15.13, java.util.stream'],
+      ['0007-java-memory-model', 'The Java memory model', 'JLS ch 17']]],
+    ['jvm', 'The JVM (JVMS 21 + HotSpot)', [
+      ['0008-class-files-and-bytecode', 'Class files and bytecode', 'JVMS ch 4, 6'],
+      ['0009-loading-linking-initialization', 'Loading, linking, initialization, class loaders', 'JVMS ch 5'],
+      ['0010-execution-frames-invokedynamic', 'Execution: frames, invoke*, invokedynamic', 'JVMS ch 2, 5.4.3, 6'],
+      ['0011-hotspot-jit', 'HotSpot: interpreter, C1/C2, deoptimization', 'compilationPolicy.cpp, c2_globals.hpp'],
+      ['0012-heap-gc-generational-zgc', 'Objects, heap, GC, Generational ZGC', 'markWord.hpp, gcConfig.cpp, JEP 439']]],
+    ['loom', 'Java 21: virtual threads and new features', [
+      ['0013-virtual-threads-model', 'Virtual threads: the model (JEP 444)', 'JEP 444'],
+      ['0014-virtual-threads-internals', 'Virtual threads: continuations, carriers, scheduler', 'VirtualThread.java, Continuation.java, freeze/thaw'],
+      ['0015-structured-concurrency-scoped-values', 'Structured concurrency & scoped values', 'StructuredTaskScope, ScopedValue (preview)'],
+      ['0016-concurrency-toolkit', 'The concurrency toolkit: monitors, locks, executors', 'JLS §17.1–17.3, java.util.concurrent'],
+      ['0017-java-21-features', 'What Java 21 adds', 'JEPs 431, 440, 441, 442, 443, 445, 446, 453']]]
   ];
   const LESSONS = PIECES.flatMap(p => p[2].map(l => [l[0], l[1], p[0], l[2]]));
   const title = id => (LESSONS.find(l => l[0] === id) || [])[1] || id;
@@ -257,7 +279,7 @@ window.OS = (function () {
     const isLesson = i >= 0;
     const top = document.createElement('header'); top.className = 'topbar';
     top.innerHTML = `<button class="menu" aria-label="Open directory" aria-expanded="false">☰<span>Directory</span></button>
-      <a class="brand" href="${root}index.html"><span class="dot"></span>OSTEP course</a>
+      <a class="brand" href="${root}index.html"><span class="dot"></span>Java 21 course</a>
       <nav class="links"><a href="${root}reference/glossary.html">Glossary</a><a href="${root}reference/cheatsheets.html">Cheat sheets</a><a href="${root}notes.html">My notes</a></nav>
       ${isLesson ? `<span class="where">${i+1} / ${LESSONS.length}</span>` : ''}`;
     document.body.prepend(top);
@@ -341,6 +363,17 @@ window.OS = (function () {
     });
   }
 
+
+  /* ---------- Java code blocks: annotated, copyable, with a jshell hint (no JVM in the browser) ---------- */
+  function py(el, code, opts) {
+    el = typeof el === 'string' ? document.getElementById(el) : el; opts = opts || {};
+    el.classList.add('pyrun');
+    const src = code.trim();
+    const preview = /--enable-preview|StructuredTaskScope|ScopedValue|STR\./.test(src);
+    el.innerHTML = `<div class="pyhead"><span>Java 21${preview ? ' · needs --enable-preview' : ''}${opts.note ? ' · ' + esc(opts.note) : ''}</span><span class="pystatus">paste into jshell or a scratch file</span><button class="primary copy">Copy</button></div><pre class="pyout" style="display:block;white-space:pre-wrap;margin:0"><code>${esc(src)}</code></pre>`;
+    el.querySelector('.copy').onclick = () => { navigator.clipboard && navigator.clipboard.writeText(src).then(() => { el.querySelector('.pystatus').textContent = 'copied'; }).catch(() => {}); };
+  }
+
   /* ---------- flip cards ---------- */
   function cards(el, list) {
     el = typeof el === 'string' ? document.getElementById(el) : el;
@@ -385,17 +418,23 @@ window.OS = (function () {
     el.querySelectorAll('input').forEach(c => c.onchange = () => { const s = [...el.querySelectorAll('input:checked')].map(x => +x.dataset.i); if (pageId) store.set('obj:' + pageId, s); });
   }
 
-  return { chrome, quiz, cards, stepper, gantt, objectives, esc, store, LESSONS, PIECES, title };
+  return { chrome, quiz, cards, stepper, gantt, objectives, py, esc, store, LESSONS, PIECES, title };
 })();
 
 </script>
 <script>
-OS.chrome('index','');
-const P=[['intro','Introduction','What an OS is: the three pieces, design goals, history.',['0001-three-easy-pieces','Three easy pieces','ch 1–2']],
-['virt','Virtualization','The CPU and memory made private and plentiful.',['0002-processes','Processes & the process API','ch 4–5'],['0003-limited-direct-execution','Limited direct execution','ch 6'],['0004-scheduling','Scheduling: FIFO to CFS and multi-CPU','ch 7–10'],['0005-address-spaces','Address spaces, base/bounds, segments','ch 13–16'],['0006-paging-and-tlbs','Free space, paging, TLBs, small tables','ch 17–20'],['0007-swapping','Swapping, replacement, VAX/VMS & Linux','ch 21–23']],
-['conc','Concurrency','Threads and the primitives that make them safe.',['0008-threads-and-locks','Threads, thread API, locks','ch 26–28'],['0009-cvs-and-semaphores','Locked structures, CVs, semaphores','ch 29–31'],['0010-bugs-and-events','Concurrency bugs & event-based servers','ch 32–33']],
-['pers','Persistence + Security','Storage from the device up; then protecting it all.',['0011-devices-disks-raid','Devices, disks, RAID','ch 36–38'],['0012-files-and-vsfs','Files, directories, a simple file system','ch 39–40'],['0013-ffs-journaling-lfs','FFS, crash consistency, LFS','ch 41–43'],['0014-ssd-and-integrity','SSDs & data integrity','ch 44–45'],['0015-distributed-nfs-afs','Distributed systems, NFS, AFS','ch 48–50'],['0016-security-and-vmms','Security (ch 53–57) & VMMs','ch 53–57, App B']]];
-const m=document.getElementById('map');let idx=0;const S=OS.store;
-m.innerHTML=P.map(([cls,name,desc,...ls])=>`<div class="piece piece-${cls}"><h3>${name}</h3><p>${desc}</p>${ls.map(l=>{idx++;const q=S.get('quiz:'+l[0]),nt=(S.get('notes:'+l[0])||{}).text;return `<a href="lessons/${l[0]}.html" data-id="${l[0]}" class="${q&&q.score===q.total?'done':''}">${idx}. ${l[1]}<small>${l[2]}${q?` · quiz ${q.score}/${q.total}`:''}${nt?' · ✎ notes':''}</small></a>`;}).join('')}</div>`).join('');
-const done=OS.LESSONS.filter(l=>S.get('quiz:'+l[0])).length;const ph=document.createElement('p');ph.className='cap';ph.textContent=done?`${done} of 16 lesson quizzes attempted — see My notes & progress for details.`:'Quiz scores, checked objectives and notes are saved in this browser as you go.';document.getElementById('map').after(ph);
+OS.chrome('0006-lambdas-streams');
+OS.objectives('obj',['Explain target typing and why a lambda\'s type and identity are determined by context.','State the effectively-final rule and how this differs from anonymous classes.','Name the four method-reference forms and when the receiver is evaluated.','Describe the stream pipeline model: lazy intermediates, one-at-a-time flow, short-circuiting, statefulness, ordering.','Judge when parallel streams help and what correctness needs (associativity, non-interference).']);
+const EV=[['filter 1','1 is odd → dropped; the next element is pulled through the WHOLE pipeline before 2 is touched'],['filter 2','even → passes to map immediately'],['map 2','→ 20'],['consume 20','limit has seen 1 of 2'],['filter 3','dropped'],['filter 4','passes'],['map 4','→ 40'],['consume 40','limit reached 2 → the pipeline short-circuits; 5 and 6 are never filtered']];
+let si=0;function sdraw(){document.getElementById('slog').innerHTML=EV.map((e,i)=>`<div class="${i<si?'':'lazy'} ${i===si-1?'now':''}">${i<si?e[0]:'…'}</div>`).join('');document.getElementById('scap').textContent=si?EV[si-1][1]:'Nothing runs until the terminal forEach: intermediate operations only build the pipeline.';}
+document.getElementById('sstep').onclick=()=>{si=Math.min(EV.length,si+1);sdraw();};document.getElementById('sreset').onclick=()=>{si=0;sdraw();};sdraw();
+OS.cards('cards',[['Poly expression','Lambda/method ref/diamond/generic call whose type depends on the target context (§15.2).'],['Functional interface','Exactly one abstract method; the lambda implements it; @FunctionalInterface checks.'],['Effectively final','A captured local must never be reassigned; lambdas capture values, not variables.'],['this in a lambda','The enclosing instance — unlike anonymous classes, where this is the anonymous object.'],['Bound vs unbound method ref','expr::m evaluates the receiver once at creation; Type::m takes the receiver as the first argument.'],['Lazy pipeline','Intermediate ops build the pipeline; the terminal op pulls elements one at a time through all stages.'],['Non-interference / stateless','Behavioural parameters must not modify the source and should not depend on mutable state.'],['Short-circuiting','limit, findFirst, anyMatch… can terminate without processing every element, even infinite streams.'],['Common pool','Parallel streams use ForkJoinPool.commonPool (LIFO, cores−1 workers); separate from the virtual-thread scheduler.']]);
+OS.quiz('quiz',[
+{q:'What determines the type of () -> 42?',o:['its return expression','the target functional interface of the context','it is always a Supplier','the JVM at run time'],a:1,why:'Lambdas are poly expressions; the same text can be an IntSupplier, Callable<Integer>, or Supplier<Object> depending on context.'},
+{q:'A lambda reads a local variable that is later reassigned in the method. Result?',o:['it sees the new value','compile error: variable must be effectively final','it sees the old value','a warning only'],a:1,why:'§15.27.2 requires captured locals to be final or effectively final.'},
+{q:'Inside a lambda, this refers to:',o:['the lambda object','the enclosing instance','null','the functional interface'],a:1,why:'Lambdas do not introduce a new this scope; anonymous classes do.'},
+{q:'Supplier<PrintStream> s = System.out::println; is invalid because:',o:['println is static','the receiver System.out cannot be captured','System.out::println matches Consumer/Runnable shapes, not a Supplier returning PrintStream','method references cannot be Suppliers'],a:2,why:'The functional interface\'s method must be compatible: println returns void and takes 0–1 args; a Supplier<PrintStream> must return a PrintStream.'},
+{q:'stream().filter(...).map(...) with no terminal operation:',o:['runs eagerly','does nothing; intermediate operations are lazy','throws IllegalStateException','runs in parallel'],a:1,why:'The package summary: intermediate operations are lazy; execution begins only at a terminal operation.'},
+{q:'Which source parallelizes best?',o:['LinkedList','Stream.iterate','ArrayList or an int range','a BufferedReader.lines()'],a:2,why:'Splittable sources with known size (arrays, ArrayList, ranges) divide evenly; linked and generated sources split poorly.'},
+{q:'Collectors.toMap without a merge function on duplicate keys:',o:['keeps the first','keeps the last','throws IllegalStateException','creates a list value'],a:2,why:'toMap(k, v) throws on duplicate keys; supply a merge function or use groupingBy.'}]);
 </script></body></html>

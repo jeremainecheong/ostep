@@ -1,11 +1,11 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>OSTEP course — Operating Systems: Three Easy Pieces, taught interactively</title><style>
+<title>4 · Generics, wildcards, erasure — Java 21 course</title><style>
 /* OSTEP course — shared stylesheet. Three pieces, three hues. */
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
 :root{
   --ink:#151b2f; --ink-2:#1e2540; --ink-3:#28304f; --line:#3a4368;
   --paper:#eef0f7; --muted:#a9b1cf; --faint:#6e779a;
-  --virt:#e8b84a; --conc:#5bc8f5; --pers:#6bcb77; --sec:#f47fa0; --intro:#c9a8ff;
+  --virt:#e8b84a; --conc:#5bc8f5; --pers:#6bcb77; --sec:#f47fa0; --intro:#c9a8ff; --spec:#ffd166; --internals:#5bc8f5; --data:#6bcb77;
   --ok:#6bcb77; --bad:#ff6b6b;
   --accent:var(--virt);
   --radius:6px;
@@ -28,7 +28,7 @@ p,li{max-width:72ch}
 .hero{padding:44px 0 16px}
 .hero .chapters{color:var(--muted);font-size:.95rem;margin-bottom:6px}
 .lede{font-size:1.2rem;color:var(--muted);max-width:66ch}
-.piece-virt{--accent:var(--virt)} .piece-conc{--accent:var(--conc)} .piece-pers{--accent:var(--pers)} .piece-sec{--accent:var(--sec)} .piece-intro{--accent:var(--intro)}
+.piece-lang{--accent:var(--spec)} .piece-jvm{--accent:var(--internals)} .piece-loom{--accent:var(--data)} .piece-spec{--accent:var(--spec)} .piece-internals{--accent:var(--internals)} .piece-data{--accent:var(--data)} .piece-virt{--accent:var(--virt)} .piece-conc{--accent:var(--conc)} .piece-pers{--accent:var(--pers)} .piece-sec{--accent:var(--sec)} .piece-intro{--accent:var(--intro)}
 .fig{background:var(--ink-2);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;margin:22px 0}
 .fig figcaption,.cap{color:var(--muted);font-size:.9rem;margin-top:10px}
 .fig svg{max-width:100%;height:auto;display:block}
@@ -182,69 +182,104 @@ details>div{padding:0 16px 14px}
 }
 @media (max-width:420px){.cards{grid-template-columns:1fr}}
 
+/* ---------- runnable Python ---------- */
+.pyrun{border:1px solid var(--line);border-radius:var(--radius);background:#0f1424;margin:18px 0;overflow:hidden}
+.pyrun .pyhead{display:flex;gap:10px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--line);font-size:.85rem;color:var(--muted);background:var(--ink-2)}
+.pyrun .pyhead span:first-child{flex:1;font-weight:600;color:var(--paper)}
+.pyrun .pystatus{font-size:.78rem}
+.pyrun textarea{display:block;width:100%;border:none;background:#0f1424;color:var(--paper);font-family:'IBM Plex Mono',monospace;font-size:.86rem;line-height:1.5;padding:12px 14px;resize:vertical;outline:none;min-height:60px;tab-size:4}
+.pyrun .pyout{font-family:'IBM Plex Mono',monospace;font-size:.86rem;line-height:1.5;padding:12px 14px;margin:0;border:none;border-top:1px solid var(--line);border-left:none;border-radius:0;background:#0a0e1a;color:#cfe3ff;max-height:none;overflow:auto}
+
 </style>
-<style>.map{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:24px 0}.piece{border:1px solid var(--line);border-radius:8px;padding:16px;background:var(--ink-2);border-top:4px solid var(--accent)}.piece h3{margin:0 0 4px;color:var(--accent)}.piece p{font-size:.9rem;color:var(--muted);margin:0 0 10px}.piece a{display:block;text-decoration:none;color:var(--paper);padding:6px 0;border-top:1px solid var(--line);font-size:.92rem}.piece a:hover{color:var(--accent)}.piece a small{display:block;color:var(--faint);font-size:.78rem}.piece a.done::after{content:" ✓";color:var(--ok)}.how{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}.how .fig{margin:0}.how h4{margin:0 0 6px}@media(max-width:900px){.map{grid-template-columns:1fr 1fr}.how{grid-template-columns:1fr}}@media(max-width:600px){.map{grid-template-columns:1fr}}.big{font-size:1.05rem}</style></head>
-<body class="piece-intro"><div class="wrap">
-<header class="hero"><div class="chapters">Operating Systems: Three Easy Pieces · Remzi H. and Andrea C. Arpaci-Dusseau (v1.10, 2023) · security chapters by Peter Reiher</div>
-<h1>The whole book, as sixteen interactive lessons</h1>
-<p class="lede big">Built from the text of all 57 chapters plus the VMM appendix — every "crux", every summary, every number in the figures was extracted from the chapter PDFs, not recalled. Each lesson is short, visual, and ends in retrieval practice. Do them in order; the book's pieces build on each other.</p></header>
+<style>.pecs{display:grid;grid-template-columns:1fr 1fr;gap:12px}.pecs .fig{margin:0}.chk{display:grid;grid-template-columns:1fr 1fr;gap:8px}.chk select{width:100%}.out{padding:10px;border:1px solid var(--line);border-radius:6px;background:#0f1424;margin-top:8px;font-size:.88rem}.out b{color:var(--accent)}.er{display:grid;grid-template-columns:1fr 1fr;gap:12px}.er pre{margin:0}@media(max-width:700px){.pecs,.er{grid-template-columns:1fr}}</style></head>
+<body class="piece-lang"><div class="wrap">
+<header class="hero"><div class="chapters">JLS SE 21 · §4.4 Type Variables, §4.5 Parameterized Types, §4.6 Type Erasure, §4.10 Subtyping, §8.4.8.3 bridge methods, §15.12.2.7 inference · Chapter 18 Type Inference</div>
+<h1>Generics: compile-time types, erased at run time</h1>
+<p class="lede">Java generics give you type-checked collections without changing the JVM: type parameters exist in the compiler and in <code>Signature</code> attributes, but <em>erasure</em> (§4.6) replaces them with their bounds in bytecode. That single design decision explains why <code>List&lt;String&gt;</code> is not a <code>List&lt;Object&gt;</code> (invariance), why wildcards exist (PECS), why <code>new T[]</code> and <code>instanceof List&lt;String&gt;</code> are illegal, why bridge methods appear in <code>javap</code>, and why an unchecked cast can produce a <code>ClassCastException</code> far from where it was written.</p></header>
+<div class="source"><b>Primary sources:</b> <a href="https://docs.oracle.com/javase/specs/jls/se21/html/jls-4.html#jls-4.5">JLS §4.5</a> (parameterized types, §4.5.1 wildcards), <a href="https://docs.oracle.com/javase/specs/jls/se21/html/jls-4.html#jls-4.6">§4.6 Type Erasure</a>, <a href="https://docs.oracle.com/javase/specs/jls/se21/html/jls-4.html#jls-4.10">§4.10 Subtyping</a>, <a href="https://docs.oracle.com/javase/specs/jls/se21/html/jls-8.html#jls-8.4.8.3">§8.4.8.3</a> (bridge methods), <a href="https://docs.oracle.com/javase/specs/jls/se21/html/jls-18.html">ch 18 Type Inference</a>. "PECS" is Joshua Bloch's mnemonic for §4.10.2's wildcard subtyping.</div>
+<h2>What you'll be able to do</h2><ul id="obj"></ul>
 
-<figure class="fig"><svg viewBox="0 0 900 150" role="img" aria-label="three pieces">
-<rect x="20" y="30" width="270" height="90" rx="8" fill="#e8b84a"/><text x="155" y="68" text-anchor="middle" fill="#111" font-size="20" font-weight="700" font-family="Fraunces,serif">Virtualization</text><text x="155" y="95" text-anchor="middle" fill="#111" font-size="13">CPU (ch 4–10) · Memory (ch 13–23)</text>
-<rect x="315" y="30" width="270" height="90" rx="8" fill="#5bc8f5"/><text x="450" y="68" text-anchor="middle" fill="#111" font-size="20" font-weight="700" font-family="Fraunces,serif">Concurrency</text><text x="450" y="95" text-anchor="middle" fill="#111" font-size="13">threads, locks, CVs, semaphores, bugs (ch 26–33)</text>
-<rect x="610" y="30" width="270" height="90" rx="8" fill="#6bcb77"/><text x="745" y="68" text-anchor="middle" fill="#111" font-size="20" font-weight="700" font-family="Fraunces,serif">Persistence</text><text x="745" y="95" text-anchor="middle" fill="#111" font-size="13">devices, disks, file systems, distributed (ch 36–50)</text>
-<text x="450" y="140" text-anchor="middle" fill="#a9b1cf" font-size="13">+ Security (ch 53–57) and Virtual Machine Monitors (Appendix B)</text></svg></figure>
+<h2>Invariance and the reason for it</h2>
+<div class="crux"><b>§4.10.2:</b> <code>C&lt;S&gt;</code> is a subtype of <code>C&lt;T&gt;</code> only if <code>S</code> and <code>T</code> are the same type (or via wildcards). <code>List&lt;String&gt;</code> is <em>not</em> a <code>List&lt;Object&gt;</code>: if it were, <code>List&lt;Object&gt; o = strings; o.add(1);</code> would put an Integer into a list of Strings, and unlike arrays there is no run-time check to catch it (erasure). Arrays are covariant and pay with <code>ArrayStoreException</code>; generics are invariant and pay nothing at run time.</div>
+<pre><code>List&lt;String&gt; strings = new ArrayList&lt;&gt;();
+List&lt;Object&gt; objects = strings;            // compile error: incompatible types
+Object[] arr = new String[1];               // allowed (covariant arrays)
+arr[0] = 1;                                 // ArrayStoreException at run time
+List&lt;? extends Number&gt; nums = List.of(1, 2.5);   // wildcards restore useful subtyping
+Number n = nums.get(0);                     // reading is fine: everything is at least a Number
+// nums.add(3);                             // error: the capture type could be List&lt;Double&gt;</code></pre>
 
-<h2>Course map</h2>
-<div class="map" id="map"></div>
+<h2>Wildcards and PECS</h2>
+<div class="pecs"><div class="fig"><h4>Producer → <code>? extends T</code></h4><p>A <code>List&lt;? extends Number&gt;</code> <em>produces</em> Numbers: <code>get</code> returns <code>Number</code>; <code>add</code> accepts only <code>null</code>, because the actual element type is unknown (could be <code>Integer</code> or <code>Double</code>). Use it for parameters you only read from: <code>double sum(Collection&lt;? extends Number&gt; c)</code>.</p></div><div class="fig"><h4>Consumer → <code>? super T</code></h4><p>A <code>List&lt;? super Integer&gt;</code> <em>consumes</em> Integers: <code>add(Integer)</code> is safe because the actual type is Integer or a supertype; <code>get</code> returns only <code>Object</code>. Use it for parameters you write to: <code>void fill(List&lt;? super Integer&gt; sink)</code>. Comparators are consumers: <code>Comparator&lt;? super T&gt;</code>.</p></div></div>
+<p><code>?</code> alone (unbounded) means "some type": read as <code>Object</code>, write nothing — the right type for methods that don't care about the element type (<code>void printAll(List&lt;?&gt; l)</code>). A <b>type parameter</b> instead of a wildcard is needed when two positions must agree (<code>&lt;T&gt; void copy(List&lt;? super T&gt; dst, List&lt;? extends T&gt; src)</code> — <code>Collections.copy</code>'s signature). Capture conversion (§5.1.10) gives each wildcard a fresh type variable so the compiler can reason about it; a "capture#1 of ?" error message is this mechanism showing through.</p>
+<div class="fig"><h4>What can I do with this reference?</h4><div class="chk"><label>declared type <select id="wt"><option value="ext">List&lt;? extends Number&gt;</option><option value="sup">List&lt;? super Integer&gt;</option><option value="unb">List&lt;?&gt;</option><option value="exact">List&lt;Number&gt;</option></select></label><label>operation <select id="wo"><option value="get">Number x = list.get(0)</option><option value="addInt">list.add(Integer.valueOf(1))</option><option value="addNum">list.add((Number) 2.5)</option><option value="addNull">list.add(null)</option><option value="assignInt">list = new ArrayList&lt;Integer&gt;()</option><option value="assignObj">list = new ArrayList&lt;Object&gt;()</option></select></label></div><div class="out" id="wout"></div></div>
 
-<h2>How to use this course</h2>
-<div class="how">
-<div class="fig"><h4>1. One lesson per sitting</h4><p>Each takes 25–45 minutes: read, play with the simulator until you can predict its output, flip the cards, then do the quiz <em>from memory</em>. Check off the objectives at the top only when you could explain them to someone else.</p></div>
-<div class="fig"><h4>2. Then read the chapter</h4><p>Every lesson links its primary source — the free chapter PDFs at <a href="https://pages.cs.wisc.edu/~remzi/OSTEP/">ostep.org</a>. The lesson gives you the map; the chapter has the jokes, the asides, and the homework simulators (<code>ostep-homework</code>) which are the best practice there is.</p></div>
-<div class="fig"><h4>3. Space it out</h4><p>Long-term retention comes from re-testing later, not from feeling fluent now. Redo a lesson's quiz two days later and again after a week; the <a href="reference/cheatsheets.html">cheat sheets</a> are for the fast pass, the <a href="reference/glossary.html">glossary</a> for vocabulary. Ask me in the chat for mixed quizzes across lessons.</p></div></div>
+<h2>Erasure (§4.6) and what it costs</h2>
+<p>The erasure of a parameterized type is its raw type; of a type variable, the erasure of its leftmost bound (<code>Object</code> if none). Consequences, all from that rule:</p>
+<ul><li><code>new T()</code>, <code>new T[n]</code>, <code>T.class</code>, <code>instanceof List&lt;String&gt;</code>, <code>catch (T e)</code>, static fields of type T — all illegal: T is not there at run time. <code>List&lt;String&gt;.class</code> does not exist; <code>List.class</code> does. Workarounds: pass a <code>Class&lt;T&gt;</code> token, <code>Array.newInstance</code>, or accept an unchecked cast.</li><li><b>Unchecked warnings</b> mark the places where the compiler cannot prove safety (raw types, casts to a parameterized type). The <code>ClassCastException</code> then surfaces at the call site where the compiler inserted a checkcast — <em>heap pollution</em>: <code>@SafeVarargs</code> documents that a varargs method of type <code>T...</code> (erased to <code>Object[]</code>) does not store into the array.</li><li><b>Overloading on erasure is illegal:</b> <code>void f(List&lt;String&gt;)</code> and <code>void f(List&lt;Integer&gt;)</code> have the same erased signature.</li><li><b>Bridge methods (§8.4.8.3):</b> when a subclass overrides a generic method with a specialized signature, the compiler emits a synthetic method with the erased signature that casts and delegates, so overriding still works after erasure. <code>javap</code> shows it flagged <code>synthetic bridge</code>.</li><li>Reflection keeps the generic signatures in the <code>Signature</code> attribute (<code>Method.getGenericReturnType</code>), which is how frameworks like Jackson read <code>List&lt;String&gt;</code> from a field declaration — but never from a value.</li></ul>
+<div class="er"><pre><code>// source
+class Box&lt;T extends Comparable&lt;T&gt;&gt; {
+    T value;
+    T get() { return value; }
+    void set(T v) { value = v; }
+}
+class IntBox extends Box&lt;Integer&gt; {
+    @Override void set(Integer v) { value = v * 2; }
+}</code></pre><pre><code>// after erasure (what the JVM sees)
+class Box {
+    Comparable value;              // leftmost bound
+    Comparable get() { return value; }
+    void set(Comparable v) { value = v; }
+}
+class IntBox extends Box {
+    void set(Integer v) { value = v * 2; }
+    /* synthetic bridge */ void set(Comparable v) { set((Integer) v); }
+}</code></pre></div>
 
-<h2>What the book covers that this course does too</h2>
-<p>Chapters 1–2 (dialogue, introduction) → lesson 1. Chapters 3, 11, 12, 24, 25, 34, 35, 46, 47, 51, 52 are the book's short dialogues that open and close each part; their content is folded into the neighbouring lessons. The lab appendices (tutorial, systems and xv6 projects) and the deprecated monitors appendix are referenced in RESOURCES.md rather than taught.</p>
-<h2>Sister courses</h2><div class="how"><div class="fig"><h4><a href="python/index.html">Python 3.13</a></h4><p>The Language Reference, CPython internals (specializing interpreter, JIT, GC, GIL and free-threading), and pandas vs Polars — 20 interactive lessons with Python running in the browser.</p></div><div class="fig"><h4><a href="java/index.html">Java 21</a></h4><p>The JLS and JVMS, HotSpot (class loading, bytecode, tiered JIT, Generational ZGC), and virtual threads from JEP 444 down to VirtualThread.java — 17 interactive lessons with simulators.</p></div></div>
-<p class="tip">This workspace follows the <code>teach</code> skill layout: <code>MISSION.md</code> (why you're learning this), <code>RESOURCES.md</code> (sources), <code>NOTES.md</code>, <code>learning-records/</code>, <code>lessons/</code>, <code>reference/</code>, <code>assets/</code>. Tell me in the chat how a lesson landed and I'll adapt the next ones.</p>
+<h2>Bounds, inference, and idioms</h2>
+<ul><li><b>Bounds:</b> <code>&lt;T extends Number &amp; Comparable&lt;T&gt;&gt;</code> — a class bound first, then interfaces; erasure uses the leftmost. Recursive bound: <code>&lt;T extends Comparable&lt;? super T&gt;&gt; T max(Collection&lt;? extends T&gt;)</code> — the real signature of <code>Collections.max</code>, allowing subclasses whose superclass is the comparable one.</li><li><b>Inference (ch 18):</b> the diamond <code>new ArrayList&lt;&gt;()</code>, generic method arguments, and lambdas are typed by inference from the target type — "poly expressions" (§15.2). <code>List.of()</code> in <code>List&lt;String&gt; l = List.of();</code> infers <code>String</code>. Explicit witnesses <code>Collections.&lt;String&gt;emptyList()</code> exist for the rare ambiguous case.</li><li><b>Raw types</b> exist for migration only; using one turns off checking for the whole expression. <code>List</code> vs <code>List&lt;?&gt;</code>: the wildcard is checked, raw is not.</li><li>Generic <code>class</code> vs generic <code>method</code>: a static method cannot use the class's type parameter (there is no instance) and declares its own <code>&lt;T&gt;</code>. <code>Optional&lt;T&gt;</code>, <code>Comparator&lt;T&gt;</code>, <code>Function&lt;T,R&gt;</code> are the everyday generic APIs; primitives are boxed (<code>List&lt;int&gt;</code> is illegal until Valhalla), hence <code>IntStream</code>/<code>ToIntFunction</code> specializations.</li></ul>
+
+<h2>Flash cards</h2><div id="cards"></div>
+<h2>Retrieval practice</h2><div id="quiz"></div>
+<p class="tip">Want to see the bridge method with javap on a real class, or work through capture-conversion error messages? Ask me in the chat.</p>
 </div>
 <script>
-/* OSTEP course — shared components. Every page loads this file (inlined by build.py). */
+/* Java 21 course — shared components (from the OSTEP course). Every page loads this file (inlined by build.py). */
 window.OS = (function () {
   const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
   /* ---------- persistent storage (localStorage on a real site; in-memory fallback in sandboxes) ---------- */
   const mem = {};
   const store = {
-    get(k) { try { const v = localStorage.getItem('ostep:' + k); return v === null ? (mem[k] ?? null) : JSON.parse(v); } catch (e) { return mem[k] ?? null; } },
-    set(k, v) { mem[k] = v; try { localStorage.setItem('ostep:' + k, JSON.stringify(v)); } catch (e) {} },
-    del(k) { delete mem[k]; try { localStorage.removeItem('ostep:' + k); } catch (e) {} },
-    keys(prefix) { const out = new Set(Object.keys(mem).filter(k => k.startsWith(prefix))); try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith('ostep:' + prefix)) out.add(k.slice(6)); } } catch (e) {} return [...out]; },
-    available() { try { localStorage.setItem('ostep:test', '1'); localStorage.removeItem('ostep:test'); return true; } catch (e) { return false; } }
+    get(k) { try { const v = localStorage.getItem('java21:' + k); return v === null ? (mem[k] ?? null) : JSON.parse(v); } catch (e) { return mem[k] ?? null; } },
+    set(k, v) { mem[k] = v; try { localStorage.setItem('java21:' + k, JSON.stringify(v)); } catch (e) {} },
+    del(k) { delete mem[k]; try { localStorage.removeItem('java21:' + k); } catch (e) {} },
+    keys(prefix) { const out = new Set(Object.keys(mem).filter(k => k.startsWith(prefix))); try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith('java21:' + prefix)) out.add(k.slice(6)); } } catch (e) {} return [...out]; },
+    available() { try { localStorage.setItem('java21:test', '1'); localStorage.removeItem('java21:test'); return true; } catch (e) { return false; } }
   };
 
   /* ---------- course structure ---------- */
   const PIECES = [
-    ['intro', 'Introduction', [['0001-three-easy-pieces', 'Three easy pieces', 'ch 1–2']]],
-    ['virt', 'Virtualization', [
-      ['0002-processes', 'Processes & the process API', 'ch 4–5'],
-      ['0003-limited-direct-execution', 'Limited direct execution', 'ch 6'],
-      ['0004-scheduling', 'Scheduling', 'ch 7–10'],
-      ['0005-address-spaces', 'Address spaces & segments', 'ch 13–16'],
-      ['0006-paging-and-tlbs', 'Paging & TLBs', 'ch 17–20'],
-      ['0007-swapping', 'Swapping & policies', 'ch 21–23']]],
-    ['conc', 'Concurrency', [
-      ['0008-threads-and-locks', 'Threads & locks', 'ch 26–28'],
-      ['0009-cvs-and-semaphores', 'CVs & semaphores', 'ch 29–31'],
-      ['0010-bugs-and-events', 'Bugs & events', 'ch 32–33']]],
-    ['pers', 'Persistence', [
-      ['0011-devices-disks-raid', 'Devices, disks, RAID', 'ch 36–38'],
-      ['0012-files-and-vsfs', 'Files & a simple FS', 'ch 39–40'],
-      ['0013-ffs-journaling-lfs', 'FFS, journaling, LFS', 'ch 41–43'],
-      ['0014-ssd-and-integrity', 'SSDs & integrity', 'ch 44–45'],
-      ['0015-distributed-nfs-afs', 'Distributed FS', 'ch 48–50']]],
-    ['sec', 'Security', [['0016-security-and-vmms', 'Security & VMMs', 'ch 53–57, App B']]]
+    ['lang', 'The language, as specified (JLS 21)', [
+      ['0001-types-values-variables', 'Types, values, variables', 'JLS ch 4, 5'],
+      ['0002-classes-objects-initialization', 'Classes, objects, initialization order', 'JLS ch 8, 12'],
+      ['0003-records-sealed-interfaces', 'Records, sealed types, interfaces', 'JLS §8.10, §8.1.1.2, ch 9'],
+      ['0004-generics-and-erasure', 'Generics, wildcards, erasure', 'JLS §4.5–4.10, §8.4.8.3'],
+      ['0005-expressions-exceptions-switch', 'Expressions, exceptions, switch & patterns', 'JLS ch 11, 14, 15; JEPs 440/441'],
+      ['0006-lambdas-streams', 'Lambdas, method references, streams', 'JLS §15.27, §15.13, java.util.stream'],
+      ['0007-java-memory-model', 'The Java memory model', 'JLS ch 17']]],
+    ['jvm', 'The JVM (JVMS 21 + HotSpot)', [
+      ['0008-class-files-and-bytecode', 'Class files and bytecode', 'JVMS ch 4, 6'],
+      ['0009-loading-linking-initialization', 'Loading, linking, initialization, class loaders', 'JVMS ch 5'],
+      ['0010-execution-frames-invokedynamic', 'Execution: frames, invoke*, invokedynamic', 'JVMS ch 2, 5.4.3, 6'],
+      ['0011-hotspot-jit', 'HotSpot: interpreter, C1/C2, deoptimization', 'compilationPolicy.cpp, c2_globals.hpp'],
+      ['0012-heap-gc-generational-zgc', 'Objects, heap, GC, Generational ZGC', 'markWord.hpp, gcConfig.cpp, JEP 439']]],
+    ['loom', 'Java 21: virtual threads and new features', [
+      ['0013-virtual-threads-model', 'Virtual threads: the model (JEP 444)', 'JEP 444'],
+      ['0014-virtual-threads-internals', 'Virtual threads: continuations, carriers, scheduler', 'VirtualThread.java, Continuation.java, freeze/thaw'],
+      ['0015-structured-concurrency-scoped-values', 'Structured concurrency & scoped values', 'StructuredTaskScope, ScopedValue (preview)'],
+      ['0016-concurrency-toolkit', 'The concurrency toolkit: monitors, locks, executors', 'JLS §17.1–17.3, java.util.concurrent'],
+      ['0017-java-21-features', 'What Java 21 adds', 'JEPs 431, 440, 441, 442, 443, 445, 446, 453']]]
   ];
   const LESSONS = PIECES.flatMap(p => p[2].map(l => [l[0], l[1], p[0], l[2]]));
   const title = id => (LESSONS.find(l => l[0] === id) || [])[1] || id;
@@ -257,7 +292,7 @@ window.OS = (function () {
     const isLesson = i >= 0;
     const top = document.createElement('header'); top.className = 'topbar';
     top.innerHTML = `<button class="menu" aria-label="Open directory" aria-expanded="false">☰<span>Directory</span></button>
-      <a class="brand" href="${root}index.html"><span class="dot"></span>OSTEP course</a>
+      <a class="brand" href="${root}index.html"><span class="dot"></span>Java 21 course</a>
       <nav class="links"><a href="${root}reference/glossary.html">Glossary</a><a href="${root}reference/cheatsheets.html">Cheat sheets</a><a href="${root}notes.html">My notes</a></nav>
       ${isLesson ? `<span class="where">${i+1} / ${LESSONS.length}</span>` : ''}`;
     document.body.prepend(top);
@@ -341,6 +376,17 @@ window.OS = (function () {
     });
   }
 
+
+  /* ---------- Java code blocks: annotated, copyable, with a jshell hint (no JVM in the browser) ---------- */
+  function py(el, code, opts) {
+    el = typeof el === 'string' ? document.getElementById(el) : el; opts = opts || {};
+    el.classList.add('pyrun');
+    const src = code.trim();
+    const preview = /--enable-preview|StructuredTaskScope|ScopedValue|STR\./.test(src);
+    el.innerHTML = `<div class="pyhead"><span>Java 21${preview ? ' · needs --enable-preview' : ''}${opts.note ? ' · ' + esc(opts.note) : ''}</span><span class="pystatus">paste into jshell or a scratch file</span><button class="primary copy">Copy</button></div><pre class="pyout" style="display:block;white-space:pre-wrap;margin:0"><code>${esc(src)}</code></pre>`;
+    el.querySelector('.copy').onclick = () => { navigator.clipboard && navigator.clipboard.writeText(src).then(() => { el.querySelector('.pystatus').textContent = 'copied'; }).catch(() => {}); };
+  }
+
   /* ---------- flip cards ---------- */
   function cards(el, list) {
     el = typeof el === 'string' ? document.getElementById(el) : el;
@@ -385,17 +431,23 @@ window.OS = (function () {
     el.querySelectorAll('input').forEach(c => c.onchange = () => { const s = [...el.querySelectorAll('input:checked')].map(x => +x.dataset.i); if (pageId) store.set('obj:' + pageId, s); });
   }
 
-  return { chrome, quiz, cards, stepper, gantt, objectives, esc, store, LESSONS, PIECES, title };
+  return { chrome, quiz, cards, stepper, gantt, objectives, py, esc, store, LESSONS, PIECES, title };
 })();
 
 </script>
 <script>
-OS.chrome('index','');
-const P=[['intro','Introduction','What an OS is: the three pieces, design goals, history.',['0001-three-easy-pieces','Three easy pieces','ch 1–2']],
-['virt','Virtualization','The CPU and memory made private and plentiful.',['0002-processes','Processes & the process API','ch 4–5'],['0003-limited-direct-execution','Limited direct execution','ch 6'],['0004-scheduling','Scheduling: FIFO to CFS and multi-CPU','ch 7–10'],['0005-address-spaces','Address spaces, base/bounds, segments','ch 13–16'],['0006-paging-and-tlbs','Free space, paging, TLBs, small tables','ch 17–20'],['0007-swapping','Swapping, replacement, VAX/VMS & Linux','ch 21–23']],
-['conc','Concurrency','Threads and the primitives that make them safe.',['0008-threads-and-locks','Threads, thread API, locks','ch 26–28'],['0009-cvs-and-semaphores','Locked structures, CVs, semaphores','ch 29–31'],['0010-bugs-and-events','Concurrency bugs & event-based servers','ch 32–33']],
-['pers','Persistence + Security','Storage from the device up; then protecting it all.',['0011-devices-disks-raid','Devices, disks, RAID','ch 36–38'],['0012-files-and-vsfs','Files, directories, a simple file system','ch 39–40'],['0013-ffs-journaling-lfs','FFS, crash consistency, LFS','ch 41–43'],['0014-ssd-and-integrity','SSDs & data integrity','ch 44–45'],['0015-distributed-nfs-afs','Distributed systems, NFS, AFS','ch 48–50'],['0016-security-and-vmms','Security (ch 53–57) & VMMs','ch 53–57, App B']]];
-const m=document.getElementById('map');let idx=0;const S=OS.store;
-m.innerHTML=P.map(([cls,name,desc,...ls])=>`<div class="piece piece-${cls}"><h3>${name}</h3><p>${desc}</p>${ls.map(l=>{idx++;const q=S.get('quiz:'+l[0]),nt=(S.get('notes:'+l[0])||{}).text;return `<a href="lessons/${l[0]}.html" data-id="${l[0]}" class="${q&&q.score===q.total?'done':''}">${idx}. ${l[1]}<small>${l[2]}${q?` · quiz ${q.score}/${q.total}`:''}${nt?' · ✎ notes':''}</small></a>`;}).join('')}</div>`).join('');
-const done=OS.LESSONS.filter(l=>S.get('quiz:'+l[0])).length;const ph=document.createElement('p');ph.className='cap';ph.textContent=done?`${done} of 16 lesson quizzes attempted — see My notes & progress for details.`:'Quiz scores, checked objectives and notes are saved in this browser as you go.';document.getElementById('map').after(ph);
+OS.chrome('0004-generics-and-erasure');
+OS.objectives('obj',['Explain invariance of parameterized types and contrast it with covariant arrays.','Apply PECS: choose ? extends, ? super, ?, or a type parameter for a signature.','State the erasure rule and derive the six things it makes illegal.','Explain heap pollution, unchecked warnings, @SafeVarargs and bridge methods.','Read bounded and recursively bounded signatures such as Collections.max.']);
+const W={ext:{get:['ok','Reading returns Number: whatever the actual element type, it is a Number.'],addInt:['no','The list might really be a List<Double>; the compiler only knows "some subtype of Number" (capture).'],addNum:['no','Same reason — no value except null can be proven to fit the unknown element type.'],addNull:['ok','null is a member of every reference type.'],assignInt:['ok','List<Integer> is a subtype of List<? extends Number> (§4.10.2).'],assignObj:['no','Object is not a subtype of Number.']},sup:{get:['no','get returns Object: the actual type could be Integer, Number or Object. You can only read as Object.'],addInt:['ok','An Integer fits Integer and any supertype: the consumer side is safe.'],addNum:['no','A Number is not necessarily an Integer; the list might be a List<Integer>.'],addNull:['ok','null always fits.'],assignInt:['ok','List<Integer> is a subtype of List<? super Integer>.'],assignObj:['ok','List<Object> also is: Object is a supertype of Integer.']},unb:{get:['no','get returns Object; assign to Number only with a cast.'],addInt:['no','Unknown element type: nothing but null can be added.'],addNum:['no','Same.'],addNull:['ok','null fits.'],assignInt:['ok','Any List<X> is a List<?>.'],assignObj:['ok','Any List<X> is a List<?>.']},exact:{get:['ok','Exact type Number: read and write freely.'],addInt:['ok','Integer is a Number (widening reference on the element).'],addNum:['ok','Exactly the element type.'],addNull:['ok','null fits.'],assignInt:['no','Invariance: List<Integer> is not a List<Number>.'],assignObj:['no','Invariance again.']}};
+function wcheck(){const t=document.getElementById('wt').value,o=document.getElementById('wo').value,r=W[t][o];document.getElementById('wout').innerHTML=`<b>${r[0]==='ok'?'compiles':'compile error'}</b> — ${r[1]}`;}
+['wt','wo'].forEach(id=>document.getElementById(id).onchange=wcheck);wcheck();
+OS.cards('cards',[['Invariance','C<S> <: C<T> only when S = T; prevents unchecked stores that erasure could not catch at run time.'],['? extends T','Producer: read as T, write nothing (except null). Use for inputs you only read.'],['? super T','Consumer: write T, read only Object. Use for outputs/sinks and comparators.'],['Capture conversion','Each wildcard becomes a fresh type variable so the compiler can reason about "some type" (capture#1 messages).'],['Erasure','Parameterized types → raw types; type variables → erasure of the leftmost bound (Object if none).'],['Illegal under erasure','new T(), new T[], T.class, instanceof C<T>, catch (T e), static T fields, overloads differing only in type args.'],['Heap pollution','A variable of parameterized type referring to an object of the wrong parameterization; surfaces later as ClassCastException.'],['Bridge method','Synthetic erased-signature method the compiler adds so an override with a specialized signature still overrides after erasure.'],['Recursive bound','<T extends Comparable<? super T>>: T comparable to itself or a supertype; used by Collections.max/sort.']]);
+OS.quiz('quiz',[
+{q:'Why is List<String> not a subtype of List<Object>?',o:['Object is final','it would allow adding non-Strings with no run-time check','Strings are immutable','List is an interface'],a:1,why:'Erasure removes element types at run time, so covariance would silently corrupt the list; arrays instead check every store.'},
+{q:'For a method that only reads Numbers from a collection, the parameter type should be:',o:['Collection<Number>','Collection<? extends Number>','Collection<? super Number>','Collection<Object>'],a:1,why:'PECS: producers use ? extends, accepting List<Integer>, List<Double>, etc.'},
+{q:'Which is legal inside a generic class C<T>?',o:['new T()','T[] arr = new T[10]','static T cache','T value; (an instance field)'],a:3,why:'Instance fields of type T are fine; instantiation, generic array creation and static fields of type T are illegal after erasure.'},
+{q:'The erasure of <T extends Number & Comparable<T>> T is:',o:['Object','Number','Comparable','Number & Comparable'],a:1,why:'§4.6: the erasure of a type variable is the erasure of its leftmost bound.'},
+{q:'What does a bridge method do?',o:['boxes primitives','implements the erased signature by casting and delegating to the specialized override','links generic and raw types at run time','enables reflection on type arguments'],a:1,why:'§8.4.8.3: without it, the erased superclass method would not be overridden by the specialized subclass method.'},
+{q:'@SafeVarargs asserts that a T... method:',o:['never throws','does not store into or expose the varargs array (no heap pollution)','has been tested with all types','is final'],a:1,why:'The varargs array is erased to Object[]; the annotation suppresses the warning when the method only reads from it.'},
+{q:'List<? super Integer> l; Object o = l.get(0); Integer i = l.get(0);',o:['both compile','first compiles, second does not','neither compiles','both fail at run time'],a:1,why:'Reading from a ? super type yields Object; only writes of Integer are guaranteed safe.'}]);
 </script></body></html>

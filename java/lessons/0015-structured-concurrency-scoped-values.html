@@ -1,0 +1,502 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>15 · Structured concurrency & scoped values — Java 21 course</title><style>
+/* OSTEP course — shared stylesheet. Three pieces, three hues. */
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+:root{
+  --ink:#151b2f; --ink-2:#1e2540; --ink-3:#28304f; --line:#3a4368;
+  --paper:#eef0f7; --muted:#a9b1cf; --faint:#6e779a;
+  --virt:#e8b84a; --conc:#5bc8f5; --pers:#6bcb77; --sec:#f47fa0; --intro:#c9a8ff; --spec:#ffd166; --internals:#5bc8f5; --data:#6bcb77;
+  --ok:#6bcb77; --bad:#ff6b6b;
+  --accent:var(--virt);
+  --radius:6px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--ink);color:var(--paper);font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:17px;line-height:1.6}
+a{color:var(--accent)}
+code,pre,kbd,.mono{font-family:'IBM Plex Mono',ui-monospace,monospace}
+code{background:var(--ink-3);padding:1px 5px;border-radius:4px;font-size:.9em}
+pre{background:#0f1424;border:1px solid var(--line);border-left:4px solid var(--accent);padding:14px 16px;overflow:auto;border-radius:var(--radius);font-size:.86em;line-height:1.5}
+pre code{background:none;padding:0;font-size:inherit}
+h1,h2,h3,h4{font-family:'Fraunces',Georgia,serif;font-weight:700;line-height:1.15;margin:0 0 .4em}
+h1{font-size:2.6rem;letter-spacing:-.01em}
+h2{font-size:1.9rem;margin-top:2.6rem;padding-top:1.2rem;border-top:1px solid var(--line)}
+h3{font-size:1.3rem;margin-top:1.8rem;color:var(--accent)}
+h4{font-size:1.05rem;margin-top:1.2rem}
+p,li{max-width:72ch}
+.wrap{max-width:1100px;margin:0 auto;padding:0 28px 96px}
+.hero{padding:44px 0 16px}
+.hero .chapters{color:var(--muted);font-size:.95rem;margin-bottom:6px}
+.lede{font-size:1.2rem;color:var(--muted);max-width:66ch}
+.piece-lang{--accent:var(--spec)} .piece-jvm{--accent:var(--internals)} .piece-loom{--accent:var(--data)} .piece-spec{--accent:var(--spec)} .piece-internals{--accent:var(--internals)} .piece-data{--accent:var(--data)} .piece-virt{--accent:var(--virt)} .piece-conc{--accent:var(--conc)} .piece-pers{--accent:var(--pers)} .piece-sec{--accent:var(--sec)} .piece-intro{--accent:var(--intro)}
+.fig{background:var(--ink-2);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;margin:22px 0}
+.fig figcaption,.cap{color:var(--muted);font-size:.9rem;margin-top:10px}
+.fig svg{max-width:100%;height:auto;display:block}
+svg text{font-family:'IBM Plex Sans',sans-serif}
+svg .mono{font-family:'IBM Plex Mono',monospace}
+.crux{border:1px solid var(--accent);border-radius:var(--radius);padding:14px 18px;margin:22px 0;background:color-mix(in srgb,var(--accent) 8%,transparent)}
+.crux b{color:var(--accent)}
+.tip{border-left:4px solid var(--muted);padding:6px 16px;margin:18px 0;color:var(--muted)}
+.tip b{color:var(--paper)}
+table{border-collapse:collapse;width:100%;margin:16px 0;font-size:.95rem}
+th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{color:var(--muted);font-weight:500}
+td.mono,th.mono{font-family:'IBM Plex Mono',monospace}
+button,.btn{font:inherit;font-size:.9rem;background:var(--ink-3);color:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:7px 13px;cursor:pointer}
+button:hover{border-color:var(--accent)}
+button.primary{background:var(--accent);color:#111;border-color:var(--accent);font-weight:600}
+button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+input[type=range]{accent-color:var(--accent)}
+input[type=text],input[type=number],select{font:inherit;background:#0f1424;color:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:6px 10px}
+.controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:10px 0}
+.controls label{font-size:.9rem;color:var(--muted)}
+details{border:1px solid var(--line);border-radius:var(--radius);margin:10px 0;background:var(--ink-2)}
+summary{cursor:pointer;padding:12px 16px;font-weight:600;list-style:none}
+summary::before{content:"+";display:inline-block;width:1.2em;color:var(--accent)}
+details[open] summary::before{content:"–"}
+details>div{padding:0 16px 14px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;margin:16px 0}
+.card{perspective:900px;min-height:140px;cursor:pointer}
+.card .inner{position:relative;width:100%;height:100%;min-height:140px;transition:transform .45s;transform-style:preserve-3d}
+.card.flipped .inner{transform:rotateY(180deg)}
+.card .face{position:absolute;inset:0;padding:14px;border-radius:var(--radius);border:1px solid var(--line);background:var(--ink-2);backface-visibility:hidden;display:flex;align-items:center;justify-content:center;text-align:center;font-size:.95rem}
+.card .back{transform:rotateY(180deg);background:var(--ink-3);border-color:var(--accent);font-size:.88rem;line-height:1.45}
+.card .front{font-weight:600}
+@media (prefers-reduced-motion:reduce){.card .inner{transition:none}}
+.quiz .q{border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin:12px 0;background:var(--ink-2)}
+.quiz .q p{margin:0 0 10px;font-weight:600}
+.quiz .opts{display:grid;gap:8px}
+.quiz .opt{text-align:left;background:var(--ink);width:100%}
+.quiz .opt.right{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 15%,var(--ink))}
+.quiz .opt.wrong{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 15%,var(--ink))}
+.quiz .why{margin-top:10px;color:var(--muted);font-size:.93rem;display:none}
+.quiz .q.done .why{display:block}
+.quiz .score{margin-top:12px;font-weight:600}
+.stepper .stage{min-height:60px;background:#0f1424;border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin:10px 0}
+.stepper .idx{color:var(--muted);font-size:.85rem}
+.gantt{display:grid;gap:6px;margin:10px 0}
+.gantt .row{display:grid;grid-template-columns:60px 1fr;align-items:center;gap:8px;font-size:.85rem}
+.gantt .track{position:relative;height:26px;background:#0f1424;border-radius:4px;overflow:hidden}
+.gantt .seg{position:absolute;top:0;bottom:0;display:flex;align-items:center;justify-content:center;font-size:.75rem;color:#111;font-weight:600;border-right:1px solid rgba(0,0,0,.3)}
+.cells{display:grid;gap:4px;margin:10px 0}
+.cell{background:#0f1424;border:1px solid var(--line);border-radius:4px;padding:6px;text-align:center;font-family:'IBM Plex Mono',monospace;font-size:.8rem;min-height:36px;display:flex;align-items:center;justify-content:center}
+.cell.hit{background:color-mix(in srgb,var(--ok) 35%,#0f1424);border-color:var(--ok)}
+.cell.miss{background:color-mix(in srgb,var(--bad) 35%,#0f1424);border-color:var(--bad)}
+.cell.active{outline:2px solid var(--accent)}
+.cell.free{opacity:.45}
+.hl{background:color-mix(in srgb,var(--accent) 30%,transparent);padding:1px 5px;border-radius:3px}
+.k{color:var(--accent);font-weight:600}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media (max-width:760px){.two{grid-template-columns:1fr}.topbar{gap:10px}h1{font-size:2rem}}
+.nav-bottom{display:flex;justify-content:space-between;gap:16px;margin-top:56px;padding-top:20px;border-top:1px solid var(--line)}
+.nav-bottom a{text-decoration:none;padding:12px 16px;border:1px solid var(--line);border-radius:var(--radius);color:var(--paper)}
+.source{background:var(--ink-2);border-radius:var(--radius);padding:14px 18px;margin:22px 0;font-size:.95rem}
+.source b{color:var(--accent)}
+.objectives li{list-style:none;margin:6px 0}
+.objectives input{margin-right:8px;accent-color:var(--accent)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.85rem;color:var(--muted)}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:5px;vertical-align:-2px}
+.tag{display:inline-block;font-size:.75rem;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted);margin-right:6px}
+.log{font-family:'IBM Plex Mono',monospace;font-size:.82rem;background:#0f1424;border:1px solid var(--line);border-radius:var(--radius);padding:10px 12px;max-height:220px;overflow:auto;white-space:pre-wrap}
+@media print{body{background:#fff;color:#111}.topbar,.nav-bottom,button{display:none}.fig,.crux,details,.source{border-color:#bbb;background:#fff}pre{background:#f5f5f5;color:#111}}
+
+/* ---------- site chrome: sticky header + directory drawer ---------- */
+.topbar{position:sticky;top:0;z-index:30;display:flex;gap:14px;align-items:center;padding:10px 16px;background:color-mix(in srgb,var(--ink) 92%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);font-size:.9rem}
+.topbar .menu{display:flex;align-items:center;gap:8px;padding:8px 12px;font-size:1rem}
+.topbar .menu span{font-size:.85rem}
+.topbar .brand{color:var(--paper);text-decoration:none;font-weight:600;display:flex;align-items:center;gap:8px}
+.topbar .dot{width:10px;height:10px;border-radius:50%;background:var(--accent);display:inline-block}
+.topbar .links{display:flex;gap:16px;margin-left:8px}
+.topbar .links a{color:var(--muted);text-decoration:none}
+.topbar .links a:hover{color:var(--paper)}
+.topbar .where{margin-left:auto;color:var(--faint);font-variant-numeric:tabular-nums}
+.drawer{position:fixed;top:0;left:0;bottom:0;width:min(340px,88vw);background:var(--ink-2);border-right:1px solid var(--line);z-index:50;transform:translateX(-102%);transition:transform .25s;overflow-y:auto;padding:0 0 24px;box-shadow:0 0 40px rgba(0,0,0,.5)}
+.drawer-open .drawer{transform:none}
+.scrim{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:40;opacity:0;pointer-events:none;transition:opacity .2s}
+.drawer-open .scrim{opacity:1;pointer-events:auto}
+.drawer .dhead{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--ink-2)}
+.drawer .close,.notes-sheet .close{font-size:1.3rem;line-height:1;padding:4px 10px}
+.drawer .dgroup{padding:8px 0 4px}
+.drawer .dname{padding:8px 16px 4px;color:var(--accent);font-family:'Fraunces',serif;font-weight:700}
+.drawer .ditem{display:flex;gap:10px;align-items:center;padding:9px 16px;color:var(--paper);text-decoration:none;border-left:3px solid transparent;font-size:.92rem}
+.drawer .ditem:hover{background:var(--ink-3)}
+.drawer .ditem.cur{border-left-color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
+.drawer .ditem .n{color:var(--faint);min-width:1.4em;font-variant-numeric:tabular-nums}
+.drawer .ditem .t{flex:1;line-height:1.25}
+.drawer .ditem .t small{display:block;color:var(--faint);font-size:.75rem}
+.drawer .badges{display:flex;gap:6px;align-items:center}
+.drawer .badges i{font-style:normal;color:var(--accent)}
+.drawer .badges em{font-style:normal;font-size:.75rem;padding:1px 6px;border-radius:999px;background:var(--ink-3);color:var(--muted);font-variant-numeric:tabular-nums}
+.drawer .dfoot{padding:16px;color:var(--faint);font-size:.8rem}
+/* ---------- notes: floating button + bottom sheet ---------- */
+.notes-fab{position:fixed;right:16px;bottom:16px;z-index:35;display:flex;gap:8px;align-items:center;padding:12px 16px;border-radius:999px;background:var(--accent);color:#111;border:none;font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,.4)}
+.notes-sheet{position:fixed;left:0;right:0;bottom:0;z-index:45;background:var(--ink-2);border-top:1px solid var(--line);border-radius:14px 14px 0 0;transform:translateY(105%);transition:transform .25s;box-shadow:0 -10px 40px rgba(0,0,0,.5);max-width:900px;margin:0 auto;padding-bottom:env(safe-area-inset-bottom)}
+.notes-open .notes-sheet{transform:none}
+.notes-open .notes-fab{display:none}
+.notes-sheet .nhead{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line)}
+.notes-sheet .nhead b{flex:1;font-size:.95rem}
+.notes-sheet .nstatus{color:var(--faint);font-size:.8rem}
+.notes-sheet textarea{display:block;width:100%;min-height:36vh;max-height:60vh;resize:vertical;border:none;background:#0f1424;color:var(--paper);font:inherit;font-size:1rem;line-height:1.5;padding:14px 16px;outline:none}
+.notes-sheet .nfoot{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;font-size:.85rem;color:var(--muted)}
+/* ---------- wide widgets scroll sideways instead of breaking the page ---------- */
+.tw{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:16px 0}
+.tw table{margin:0;min-width:520px}
+.fig{overflow-x:auto}
+@media (prefers-reduced-motion:reduce){.drawer,.notes-sheet,.scrim{transition:none}}
+/* ---------- phones ---------- */
+@media (max-width:760px){
+  body{font-size:16px}
+  .wrap{padding:0 16px 110px}
+  h1{font-size:1.85rem} h2{font-size:1.45rem;margin-top:2rem} h3{font-size:1.15rem}
+  .lede{font-size:1.05rem}
+  .topbar{padding:8px 12px;gap:10px}
+  .topbar .links{display:none}
+  .topbar .menu span{display:none}
+  .topbar .menu{padding:8px 11px}
+  .fig{padding:12px 12px;margin:16px -4px;border-radius:8px}
+  .crux,.source{padding:12px 14px}
+  pre{font-size:.8em;padding:12px 12px}
+  button,.btn{padding:10px 14px;font-size:.92rem}
+  .controls{gap:8px}
+  .controls label{display:flex;align-items:center;gap:6px}
+  input[type=number]{max-width:96px}
+  .cards{grid-template-columns:1fr 1fr;gap:8px}
+  .card,.card .inner{min-height:120px}
+  .card .face{font-size:.88rem;padding:10px}
+  .cells{min-width:420px}
+  .quiz .opt{padding:12px 12px;line-height:1.35}
+  .nav-bottom{flex-direction:column}
+  .nav-bottom a{text-align:center}
+  .notes-fab span{display:none}
+  .notes-fab{padding:14px;right:12px;bottom:12px}
+  .notes-sheet textarea{min-height:44vh}
+  .stepper .stage{padding:12px}
+  .gantt .row{grid-template-columns:44px 1fr;font-size:.75rem}
+  /* lesson-specific grids collapse */
+  .lde,.il,.two,.cry,.flash,.dl,.fdt,.how,.cards.wide,.vm{grid-template-columns:1fr}
+  .map{grid-template-columns:1fr}
+  .net{grid-template-columns:1fr}.net .arrow{padding:0;transform:rotate(90deg)}
+  .phil{grid-template-columns:repeat(2,1fr)}
+  .jobs{max-width:100%}
+  .trace{min-width:620px}.tl{min-width:720px}.disk{min-width:560px}
+}
+@media (max-width:420px){.cards{grid-template-columns:1fr}}
+
+/* ---------- runnable Python ---------- */
+.pyrun{border:1px solid var(--line);border-radius:var(--radius);background:#0f1424;margin:18px 0;overflow:hidden}
+.pyrun .pyhead{display:flex;gap:10px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--line);font-size:.85rem;color:var(--muted);background:var(--ink-2)}
+.pyrun .pyhead span:first-child{flex:1;font-weight:600;color:var(--paper)}
+.pyrun .pystatus{font-size:.78rem}
+.pyrun textarea{display:block;width:100%;border:none;background:#0f1424;color:var(--paper);font-family:'IBM Plex Mono',monospace;font-size:.86rem;line-height:1.5;padding:12px 14px;resize:vertical;outline:none;min-height:60px;tab-size:4}
+.pyrun .pyout{font-family:'IBM Plex Mono',monospace;font-size:.86rem;line-height:1.5;padding:12px 14px;margin:0;border:none;border-top:1px solid var(--line);border-left:none;border-radius:0;background:#0a0e1a;color:#cfe3ff;max-height:none;overflow:auto}
+
+</style>
+<style>.tree{font-family:'IBM Plex Mono',monospace;font-size:.8rem;background:#0f1424;border:1px solid var(--line);border-radius:6px;padding:10px;white-space:pre;line-height:1.7}.tl{display:grid;gap:5px}.tl .row{display:grid;grid-template-columns:110px 1fr;gap:8px;align-items:center;font-size:.82rem}.tl .track{position:relative;height:22px;background:#0f1424;border-radius:4px;overflow:hidden}.tl .seg{position:absolute;top:0;bottom:0;display:flex;align-items:center;justify-content:center;font-size:.65rem;color:#111}.run{background:#5bc8f5}.ok{background:#6bcb77}.fail{background:#ff6b6b}.cancel{background:#3a4368;color:var(--muted)!important}.sv td:first-child{color:var(--accent);white-space:nowrap}</style></head>
+<body class="piece-loom"><div class="wrap">
+<header class="hero"><div class="chapters">JEP 453 Structured Concurrency (preview) · JEP 446 Scoped Values (preview) · JDK 21u java/util/concurrent/StructuredTaskScope.java · java/lang/ScopedValue.java</div>
+<h1>Structured concurrency and scoped values: giving threads a shape</h1>
+<p class="lede">Once threads are cheap, the next problem is <em>organizing</em> them. <code>ExecutorService</code> lets a subtask outlive the method that started it, leak when the parent fails, and keep running after its result is no longer wanted. Structured concurrency (preview in 21) confines the lifetime of a group of subtasks to a syntax block, exactly as a sequential operation is confined, so failure, cancellation and observability follow the block structure. Scoped values (also preview) are the matching way to pass context down a call tree — and across those subtasks — without <code>ThreadLocal</code>.</p></header>
+<div class="source"><b>Primary sources:</b> the JDK 21u class documentation of <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/StructuredTaskScope.html"><code>StructuredTaskScope</code></a> (basic operation, policies <code>ShutdownOnSuccess</code>/<code>ShutdownOnFailure</code>, extending via <code>handleComplete</code>, tree structure) and <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/ScopedValue.html"><code>ScopedValue</code></a> (bindings per thread, rebinding, inheritance), read from the sources; JEP 453 summary (StructuredTaskScope::fork returns <code>Subtask</code>, not <code>Future</code>, as of 21; incubated as JEP 428/437 in 19/20; still previewing through JDK 25+). Both require <code>--enable-preview</code> in 21.</div>
+<h2>What you'll be able to do</h2><ul id="obj"></ul>
+
+<h2>The problem with unstructured concurrency</h2>
+<p>With <code>executor.submit</code> the parent gets a <code>Future</code> and the subtask is on its own: if the parent throws, the subtask leaks; if one subtask fails, its siblings keep working uselessly unless you hand-cancel each; if the parent is interrupted, nothing propagates. Thread dumps show a flat list. The API doesn't express that these tasks belong together. Structured concurrency's principle (from the class docs): "the lifetime of a concurrent operation is confined by a <em>syntax block</em>, just like that of a sequential operation in structured programming."</p>
+
+<h2>StructuredTaskScope</h2>
+<pre><code>// JDK 21 (--enable-preview): the class docs' basic pattern
+try (var scope = new StructuredTaskScope&lt;Object&gt;()) {
+    Subtask&lt;String&gt;  s1 = scope.fork(task1);   // starts a thread (virtual by default) per subtask
+    Subtask&lt;Integer&gt; s2 = scope.fork(task2);
+    scope.join();                              // wait for all subtasks (or shutdown)
+    ... s1.get(), s2.get(), or s1.state() ...   // SUCCESS / FAILED / UNAVAILABLE
+}                                               // close(): owner only; waits for any leftovers; StructureViolation if misused</code></pre>
+<div class="crux"><b>The contract (from the source's javadoc).</b> The thread that creates the scope is its <b>owner</b>. Only the owner may <code>fork</code>, <code>join</code>, <code>shutdown</code> and <code>close</code> (<code>WrongThreadException</code> otherwise — subtasks may also fork, nesting scopes). <code>join()</code> must be called before reading results: <code>close()</code> throws <code>IllegalStateException</code> after closing if the owner never joined. <code>shutdown()</code> interrupts unfinished subtasks and prevents new forks; it is how a policy stops work that is no longer needed. <code>close()</code> is meant for try-with-resources; forking after <code>close()</code> fails. Scopes form a <b>tree</b> by nesting (a subtask that opens a scope makes it a child), which powers scoped-value inheritance, confinement checks ("threads contained in the task scope"), and the structured thread dump.</div>
+<div class="fig"><h4>Policies: what happens when subtasks finish</h4><div class="controls"><button class="primary" data-p="all">plain scope: wait for all</button><button data-p="fail">ShutdownOnFailure (invoke-all)</button><button data-p="succ">ShutdownOnSuccess (invoke-any)</button><button data-p="deadline">joinUntil(deadline)</button></div><div class="tl" id="ptl"></div><div class="cap" id="pmsg"></div></div>
+<p><b>ShutdownOnFailure</b> captures the first exception and shuts the scope down — interrupting siblings and waking the owner — for the "all results required" case; after <code>join()</code>, <code>throwIfFailed()</code> rethrows (wrapped in <code>ExecutionException</code>, or mapped by a function). <b>ShutdownOnSuccess</b> captures the first successful result and shuts down the rest — "any result will do"; <code>result()</code> returns it or throws if every subtask failed. Both are <code>StructuredTaskScope</code> subclasses overriding <b><code>handleComplete(Subtask)</code></b>, the hook you override for your own policy (the docs' <code>CollectingScope</code> example queues successful subtasks and guards its accessor with <code>ensureOwnerAndJoined()</code>). <code>joinUntil(Instant)</code> throws <code>TimeoutException</code>; the usual recipe then calls <code>shutdown()</code>.</p>
+<pre><code>// invoke-all with fail-fast, from the class docs
+try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
+    Subtask&lt;String&gt;  user  = scope.fork(() -> findUser());
+    Subtask&lt;Integer&gt; order = scope.fork(() -> fetchOrder());
+    scope.join().throwIfFailed();                     // first failure cancels the other and propagates
+    return new Response(user.get(), order.get());
+}
+// invoke-any
+try (var scope = new StructuredTaskScope.ShutdownOnSuccess&lt;String&gt;()) {
+    scope.fork(() -> fetch(left)); scope.fork(() -> fetch(right));
+    scope.join();
+    return scope.result(e -> new WebApplicationException(e));   // both failed → exception with causes
+}</code></pre>
+
+<h2>Scoped values</h2>
+<p>A <code>ScopedValue</code> is "an implicit method parameter": bound to a value for the <em>dynamic scope</em> of a method call — the call and everything it transitively calls — and unbound when the call completes, normally or abruptly. Compared to <code>ThreadLocal</code>: no <code>set()</code> (immutable binding), automatic unbinding (no <code>remove()</code> leaks), bounded lifetime, and cheap to inherit into child threads because there is nothing to copy — child threads created in a <code>StructuredTaskScope</code> see the parent's bindings. The docs stress the value should be immutable or synchronized, since several threads may read it.</p>
+<table class="sv"><tr><th>API (JDK 21)</th><th>Meaning</th></tr><tr><td>ScopedValue.newInstance()</td><td>create the key, typically <code>private static final</code> — access to the key is the capability</td></tr><tr><td>ScopedValue.runWhere(K, v, Runnable)</td><td>run with K bound to v</td></tr><tr><td>callWhere / getWhere</td><td>same, returning a result (Callable / Supplier)</td></tr><tr><td>ScopedValue.where(K, v).where(K2, v2).run(…)</td><td>bind several keys via a <code>Carrier</code></td></tr><tr><td>K.get()</td><td>current binding; <code>NoSuchElementException</code> if unbound</td></tr><tr><td>K.isBound(), K.orElse(x), K.orElseThrow(s)</td><td>queries with defaults</td></tr><tr><td>rebinding</td><td>a nested <code>runWhere</code> on the same key shadows the value for its own dynamic scope, then reverts</td></tr><tr><td>inheritance</td><td>threads forked in a <code>StructuredTaskScope</code> inherit the bindings in force when the scope was opened; a <code>StructureViolationException</code> is thrown if bindings changed inconsistently (e.g. scope opened inside a binding and closed outside)</td></tr></table>
+<div class="fig"><h4>Dynamic scope visualizer</h4><div class="tree" id="svtree"></div><div class="controls"><button class="primary" id="sv1">runWhere(USER, "duke", …)</button><button id="sv2">nested rebinding</button><button id="sv3">fork in a scope</button></div><div class="cap" id="svmsg"></div></div>
+<div id="py1"></div>
+
+<h2>Status and outlook</h2>
+<p>In JDK 21 both are <b>preview</b> APIs (<code>@PreviewFeature</code>: <code>javac --enable-preview --release 21</code>, <code>java --enable-preview</code>); the class-file minor version 65535 (lesson 8) marks the result. JEP 453's one change from the incubator: <code>fork</code> returns <code>Subtask</code> rather than <code>Future</code>, removing the temptation to call <code>cancel</code>/<code>get</code> outside the structure. The API kept previewing after 21 (JEP 462, 480, 499, 505 — the last replacing public constructors with static factories and introducing <code>Joiner</code>), so expect names to differ in later JDKs; the principles — owner, join before results, shutdown-based cancellation, tree structure — are stable.</p>
+
+<h2>Flash cards</h2><div id="cards"></div>
+<h2>Retrieval practice</h2><div id="quiz"></div>
+<p class="tip">Ask me in the chat to write a custom policy (e.g. "first two successes") via handleComplete, or to migrate a CompletableFuture chain to a structured scope.</p>
+</div>
+<script>
+/* Java 21 course — shared components (from the OSTEP course). Every page loads this file (inlined by build.py). */
+window.OS = (function () {
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+  /* ---------- persistent storage (localStorage on a real site; in-memory fallback in sandboxes) ---------- */
+  const mem = {};
+  const store = {
+    get(k) { try { const v = localStorage.getItem('java21:' + k); return v === null ? (mem[k] ?? null) : JSON.parse(v); } catch (e) { return mem[k] ?? null; } },
+    set(k, v) { mem[k] = v; try { localStorage.setItem('java21:' + k, JSON.stringify(v)); } catch (e) {} },
+    del(k) { delete mem[k]; try { localStorage.removeItem('java21:' + k); } catch (e) {} },
+    keys(prefix) { const out = new Set(Object.keys(mem).filter(k => k.startsWith(prefix))); try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith('java21:' + prefix)) out.add(k.slice(6)); } } catch (e) {} return [...out]; },
+    available() { try { localStorage.setItem('java21:test', '1'); localStorage.removeItem('java21:test'); return true; } catch (e) { return false; } }
+  };
+
+  /* ---------- course structure ---------- */
+  const PIECES = [
+    ['lang', 'The language, as specified (JLS 21)', [
+      ['0001-types-values-variables', 'Types, values, variables', 'JLS ch 4, 5'],
+      ['0002-classes-objects-initialization', 'Classes, objects, initialization order', 'JLS ch 8, 12'],
+      ['0003-records-sealed-interfaces', 'Records, sealed types, interfaces', 'JLS §8.10, §8.1.1.2, ch 9'],
+      ['0004-generics-and-erasure', 'Generics, wildcards, erasure', 'JLS §4.5–4.10, §8.4.8.3'],
+      ['0005-expressions-exceptions-switch', 'Expressions, exceptions, switch & patterns', 'JLS ch 11, 14, 15; JEPs 440/441'],
+      ['0006-lambdas-streams', 'Lambdas, method references, streams', 'JLS §15.27, §15.13, java.util.stream'],
+      ['0007-java-memory-model', 'The Java memory model', 'JLS ch 17']]],
+    ['jvm', 'The JVM (JVMS 21 + HotSpot)', [
+      ['0008-class-files-and-bytecode', 'Class files and bytecode', 'JVMS ch 4, 6'],
+      ['0009-loading-linking-initialization', 'Loading, linking, initialization, class loaders', 'JVMS ch 5'],
+      ['0010-execution-frames-invokedynamic', 'Execution: frames, invoke*, invokedynamic', 'JVMS ch 2, 5.4.3, 6'],
+      ['0011-hotspot-jit', 'HotSpot: interpreter, C1/C2, deoptimization', 'compilationPolicy.cpp, c2_globals.hpp'],
+      ['0012-heap-gc-generational-zgc', 'Objects, heap, GC, Generational ZGC', 'markWord.hpp, gcConfig.cpp, JEP 439']]],
+    ['loom', 'Java 21: virtual threads and new features', [
+      ['0013-virtual-threads-model', 'Virtual threads: the model (JEP 444)', 'JEP 444'],
+      ['0014-virtual-threads-internals', 'Virtual threads: continuations, carriers, scheduler', 'VirtualThread.java, Continuation.java, freeze/thaw'],
+      ['0015-structured-concurrency-scoped-values', 'Structured concurrency & scoped values', 'StructuredTaskScope, ScopedValue (preview)'],
+      ['0016-concurrency-toolkit', 'The concurrency toolkit: monitors, locks, executors', 'JLS §17.1–17.3, java.util.concurrent'],
+      ['0017-java-21-features', 'What Java 21 adds', 'JEPs 431, 440, 441, 442, 443, 445, 446, 453']]]
+  ];
+  const LESSONS = PIECES.flatMap(p => p[2].map(l => [l[0], l[1], p[0], l[2]]));
+  const title = id => (LESSONS.find(l => l[0] === id) || [])[1] || id;
+  let pageId = null, root = '../';
+
+  /* ---------- chrome: sticky header, slide-out directory, notes drawer, prev/next ---------- */
+  function chrome(id, rootPath) {
+    pageId = id; root = rootPath === undefined ? '../' : rootPath;
+    const i = LESSONS.findIndex(l => l[0] === id);
+    const isLesson = i >= 0;
+    const top = document.createElement('header'); top.className = 'topbar';
+    top.innerHTML = `<button class="menu" aria-label="Open directory" aria-expanded="false">☰<span>Directory</span></button>
+      <a class="brand" href="${root}index.html"><span class="dot"></span>Java 21 course</a>
+      <nav class="links"><a href="${root}reference/glossary.html">Glossary</a><a href="${root}reference/cheatsheets.html">Cheat sheets</a><a href="${root}notes.html">My notes</a></nav>
+      ${isLesson ? `<span class="where">${i+1} / ${LESSONS.length}</span>` : ''}`;
+    document.body.prepend(top);
+    // directory drawer
+    const drawer = document.createElement('aside'); drawer.className = 'drawer'; drawer.setAttribute('aria-label', 'Course directory');
+    const scores = Object.fromEntries(LESSONS.map(l => [l[0], store.get('quiz:' + l[0])]));
+    const notes = new Set(store.keys('notes:').map(k => k.slice(6)).filter(k => (store.get('notes:' + k) || {}).text));
+    drawer.innerHTML = `<div class="dhead"><b>Directory</b><button class="close" aria-label="Close">×</button></div>
+      <a class="ditem ${id === 'index' ? 'cur' : ''}" href="${root}index.html">Course hub</a>
+      ${PIECES.map(([cls, name, ls]) => `<div class="dgroup piece-${cls}"><div class="dname">${name}</div>${ls.map(l => {
+        const n = LESSONS.findIndex(x => x[0] === l[0]) + 1, s = scores[l[0]];
+        return `<a class="ditem ${l[0] === id ? 'cur' : ''}" href="${root}lessons/${l[0]}.html"><span class="n">${n}</span><span class="t">${l[1]}<small>${l[3]}</small></span><span class="badges">${notes.has(l[0]) ? '<i title="you have notes">✎</i>' : ''}${s ? `<em title="best quiz score">${s.score}/${s.total}</em>` : ''}</span></a>`; }).join('')}</div>`).join('')}
+      <div class="dgroup piece-intro"><div class="dname">Reference</div>
+        <a class="ditem ${id === 'glossary' ? 'cur' : ''}" href="${root}reference/glossary.html"><span class="t">Glossary</span></a>
+        <a class="ditem ${id === 'cheatsheets' ? 'cur' : ''}" href="${root}reference/cheatsheets.html"><span class="t">Cheat sheets</span></a>
+        <a class="ditem ${id === 'notes' ? 'cur' : ''}" href="${root}notes.html"><span class="t">My notes &amp; progress</span></a></div>
+      <div class="dfoot">${store.available() ? 'Notes and scores are saved in this browser.' : 'Notes and scores are kept for this session only (storage unavailable here).'}</div>`;
+    document.body.append(drawer);
+    const scrim = document.createElement('div'); scrim.className = 'scrim'; document.body.append(scrim);
+    const open = o => { document.body.classList.toggle('drawer-open', o); top.querySelector('.menu').setAttribute('aria-expanded', o); if (o) drawer.querySelector('.cur, .ditem')?.focus(); };
+    top.querySelector('.menu').onclick = () => open(!document.body.classList.contains('drawer-open'));
+    drawer.querySelector('.close').onclick = () => open(false); scrim.onclick = () => open(false);
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') { open(false); notesOpen(false); } });
+    // prev/next for lessons
+    if (isLesson) {
+      const nav = document.createElement('div'); nav.className = 'nav-bottom';
+      const prev = LESSONS[i-1], next = LESSONS[i+1];
+      nav.innerHTML = (prev ? `<a href="${prev[0]}.html">← ${i}. ${prev[1]}</a>` : '<span></span>') +
+                      (next ? `<a href="${next[0]}.html">${i+2}. ${next[1]} →</a>` : `<a href="${root}index.html">Back to course hub →</a>`);
+      document.querySelector('.wrap').append(nav);
+    }
+    // wrap tables so they scroll sideways on phones
+    document.querySelectorAll('.wrap table').forEach(t => { if (t.parentElement.classList.contains('tw')) return; const w = document.createElement('div'); w.className = 'tw'; t.replaceWith(w); w.append(t); });
+    // notes drawer (every page except the notes page itself)
+    if (id !== 'notes') notesUI(id, isLesson ? `${i+1}. ${LESSONS[i][1]}` : (document.title.split(' — ')[0]));
+  }
+
+  /* ---------- notes: floating button + bottom sheet, autosaved ---------- */
+  let notesOpen = () => {};
+  function notesUI(id, label) {
+    const btn = document.createElement('button'); btn.className = 'notes-fab'; btn.innerHTML = '✎ <span>Notes</span>'; btn.setAttribute('aria-label', 'Open notes');
+    const sheet = document.createElement('section'); sheet.className = 'notes-sheet'; sheet.setAttribute('aria-label', 'Notes for this page');
+    const saved = store.get('notes:' + id) || {};
+    sheet.innerHTML = `<div class="nhead"><b>Notes · ${esc(label)}</b><span class="nstatus"></span><button class="close" aria-label="Close notes">×</button></div>
+      <textarea placeholder="Your notes for this page. Markdown is fine. Saved automatically.">${esc(saved.text || '')}</textarea>
+      <div class="nfoot"><span class="ncount"></span><a href="${root}notes.html">All notes &amp; export →</a></div>`;
+    document.body.append(btn, sheet);
+    const ta = sheet.querySelector('textarea'), status = sheet.querySelector('.nstatus'), count = sheet.querySelector('.ncount');
+    const upd = () => { count.textContent = ta.value.trim() ? ta.value.trim().split(/\s+/).length + ' words' : ''; };
+    let t; ta.addEventListener('input', () => { status.textContent = 'saving…'; clearTimeout(t); t = setTimeout(() => { store.set('notes:' + id, { text: ta.value, title: label, updated: new Date().toISOString() }); status.textContent = 'saved'; upd(); }, 400); });
+    upd();
+    notesOpen = o => { document.body.classList.toggle('notes-open', o); if (o) ta.focus(); };
+    btn.onclick = () => notesOpen(!document.body.classList.contains('notes-open'));
+    sheet.querySelector('.close').onclick = () => notesOpen(false);
+  }
+
+  /* ---------- quiz: immediate feedback; best score persisted ---------- */
+  function quiz(el, qs) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('quiz');
+    let score = 0, answered = 0;
+    const best = pageId ? store.get('quiz:' + pageId) : null;
+    el.innerHTML = qs.map((q, i) => `<div class="q" data-i="${i}"><p>${i+1}. ${q.q}</p>
+      <div class="opts">${q.o.map((o, j) => `<button class="opt" data-j="${j}">${esc(o)}</button>`).join('')}</div>
+      <div class="why">${q.why}</div></div>`).join('') + `<div class="score">${best ? `Best so far: ${best.score}/${best.total} (${new Date(best.date).toLocaleDateString()})` : ''}</div>`;
+    el.querySelectorAll('.q').forEach(qd => {
+      const q = qs[+qd.dataset.i];
+      qd.querySelectorAll('.opt').forEach(b => b.addEventListener('click', () => {
+        if (qd.classList.contains('done')) return;
+        qd.classList.add('done'); answered++;
+        const j = +b.dataset.j;
+        if (j === q.a) { b.classList.add('right'); score++; }
+        else { b.classList.add('wrong'); qd.querySelectorAll('.opt')[q.a].classList.add('right'); }
+        const s = el.querySelector('.score');
+        s.textContent = `${score} / ${answered} correct`;
+        if (answered === qs.length) {
+          s.textContent += score === qs.length ? ' — all of them. Retry from memory in two days.' : ' — reread the sections you missed, then retry.';
+          if (pageId && (!best || score >= best.score)) store.set('quiz:' + pageId, { score, total: qs.length, date: new Date().toISOString() });
+        }
+      }));
+    });
+  }
+
+
+  /* ---------- Java code blocks: annotated, copyable, with a jshell hint (no JVM in the browser) ---------- */
+  function py(el, code, opts) {
+    el = typeof el === 'string' ? document.getElementById(el) : el; opts = opts || {};
+    el.classList.add('pyrun');
+    const src = code.trim();
+    const preview = /--enable-preview|StructuredTaskScope|ScopedValue|STR\./.test(src);
+    el.innerHTML = `<div class="pyhead"><span>Java 21${preview ? ' · needs --enable-preview' : ''}${opts.note ? ' · ' + esc(opts.note) : ''}</span><span class="pystatus">paste into jshell or a scratch file</span><button class="primary copy">Copy</button></div><pre class="pyout" style="display:block;white-space:pre-wrap;margin:0"><code>${esc(src)}</code></pre>`;
+    el.querySelector('.copy').onclick = () => { navigator.clipboard && navigator.clipboard.writeText(src).then(() => { el.querySelector('.pystatus').textContent = 'copied'; }).catch(() => {}); };
+  }
+
+  /* ---------- flip cards ---------- */
+  function cards(el, list) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('cards');
+    el.innerHTML = list.map(([f, b]) => `<div class="card" tabindex="0" role="button" aria-label="flip card"><div class="inner"><div class="face front">${f}</div><div class="face back">${b}</div></div></div>`).join('');
+    el.querySelectorAll('.card').forEach(c => {
+      const t = () => c.classList.toggle('flipped');
+      c.addEventListener('click', t);
+      c.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); t(); } });
+    });
+  }
+
+  /* ---------- stepper ---------- */
+  function stepper(el, steps, render) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('stepper');
+    let i = 0;
+    el.innerHTML = `<div class="controls"><button class="prev">← Back</button><button class="next primary">Next step →</button><span class="idx"></span></div><div class="stage"></div><div class="extra"></div>`;
+    const stage = el.querySelector('.stage'), idx = el.querySelector('.idx'), extra = el.querySelector('.extra');
+    const draw = () => { stage.innerHTML = steps[i]; idx.textContent = `step ${i+1} / ${steps.length}`; if (render) render(i, extra); };
+    el.querySelector('.prev').onclick = () => { i = Math.max(0, i-1); draw(); };
+    el.querySelector('.next').onclick = () => { i = Math.min(steps.length-1, i+1); draw(); };
+    draw();
+  }
+
+  /* ---------- gantt ---------- */
+  function gantt(el, rows, total, colors) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('gantt');
+    const pal = colors || ['#e8b84a','#5bc8f5','#6bcb77','#f47fa0','#c9a8ff','#ffb86b'];
+    el.innerHTML = rows.map((r, i) => `<div class="row"><span>${esc(r.name)}</span><div class="track">${r.segs.map(s =>
+      `<div class="seg" style="left:${100*s.start/total}%;width:${100*(s.end-s.start)/total}%;background:${pal[i%pal.length]}" title="${s.start}–${s.end}">${(s.end-s.start)/total > .06 ? (s.end-s.start) : ''}</div>`).join('')}</div></div>`).join('') +
+      `<div class="row"><span></span><div style="display:flex;justify-content:space-between;font-size:.75rem;color:var(--muted)"><span>0</span><span>${total}</span></div></div>`;
+  }
+
+  /* ---------- objectives checklist (persisted) ---------- */
+  function objectives(el, items) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('objectives');
+    const saved = (pageId && store.get('obj:' + pageId)) || [];
+    el.innerHTML = items.map((t, i) => `<li><label><input type="checkbox" data-i="${i}" ${saved.includes(i) ? 'checked' : ''}>${t}</label></li>`).join('');
+    el.querySelectorAll('input').forEach(c => c.onchange = () => { const s = [...el.querySelectorAll('input:checked')].map(x => +x.dataset.i); if (pageId) store.set('obj:' + pageId, s); });
+  }
+
+  return { chrome, quiz, cards, stepper, gantt, objectives, py, esc, store, LESSONS, PIECES, title };
+})();
+
+</script>
+<script>
+OS.chrome('0015-structured-concurrency-scoped-values');
+OS.objectives('obj',['State the structured-concurrency principle and the failures of unstructured executors it fixes.','Use StructuredTaskScope correctly: owner, fork/join/close order, shutdown, Subtask states.','Choose between ShutdownOnFailure and ShutdownOnSuccess, and extend handleComplete for custom policies.','Explain ScopedValue binding, rebinding, capability-style keys, and inheritance into forked subtasks.','Describe preview status, --enable-preview, and the Subtask-vs-Future change.']);
+const P={all:{rows:[['owner',[[0,10,'run','fork ×3'],[10,70,'cancel','join() waiting'],[70,80,'run','read results'],[80,84,'run','close']]],['subtask A',[[10,40,'run',''],[40,42,'ok','✓']]],['subtask B',[[10,70,'run',''],[70,72,'ok','✓']]],['subtask C',[[10,55,'run',''],[55,57,'ok','✓']]]],m:'A plain StructuredTaskScope: join() returns when every subtask completed (or the scope was shut down). The owner then partitions subtasks by state() into SUCCESS and FAILED.'},
+fail:{rows:[['owner',[[0,10,'run','fork ×3'],[10,45,'cancel','join()'],[45,55,'fail','throwIfFailed → ExecutionException'],[55,60,'run','close']]],['subtask A',[[10,40,'run',''],[40,43,'fail','✗ throws']]],['subtask B',[[10,43,'run',''],[43,48,'cancel','interrupted by shutdown']]],['subtask C',[[10,43,'run',''],[43,46,'cancel','interrupted']]]],m:'ShutdownOnFailure: the first exception is captured; handleComplete calls shutdown(), interrupting B and C and waking the owner. Results of unfinished subtasks are no longer needed.'},
+succ:{rows:[['owner',[[0,10,'run','fork ×2'],[10,35,'cancel','join()'],[35,45,'ok','result() → first success'],[45,50,'run','close']]],['subtask left',[[10,33,'run',''],[33,35,'ok','✓ first']]],['subtask right',[[10,35,'run',''],[35,40,'cancel','interrupted: not needed']]]],m:'ShutdownOnSuccess: the first successful result wins; the scope shuts down so the slower replica stops. If all fail, result() throws with the causes.'},
+deadline:{rows:[['owner',[[0,10,'run','fork ×2'],[10,50,'cancel','joinUntil(deadline)'],[50,58,'fail','TimeoutException → shutdown()'],[58,64,'run','close waits']]],['subtask A',[[10,30,'run',''],[30,32,'ok','✓']]],['subtask B',[[10,58,'run',''],[58,62,'cancel','interrupted']]]],m:'joinUntil throws TimeoutException when the deadline passes; the idiom then calls shutdown() so close() does not wait for the straggler.'}};
+function ptl(k){const p=P[k];document.getElementById('ptl').innerHTML=p.rows.map(([n,segs])=>`<div class="row"><span>${n}</span><div class="track">${segs.map(s=>`<div class="seg ${s[2]}" style="left:${s[0]}%;width:${s[1]-s[0]}%">${s[3]}</div>`).join('')}</div></div>`).join('');document.getElementById('pmsg').textContent=p.m;}
+document.querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-p]').forEach(x=>x.classList.remove('primary'));b.classList.add('primary');ptl(b.dataset.p);});ptl('all');
+const SV={sv1:{t:`main thread
+└─ ScopedValue.runWhere(USER, "duke", () -> handle())
+   ├─ handle()            USER.get() → "duke"
+   │  └─ service()        USER.get() → "duke"   (no parameter passed)
+   │     └─ repo()        USER.get() → "duke"
+   └─ (returns)           USER unbound again → get() throws NoSuchElementException`,m:'The binding is visible for the dynamic extent of the call — every method transitively called — and vanishes when it returns, normally or by exception.'},
+sv2:{t:`runWhere(USER, "duke", () -> {
+   USER.get() → "duke"
+   runWhere(USER, "duchess", () -> {      // rebinding: nested dynamic scope
+      USER.get() → "duchess"
+   })
+   USER.get() → "duke"                     // reverts automatically
+})`,m:'Rebinding shadows the value only inside the nested call; there is no set() and nothing to restore by hand.'},
+sv3:{t:`runWhere(USER, "duke", () -> {
+   try (var scope = new StructuredTaskScope<String>()) {
+      scope.fork(() -> USER.get());        // subtask thread: "duke" — inherited, nothing copied
+      scope.fork(() -> USER.get());        // "duke"
+      scope.join();
+   }                                       // scope closed inside the binding: OK
+})
+// opening the scope inside a binding and closing it outside → StructureViolationException`,m:'Scoped values inherit into threads forked in a StructuredTaskScope, because the scope tree tells the runtime which bindings were in force. ThreadLocal inheritance would copy values per thread.'}};
+['sv1','sv2','sv3'].forEach(id=>document.getElementById(id).onclick=()=>{document.getElementById('svtree').textContent=SV[id].t;document.getElementById('svmsg').textContent=SV[id].m;});document.getElementById('sv1').click();
+OS.py('py1',`// javac --enable-preview --release 21 App.java && java --enable-preview App
+import java.util.concurrent.StructuredTaskScope;
+import java.util.concurrent.StructuredTaskScope.Subtask;
+
+public class App {
+    private static final ScopedValue<String> USER = ScopedValue.newInstance();   // the key is the capability
+
+    static String handle(String user) throws Exception {
+        return ScopedValue.callWhere(USER, user, App::aggregate);              // bound for aggregate() and below
+    }
+    static String aggregate() throws Exception {
+        try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {         // owner = this thread
+            Subtask<String> profile = scope.fork(() -> "profile of " + USER.get());   // subtasks inherit USER
+            Subtask<String> orders  = scope.fork(() -> "orders of "  + USER.get());
+            scope.join().throwIfFailed();                                       // join BEFORE reading results
+            return profile.get() + " | " + orders.get();
+        }                                                                       // close(): owner only
+    }
+    // custom policy: collect successes (from the StructuredTaskScope docs)
+    static class CollectingScope<T> extends StructuredTaskScope<T> {
+        private final java.util.Queue<Subtask<? extends T>> ok = new java.util.concurrent.LinkedTransferQueue<>();
+        @Override protected void handleComplete(Subtask<? extends T> st) { if (st.state() == Subtask.State.SUCCESS) ok.add(st); }
+        java.util.stream.Stream<Subtask<? extends T>> completedSuccessfully() { super.ensureOwnerAndJoined(); return ok.stream(); }
+    }
+    public static void main(String[] a) throws Exception { System.out.println(handle("duke")); }
+}`);
+OS.cards('cards',[['Structured concurrency','Confine the lifetime of a concurrent operation to a syntax block; subtasks cannot outlive the block or leak.'],['Owner','The thread that created the scope; only it may fork/join/shutdown/close (WrongThreadException otherwise).'],['fork → Subtask','Starts a (virtual) thread per subtask; returns Subtask (not Future) with get(), exception(), state() SUCCESS/FAILED/UNAVAILABLE.'],['join before results','close() throws IllegalStateException if the owner never joined; results are read only after join()/joinUntil().'],['shutdown()','Interrupts unfinished subtasks, prevents new forks, wakes the owner; how policies cancel.'],['ShutdownOnFailure / ShutdownOnSuccess','Invoke-all with fail-fast (throwIfFailed) vs invoke-any (result()).'],['handleComplete','Hook called per completed subtask; override to implement custom policies; guard accessors with ensureOwnerAndJoined().'],['ScopedValue','Immutable per-thread binding for a dynamic scope: runWhere/callWhere/getWhere, get(), isBound(), rebinding, no remove() needed.'],['Inheritance','Subtasks forked in a StructuredTaskScope see the parent\'s scoped-value bindings; inconsistent nesting → StructureViolationException.']]);
+OS.quiz('quiz',[
+{q:'Which thread may call scope.join() and scope.close()?',o:['any subtask','the owner thread that created the scope','the scheduler','any thread holding the scope reference'],a:1,why:'The docs: join/close are invoked by the owner; other threads get WrongThreadException.'},
+{q:'What changed in JEP 453 (JDK 21) relative to the incubator?',o:['virtual threads became mandatory','fork returns Subtask instead of Future','join became optional','shutdown was removed'],a:1,why:'Subtask avoids Future\'s cancel/get outside the structure; the rest of the API was unchanged.'},
+{q:'ShutdownOnFailure is intended for:',o:['returning the first successful result','cases where all results are required and any failure makes the rest unnecessary','fire-and-forget tasks','rate limiting'],a:1,why:'It captures the first exception and shuts down the scope ("invoke all"); ShutdownOnSuccess is "invoke any".'},
+{q:'How do you implement a custom completion policy?',o:['subclass and override handleComplete(Subtask)','pass a lambda to fork','override join()','implement Executor'],a:0,why:'The docs\' CollectingScope example overrides handleComplete and uses ensureOwnerAndJoined() for accessors.'},
+{q:'A ScopedValue bound with runWhere is unbound when:',o:['remove() is called','the runWhere call completes, normally or abruptly','the thread ends','never; it is static'],a:1,why:'Bindings last for the dynamic scope of the call and revert automatically; there is no set/remove.'},
+{q:'Subtasks forked inside a StructuredTaskScope see the parent\'s scoped values because:',o:['values are copied into each thread','the scope tree records the bindings in force; inheritance needs no copying','ScopedValue is global','the scheduler passes them'],a:1,why:'Inheritance is defined for threads started in a task scope, using the tree structure; unlike InheritableThreadLocal nothing is copied.'},
+{q:'To compile code using StructuredTaskScope on JDK 21 you need:',o:['nothing special','javac --enable-preview --release 21 (preview API)','--add-modules jdk.incubator.concurrent','-source 22'],a:1,why:'Both APIs are @PreviewFeature in 21; class files get minor version 65535.'},
+{q:'joinUntil(deadline) expires. The recommended next step is:',o:['call join() again','call shutdown() so close() need not wait for stragglers','call fork() to retry','ignore it'],a:1,why:'TimeoutException signals the deadline; shutdown interrupts unfinished subtasks before close().'}]);
+</script></body></html>

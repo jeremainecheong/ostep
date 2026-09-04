@@ -1,11 +1,11 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>OSTEP course — Operating Systems: Three Easy Pieces, taught interactively</title><style>
+<title>13 · Virtual threads: the model — Java 21 course</title><style>
 /* OSTEP course — shared stylesheet. Three pieces, three hues. */
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
 :root{
   --ink:#151b2f; --ink-2:#1e2540; --ink-3:#28304f; --line:#3a4368;
   --paper:#eef0f7; --muted:#a9b1cf; --faint:#6e779a;
-  --virt:#e8b84a; --conc:#5bc8f5; --pers:#6bcb77; --sec:#f47fa0; --intro:#c9a8ff;
+  --virt:#e8b84a; --conc:#5bc8f5; --pers:#6bcb77; --sec:#f47fa0; --intro:#c9a8ff; --spec:#ffd166; --internals:#5bc8f5; --data:#6bcb77;
   --ok:#6bcb77; --bad:#ff6b6b;
   --accent:var(--virt);
   --radius:6px;
@@ -28,7 +28,7 @@ p,li{max-width:72ch}
 .hero{padding:44px 0 16px}
 .hero .chapters{color:var(--muted);font-size:.95rem;margin-bottom:6px}
 .lede{font-size:1.2rem;color:var(--muted);max-width:66ch}
-.piece-virt{--accent:var(--virt)} .piece-conc{--accent:var(--conc)} .piece-pers{--accent:var(--pers)} .piece-sec{--accent:var(--sec)} .piece-intro{--accent:var(--intro)}
+.piece-lang{--accent:var(--spec)} .piece-jvm{--accent:var(--internals)} .piece-loom{--accent:var(--data)} .piece-spec{--accent:var(--spec)} .piece-internals{--accent:var(--internals)} .piece-data{--accent:var(--data)} .piece-virt{--accent:var(--virt)} .piece-conc{--accent:var(--conc)} .piece-pers{--accent:var(--pers)} .piece-sec{--accent:var(--sec)} .piece-intro{--accent:var(--intro)}
 .fig{background:var(--ink-2);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;margin:22px 0}
 .fig figcaption,.cap{color:var(--muted);font-size:.9rem;margin-top:10px}
 .fig svg{max-width:100%;height:auto;display:block}
@@ -182,69 +182,92 @@ details>div{padding:0 16px 14px}
 }
 @media (max-width:420px){.cards{grid-template-columns:1fr}}
 
+/* ---------- runnable Python ---------- */
+.pyrun{border:1px solid var(--line);border-radius:var(--radius);background:#0f1424;margin:18px 0;overflow:hidden}
+.pyrun .pyhead{display:flex;gap:10px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--line);font-size:.85rem;color:var(--muted);background:var(--ink-2)}
+.pyrun .pyhead span:first-child{flex:1;font-weight:600;color:var(--paper)}
+.pyrun .pystatus{font-size:.78rem}
+.pyrun textarea{display:block;width:100%;border:none;background:#0f1424;color:var(--paper);font-family:'IBM Plex Mono',monospace;font-size:.86rem;line-height:1.5;padding:12px 14px;resize:vertical;outline:none;min-height:60px;tab-size:4}
+.pyrun .pyout{font-family:'IBM Plex Mono',monospace;font-size:.86rem;line-height:1.5;padding:12px 14px;margin:0;border:none;border-top:1px solid var(--line);border-left:none;border-radius:0;background:#0a0e1a;color:#cfe3ff;max-height:none;overflow:auto}
+
 </style>
-<style>.map{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:24px 0}.piece{border:1px solid var(--line);border-radius:8px;padding:16px;background:var(--ink-2);border-top:4px solid var(--accent)}.piece h3{margin:0 0 4px;color:var(--accent)}.piece p{font-size:.9rem;color:var(--muted);margin:0 0 10px}.piece a{display:block;text-decoration:none;color:var(--paper);padding:6px 0;border-top:1px solid var(--line);font-size:.92rem}.piece a:hover{color:var(--accent)}.piece a small{display:block;color:var(--faint);font-size:.78rem}.piece a.done::after{content:" ✓";color:var(--ok)}.how{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}.how .fig{margin:0}.how h4{margin:0 0 6px}@media(max-width:900px){.map{grid-template-columns:1fr 1fr}.how{grid-template-columns:1fr}}@media(max-width:600px){.map{grid-template-columns:1fr}}.big{font-size:1.05rem}</style></head>
-<body class="piece-intro"><div class="wrap">
-<header class="hero"><div class="chapters">Operating Systems: Three Easy Pieces · Remzi H. and Andrea C. Arpaci-Dusseau (v1.10, 2023) · security chapters by Peter Reiher</div>
-<h1>The whole book, as sixteen interactive lessons</h1>
-<p class="lede big">Built from the text of all 57 chapters plus the VMM appendix — every "crux", every summary, every number in the figures was extracted from the chapter PDFs, not recalled. Each lesson is short, visual, and ends in retrieval practice. Do them in order; the book's pieces build on each other.</p></header>
+<style>.little{display:grid;grid-template-columns:1fr 1fr;gap:12px}.little .fig{margin:0}.bars{display:grid;gap:6px}.bar{display:grid;grid-template-columns:150px 1fr 80px;gap:8px;align-items:center;font-size:.85rem}.bar i{display:block;height:16px;background:var(--accent);border-radius:3px}.cmp td:first-child{color:var(--accent)}</style></head>
+<body class="piece-loom"><div class="wrap">
+<header class="hero"><div class="chapters">JEP 444 Virtual Threads (JDK 21, final) · java.lang.Thread API · Executors.newVirtualThreadPerTaskExecutor</div>
+<h1>Virtual threads: thread-per-request that scales</h1>
+<p class="lede">JEP 444's argument is economic. A server's throughput is bounded by how many requests it can have in flight, each request wants a thread for its whole duration, and OS threads are too expensive to have in the hundreds of thousands — so developers abandoned the readable thread-per-request style for asynchronous pipelines. Virtual threads are <code>java.lang.Thread</code> instances that the JDK, not the OS, schedules: cheap enough to never pool, plentiful enough to have a million, and — crucially — invisible to existing code that just calls blocking APIs. This lesson is JEP 444's model and its rules; the next opens the implementation.</p></header>
+<div class="source"><b>Primary source:</b> <a href="https://openjdk.org/jeps/444">JEP 444</a>, fetched in full (Ron Pressler &amp; Alan Bateman): motivation (Little's Law), the 10,000-task example, "do not pool", scheduling (FIFO ForkJoinPool, carriers), pinning, memory/GC, API changes, observability. Also the <a href="https://docs.oracle.com/en/java/javase/21/core/virtual-threads.html">Java 21 core-libs guide</a>.</div>
+<h2>What you'll be able to do</h2><ul id="obj"></ul>
 
-<figure class="fig"><svg viewBox="0 0 900 150" role="img" aria-label="three pieces">
-<rect x="20" y="30" width="270" height="90" rx="8" fill="#e8b84a"/><text x="155" y="68" text-anchor="middle" fill="#111" font-size="20" font-weight="700" font-family="Fraunces,serif">Virtualization</text><text x="155" y="95" text-anchor="middle" fill="#111" font-size="13">CPU (ch 4–10) · Memory (ch 13–23)</text>
-<rect x="315" y="30" width="270" height="90" rx="8" fill="#5bc8f5"/><text x="450" y="68" text-anchor="middle" fill="#111" font-size="20" font-weight="700" font-family="Fraunces,serif">Concurrency</text><text x="450" y="95" text-anchor="middle" fill="#111" font-size="13">threads, locks, CVs, semaphores, bugs (ch 26–33)</text>
-<rect x="610" y="30" width="270" height="90" rx="8" fill="#6bcb77"/><text x="745" y="68" text-anchor="middle" fill="#111" font-size="20" font-weight="700" font-family="Fraunces,serif">Persistence</text><text x="745" y="95" text-anchor="middle" fill="#111" font-size="13">devices, disks, file systems, distributed (ch 36–50)</text>
-<text x="450" y="140" text-anchor="middle" fill="#a9b1cf" font-size="13">+ Security (ch 53–57) and Virtual Machine Monitors (Appendix B)</text></svg></figure>
+<h2>Why: Little's Law</h2>
+<div class="crux"><b>JEP 444:</b> scalability is governed by Little's Law — for a given request latency, the number of requests being processed concurrently must grow in proportion to throughput. The JEP's numbers: 50 ms latency at 200 requests/s needs 10 concurrent requests; 2000 requests/s needs 100. Thread-per-request means threads must grow with throughput, but platform threads are wrappers around OS threads and "the number of threads often becomes the limiting factor long before other resources, such as CPU or network connections, are exhausted." Pooling avoids thread <em>creation</em> cost but does not raise the total.</div>
+<div class="fig"><h4>Little's Law: concurrency = throughput × latency</h4><div class="controls"><label>latency (ms) <input type="range" id="lat" min="5" max="500" value="50"></label><span id="latv"></span><label>target throughput (req/s) <input type="range" id="thr" min="100" max="20000" step="100" value="2000"></label><span id="thrv"></span></div><div class="bars" id="lbars"></div><div class="cap" id="lmsg"></div></div>
+<p>The asynchronous alternative — return the thread to a pool while waiting for I/O, compose stages with callbacks or <code>CompletableFuture</code> — achieves the scaling but, the JEP argues, at a high price: it forsakes loops and try/catch, stack traces lose context, debuggers can't step through a request, profilers can't attribute cost, because the application's unit of concurrency (the pipeline) is no longer the platform's (the thread).</p>
 
-<h2>Course map</h2>
-<div class="map" id="map"></div>
+<h2>What a virtual thread is</h2>
+<p>A <b>virtual thread</b> is an instance of <code>java.lang.Thread</code> that is <em>not tied to a particular OS thread</em>; a <b>platform thread</b> is one implemented the traditional way as a thin wrapper around an OS thread. Virtual threads are user-mode threads with <b>M:N scheduling</b> (Java's 1990s green threads were M:1, platform threads are 1:1). When code in a virtual thread calls a blocking operation in the <code>java.*</code> API, the runtime performs a non-blocking OS call and <em>suspends</em> the virtual thread until it can resume; the OS thread it was using is freed for other virtual threads. To Java code, "virtual threads are simply threads that are cheap to create and almost infinitely plentiful."</p>
+<div class="little"><div class="fig"><h4>The JEP's example</h4><pre><code>try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+    IntStream.range(0, 10_000).forEach(i -> {
+        executor.submit(() -> {
+            Thread.sleep(Duration.ofSeconds(1));
+            return i;
+        });
+    });
+}  // executor.close() waits for all tasks</code></pre><p>10,000 virtual threads sleeping one second run on "perhaps as few as one" OS thread and finish in about a second (~10,000 tasks/s). <code>Executors.newCachedThreadPool()</code> would try to create 10,000 OS threads and may crash; <code>newFixedThreadPool(200)</code> would take 50 seconds (~200 tasks/s). Change 10,000 to 1,000,000 and virtual threads still work: about a million tasks per second after warm-up.</p></div>
+<div class="fig"><h4>When they help — and don't</h4><p>Virtual threads improve throughput when (1) the number of concurrent tasks is high — more than a few thousand — <em>and</em> (2) the workload is not CPU-bound. "Virtual threads are not faster threads — they do not run code any faster than platform threads. They exist to provide scale (higher throughput), not speed (lower latency)." If each task computed for a second instead of sleeping, adding threads beyond the core count would help nobody.</p><p>They are also not a data-parallelism construct: parallel streams remain the tool for processing large data sets in parallel (a non-goal of the JEP).</p></div></div>
 
-<h2>How to use this course</h2>
-<div class="how">
-<div class="fig"><h4>1. One lesson per sitting</h4><p>Each takes 25–45 minutes: read, play with the simulator until you can predict its output, flip the cards, then do the quiz <em>from memory</em>. Check off the objectives at the top only when you could explain them to someone else.</p></div>
-<div class="fig"><h4>2. Then read the chapter</h4><p>Every lesson links its primary source — the free chapter PDFs at <a href="https://pages.cs.wisc.edu/~remzi/OSTEP/">ostep.org</a>. The lesson gives you the map; the chapter has the jokes, the asides, and the homework simulators (<code>ostep-homework</code>) which are the best practice there is.</p></div>
-<div class="fig"><h4>3. Space it out</h4><p>Long-term retention comes from re-testing later, not from feeling fluent now. Redo a lesson's quiz two days later and again after a week; the <a href="reference/cheatsheets.html">cheat sheets</a> are for the fast pass, the <a href="reference/glossary.html">glossary</a> for vocabulary. Ask me in the chat for mixed quizzes across lessons.</p></div></div>
+<h2>The rules</h2>
+<ul><li><b>Never pool virtual threads.</b> Create one per task; most will be short-lived with shallow stacks. Pools exist to share expensive resources; virtual threads aren't expensive.</li><li><b>Don't use pools to limit concurrency</b> to a resource that handles, say, 20 requests; use a <code>Semaphore</code> (or other constructs designed for it).</li><li><b>Be wary of ThreadLocal caching.</b> A thread-local holding an expensive resource (a DB connection) made sense to share across tasks on a pooled thread; with a virtual thread per task it means one resource per task. Virtual threads <em>do</em> support thread-locals (a change from the previews), but with a million threads the memory adds up; <code>-Djdk.traceVirtualThreadLocals=true</code> prints where they are set. Scoped values (lesson 15) are often the better fit.</li><li><b>Blocking is fine</b> — that's the point. Most blocking JDK operations unmount the virtual thread: sockets, <code>BlockingQueue.take()</code>, locks and <code>LockSupport.park</code>, <code>Thread.sleep</code>, <code>Future.get</code>.</li><li><b>Two exceptions capture the carrier</b>: OS-level limits (many filesystem operations) and JDK-level ones (<code>Object.wait()</code>). The scheduler <em>compensates</em> by temporarily adding platform threads, up to <code>jdk.virtualThreadScheduler.maxPoolSize</code>.</li><li><b>Pinning</b>: inside a <code>synchronized</code> block or method, or a native method/foreign function, a virtual thread cannot unmount; blocking there blocks the carrier and the scheduler does <em>not</em> compensate. Fix frequent, long-blocking cases by switching to <code>ReentrantLock</code>; infrequent or in-memory-only <code>synchronized</code> is fine. Diagnostics: the JFR event <code>jdk.VirtualThreadPinned</code> (enabled by default, 20 ms threshold) and <code>-Djdk.tracePinnedThreads=full|short</code>. (The JEP says the synchronized limitation may be lifted in a future release.)</li></ul>
 
-<h2>What the book covers that this course does too</h2>
-<p>Chapters 1–2 (dialogue, introduction) → lesson 1. Chapters 3, 11, 12, 24, 25, 34, 35, 46, 47, 51, 52 are the book's short dialogues that open and close each part; their content is folded into the neighbouring lessons. The lab appendices (tutorial, systems and xv6 projects) and the deprecated monitors appendix are referenced in RESOURCES.md rather than taught.</p>
-<h2>Sister courses</h2><div class="how"><div class="fig"><h4><a href="python/index.html">Python 3.13</a></h4><p>The Language Reference, CPython internals (specializing interpreter, JIT, GC, GIL and free-threading), and pandas vs Polars — 20 interactive lessons with Python running in the browser.</p></div><div class="fig"><h4><a href="java/index.html">Java 21</a></h4><p>The JLS and JVMS, HotSpot (class loading, bytecode, tiered JIT, Generational ZGC), and virtual threads from JEP 444 down to VirtualThread.java — 17 interactive lessons with simulators.</p></div></div>
-<p class="tip">This workspace follows the <code>teach</code> skill layout: <code>MISSION.md</code> (why you're learning this), <code>RESOURCES.md</code> (sources), <code>NOTES.md</code>, <code>learning-records/</code>, <code>lessons/</code>, <code>reference/</code>, <code>assets/</code>. Tell me in the chat how a lesson landed and I'll adapt the next ones.</p>
+<h2>Scheduling and carriers</h2>
+<p>The JDK's scheduler is a <b>work-stealing <code>ForkJoinPool</code> in FIFO mode</b>, distinct from the common pool (which runs parallel streams in LIFO mode). Its parallelism defaults to the number of available processors (<code>jdk.virtualThreadScheduler.parallelism</code>). The platform thread a virtual thread runs on is its <b>carrier</b>; the scheduler <em>mounts</em> a virtual thread on a carrier, and the thread <em>unmounts</em> when it blocks, after which the carrier takes another. There is <b>no affinity</b> and <b>no time-sharing</b>: a virtual thread is not preempted for using CPU, and it may resume on a different carrier. From Java code the carrier is invisible: <code>Thread.currentThread()</code> is the virtual thread; stack traces, thread dumps and thread-locals of the carrier and the virtual thread are separate. From native code both share one OS thread, so JNI may see different OS thread ids across calls. Virtual threads are not cooperative — code never yields explicitly — and must not assume how or when they are assigned to carriers.</p>
+<table class="cmp"><tr><th>API aspect</th><th>Platform thread</th><th>Virtual thread</th></tr><tr><td>creation</td><td><code>new Thread(...)</code>, <code>Thread.ofPlatform()</code></td><td><code>Thread.ofVirtual().start(r)</code>, <code>Thread.startVirtualThread(r)</code>, <code>Executors.newVirtualThreadPerTaskExecutor()</code>; no public constructor</td></tr><tr><td>daemon</td><td>settable</td><td>always daemon; <code>setDaemon(false)</code> has no effect</td></tr><tr><td>priority</td><td>settable</td><td>fixed <code>NORM_PRIORITY</code></td></tr><tr><td>thread group</td><td>real group</td><td>placeholder group "VirtualThreads"</td></tr><tr><td>identity</td><td><code>isVirtual()</code> false</td><td><code>isVirtual()</code> true (final method)</td></tr><tr><td>interruption</td><td>as before</td><td>supported; socket I/O is now interruptible in a virtual thread (closes the socket)</td></tr><tr><td>stop/suspend/resume</td><td colspan="2">throw UnsupportedOperationException for both since JDK 20</td></tr></table>
+
+<h2>Memory, GC, observability</h2>
+<p>A virtual thread's stack lives in the heap as <b>stack chunk</b> objects that grow and shrink; that is what makes a million threads affordable. They are <em>not GC roots</em>, so G1 and friends don't scan them in a stop-the-world pause. One current limitation: G1 doesn't support humongous stack chunks, so a stack reaching half a region (as small as 512 KB) may <code>StackOverflowError</code>. Overall the JEP expects heap and GC costs comparable to asynchronous code, since a million tasks need a million objects either way. Tooling: debuggers step through virtual threads; JFR attributes events correctly (new events <code>VirtualThreadStart/End</code> off by default, <code>VirtualThreadPinned</code>, <code>VirtualThreadSubmitFailed</code>); the new thread dump <code>jcmd &lt;pid&gt; Thread.dump_to_file -format=json</code> groups threads without pausing the application; <code>ThreadMXBean</code> and JVM TI's <code>GetAllThreads</code> cover platform threads only. And one flag to avoid: <code>-XX:+PreserveFramePointer</code> "has a drastic negative impact on virtual thread performance."</p>
+<div id="py1"></div>
+
+<h2>Flash cards</h2><div id="cards"></div>
+<h2>Retrieval practice</h2><div id="quiz"></div>
+<p class="tip">Ask me in the chat to review a thread-pool-based service for the migration pitfalls (pool sizing as throttling, ThreadLocal caches, synchronized around I/O).</p>
 </div>
 <script>
-/* OSTEP course — shared components. Every page loads this file (inlined by build.py). */
+/* Java 21 course — shared components (from the OSTEP course). Every page loads this file (inlined by build.py). */
 window.OS = (function () {
   const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
   /* ---------- persistent storage (localStorage on a real site; in-memory fallback in sandboxes) ---------- */
   const mem = {};
   const store = {
-    get(k) { try { const v = localStorage.getItem('ostep:' + k); return v === null ? (mem[k] ?? null) : JSON.parse(v); } catch (e) { return mem[k] ?? null; } },
-    set(k, v) { mem[k] = v; try { localStorage.setItem('ostep:' + k, JSON.stringify(v)); } catch (e) {} },
-    del(k) { delete mem[k]; try { localStorage.removeItem('ostep:' + k); } catch (e) {} },
-    keys(prefix) { const out = new Set(Object.keys(mem).filter(k => k.startsWith(prefix))); try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith('ostep:' + prefix)) out.add(k.slice(6)); } } catch (e) {} return [...out]; },
-    available() { try { localStorage.setItem('ostep:test', '1'); localStorage.removeItem('ostep:test'); return true; } catch (e) { return false; } }
+    get(k) { try { const v = localStorage.getItem('java21:' + k); return v === null ? (mem[k] ?? null) : JSON.parse(v); } catch (e) { return mem[k] ?? null; } },
+    set(k, v) { mem[k] = v; try { localStorage.setItem('java21:' + k, JSON.stringify(v)); } catch (e) {} },
+    del(k) { delete mem[k]; try { localStorage.removeItem('java21:' + k); } catch (e) {} },
+    keys(prefix) { const out = new Set(Object.keys(mem).filter(k => k.startsWith(prefix))); try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith('java21:' + prefix)) out.add(k.slice(6)); } } catch (e) {} return [...out]; },
+    available() { try { localStorage.setItem('java21:test', '1'); localStorage.removeItem('java21:test'); return true; } catch (e) { return false; } }
   };
 
   /* ---------- course structure ---------- */
   const PIECES = [
-    ['intro', 'Introduction', [['0001-three-easy-pieces', 'Three easy pieces', 'ch 1–2']]],
-    ['virt', 'Virtualization', [
-      ['0002-processes', 'Processes & the process API', 'ch 4–5'],
-      ['0003-limited-direct-execution', 'Limited direct execution', 'ch 6'],
-      ['0004-scheduling', 'Scheduling', 'ch 7–10'],
-      ['0005-address-spaces', 'Address spaces & segments', 'ch 13–16'],
-      ['0006-paging-and-tlbs', 'Paging & TLBs', 'ch 17–20'],
-      ['0007-swapping', 'Swapping & policies', 'ch 21–23']]],
-    ['conc', 'Concurrency', [
-      ['0008-threads-and-locks', 'Threads & locks', 'ch 26–28'],
-      ['0009-cvs-and-semaphores', 'CVs & semaphores', 'ch 29–31'],
-      ['0010-bugs-and-events', 'Bugs & events', 'ch 32–33']]],
-    ['pers', 'Persistence', [
-      ['0011-devices-disks-raid', 'Devices, disks, RAID', 'ch 36–38'],
-      ['0012-files-and-vsfs', 'Files & a simple FS', 'ch 39–40'],
-      ['0013-ffs-journaling-lfs', 'FFS, journaling, LFS', 'ch 41–43'],
-      ['0014-ssd-and-integrity', 'SSDs & integrity', 'ch 44–45'],
-      ['0015-distributed-nfs-afs', 'Distributed FS', 'ch 48–50']]],
-    ['sec', 'Security', [['0016-security-and-vmms', 'Security & VMMs', 'ch 53–57, App B']]]
+    ['lang', 'The language, as specified (JLS 21)', [
+      ['0001-types-values-variables', 'Types, values, variables', 'JLS ch 4, 5'],
+      ['0002-classes-objects-initialization', 'Classes, objects, initialization order', 'JLS ch 8, 12'],
+      ['0003-records-sealed-interfaces', 'Records, sealed types, interfaces', 'JLS §8.10, §8.1.1.2, ch 9'],
+      ['0004-generics-and-erasure', 'Generics, wildcards, erasure', 'JLS §4.5–4.10, §8.4.8.3'],
+      ['0005-expressions-exceptions-switch', 'Expressions, exceptions, switch & patterns', 'JLS ch 11, 14, 15; JEPs 440/441'],
+      ['0006-lambdas-streams', 'Lambdas, method references, streams', 'JLS §15.27, §15.13, java.util.stream'],
+      ['0007-java-memory-model', 'The Java memory model', 'JLS ch 17']]],
+    ['jvm', 'The JVM (JVMS 21 + HotSpot)', [
+      ['0008-class-files-and-bytecode', 'Class files and bytecode', 'JVMS ch 4, 6'],
+      ['0009-loading-linking-initialization', 'Loading, linking, initialization, class loaders', 'JVMS ch 5'],
+      ['0010-execution-frames-invokedynamic', 'Execution: frames, invoke*, invokedynamic', 'JVMS ch 2, 5.4.3, 6'],
+      ['0011-hotspot-jit', 'HotSpot: interpreter, C1/C2, deoptimization', 'compilationPolicy.cpp, c2_globals.hpp'],
+      ['0012-heap-gc-generational-zgc', 'Objects, heap, GC, Generational ZGC', 'markWord.hpp, gcConfig.cpp, JEP 439']]],
+    ['loom', 'Java 21: virtual threads and new features', [
+      ['0013-virtual-threads-model', 'Virtual threads: the model (JEP 444)', 'JEP 444'],
+      ['0014-virtual-threads-internals', 'Virtual threads: continuations, carriers, scheduler', 'VirtualThread.java, Continuation.java, freeze/thaw'],
+      ['0015-structured-concurrency-scoped-values', 'Structured concurrency & scoped values', 'StructuredTaskScope, ScopedValue (preview)'],
+      ['0016-concurrency-toolkit', 'The concurrency toolkit: monitors, locks, executors', 'JLS §17.1–17.3, java.util.concurrent'],
+      ['0017-java-21-features', 'What Java 21 adds', 'JEPs 431, 440, 441, 442, 443, 445, 446, 453']]]
   ];
   const LESSONS = PIECES.flatMap(p => p[2].map(l => [l[0], l[1], p[0], l[2]]));
   const title = id => (LESSONS.find(l => l[0] === id) || [])[1] || id;
@@ -257,7 +280,7 @@ window.OS = (function () {
     const isLesson = i >= 0;
     const top = document.createElement('header'); top.className = 'topbar';
     top.innerHTML = `<button class="menu" aria-label="Open directory" aria-expanded="false">☰<span>Directory</span></button>
-      <a class="brand" href="${root}index.html"><span class="dot"></span>OSTEP course</a>
+      <a class="brand" href="${root}index.html"><span class="dot"></span>Java 21 course</a>
       <nav class="links"><a href="${root}reference/glossary.html">Glossary</a><a href="${root}reference/cheatsheets.html">Cheat sheets</a><a href="${root}notes.html">My notes</a></nav>
       ${isLesson ? `<span class="where">${i+1} / ${LESSONS.length}</span>` : ''}`;
     document.body.prepend(top);
@@ -341,6 +364,17 @@ window.OS = (function () {
     });
   }
 
+
+  /* ---------- Java code blocks: annotated, copyable, with a jshell hint (no JVM in the browser) ---------- */
+  function py(el, code, opts) {
+    el = typeof el === 'string' ? document.getElementById(el) : el; opts = opts || {};
+    el.classList.add('pyrun');
+    const src = code.trim();
+    const preview = /--enable-preview|StructuredTaskScope|ScopedValue|STR\./.test(src);
+    el.innerHTML = `<div class="pyhead"><span>Java 21${preview ? ' · needs --enable-preview' : ''}${opts.note ? ' · ' + esc(opts.note) : ''}</span><span class="pystatus">paste into jshell or a scratch file</span><button class="primary copy">Copy</button></div><pre class="pyout" style="display:block;white-space:pre-wrap;margin:0"><code>${esc(src)}</code></pre>`;
+    el.querySelector('.copy').onclick = () => { navigator.clipboard && navigator.clipboard.writeText(src).then(() => { el.querySelector('.pystatus').textContent = 'copied'; }).catch(() => {}); };
+  }
+
   /* ---------- flip cards ---------- */
   function cards(el, list) {
     el = typeof el === 'string' ? document.getElementById(el) : el;
@@ -385,17 +419,46 @@ window.OS = (function () {
     el.querySelectorAll('input').forEach(c => c.onchange = () => { const s = [...el.querySelectorAll('input:checked')].map(x => +x.dataset.i); if (pageId) store.set('obj:' + pageId, s); });
   }
 
-  return { chrome, quiz, cards, stepper, gantt, objectives, esc, store, LESSONS, PIECES, title };
+  return { chrome, quiz, cards, stepper, gantt, objectives, py, esc, store, LESSONS, PIECES, title };
 })();
 
 </script>
 <script>
-OS.chrome('index','');
-const P=[['intro','Introduction','What an OS is: the three pieces, design goals, history.',['0001-three-easy-pieces','Three easy pieces','ch 1–2']],
-['virt','Virtualization','The CPU and memory made private and plentiful.',['0002-processes','Processes & the process API','ch 4–5'],['0003-limited-direct-execution','Limited direct execution','ch 6'],['0004-scheduling','Scheduling: FIFO to CFS and multi-CPU','ch 7–10'],['0005-address-spaces','Address spaces, base/bounds, segments','ch 13–16'],['0006-paging-and-tlbs','Free space, paging, TLBs, small tables','ch 17–20'],['0007-swapping','Swapping, replacement, VAX/VMS & Linux','ch 21–23']],
-['conc','Concurrency','Threads and the primitives that make them safe.',['0008-threads-and-locks','Threads, thread API, locks','ch 26–28'],['0009-cvs-and-semaphores','Locked structures, CVs, semaphores','ch 29–31'],['0010-bugs-and-events','Concurrency bugs & event-based servers','ch 32–33']],
-['pers','Persistence + Security','Storage from the device up; then protecting it all.',['0011-devices-disks-raid','Devices, disks, RAID','ch 36–38'],['0012-files-and-vsfs','Files, directories, a simple file system','ch 39–40'],['0013-ffs-journaling-lfs','FFS, crash consistency, LFS','ch 41–43'],['0014-ssd-and-integrity','SSDs & data integrity','ch 44–45'],['0015-distributed-nfs-afs','Distributed systems, NFS, AFS','ch 48–50'],['0016-security-and-vmms','Security (ch 53–57) & VMMs','ch 53–57, App B']]];
-const m=document.getElementById('map');let idx=0;const S=OS.store;
-m.innerHTML=P.map(([cls,name,desc,...ls])=>`<div class="piece piece-${cls}"><h3>${name}</h3><p>${desc}</p>${ls.map(l=>{idx++;const q=S.get('quiz:'+l[0]),nt=(S.get('notes:'+l[0])||{}).text;return `<a href="lessons/${l[0]}.html" data-id="${l[0]}" class="${q&&q.score===q.total?'done':''}">${idx}. ${l[1]}<small>${l[2]}${q?` · quiz ${q.score}/${q.total}`:''}${nt?' · ✎ notes':''}</small></a>`;}).join('')}</div>`).join('');
-const done=OS.LESSONS.filter(l=>S.get('quiz:'+l[0])).length;const ph=document.createElement('p');ph.className='cap';ph.textContent=done?`${done} of 16 lesson quizzes attempted — see My notes & progress for details.`:'Quiz scores, checked objectives and notes are saved in this browser as you go.';document.getElementById('map').after(ph);
+OS.chrome('0013-virtual-threads-model');
+OS.objectives('obj',['Explain Little\'s Law and why OS-thread cost caps thread-per-request throughput.','Define virtual vs platform threads, M:N scheduling, mount/unmount and carriers, and what remains invisible to Java code.','State when virtual threads help (many tasks, not CPU-bound) and the "not faster, just more" principle.','Apply the rules: never pool, semaphores not pools for throttling, ThreadLocal caution, pinning and its diagnostics.','Describe the memory model (heap stack chunks, not roots), API differences, and observability tools.']);
+function little(){const lat=+document.getElementById('lat').value,thr=+document.getElementById('thr').value;document.getElementById('latv').textContent=lat+' ms';document.getElementById('thrv').textContent=thr+' req/s';const conc=Math.ceil(thr*lat/1000);const rows=[['platform pool of 200',200],['platform pool of 2000',2000],['needed concurrency',conc],['virtual threads (1M+)',1000000]];const mx=Math.max(conc,2000);document.getElementById('lbars').innerHTML=rows.map(([n,v])=>`<div class="bar"><span>${n}</span><i style="width:${Math.min(100,100*v/mx)}%;opacity:${n.startsWith('needed')?1:.6}"></i><span>${v.toLocaleString()}</span></div>`).join('');document.getElementById('lmsg').textContent=`At ${lat} ms per request, ${thr} req/s keeps ${conc.toLocaleString()} requests in flight. A fixed pool caps throughput at pool_size / latency = ${(200/lat*1000).toFixed(0)} req/s for 200 threads. (JEP 444's example: 50 ms, 200 req/s → 10; 2000 req/s → 100.)`;}
+['lat','thr'].forEach(id=>document.getElementById(id).oninput=little);little();
+OS.py('py1',`// JEP 444 API, Java 21
+Thread vt = Thread.ofVirtual().name("worker-", 0).start(() -> System.out.println(Thread.currentThread()));
+Thread pt = Thread.ofPlatform().daemon().start(() -> {});
+Thread.startVirtualThread(() -> {});                       // convenience
+System.out.println(vt.isVirtual() + " " + vt.isDaemon() + " " + vt.getPriority()); // true true 5
+
+// One virtual thread per task; close() waits — never pool virtual threads
+try (ExecutorService ex = Executors.newVirtualThreadPerTaskExecutor()) {
+    Future<String> a = ex.submit(() -> fetch("https://a"));
+    Future<String> b = ex.submit(() -> fetch("https://b"));
+    System.out.println(a.get() + b.get());                // blocking get() unmounts the virtual thread
+}
+// Throttle a scarce resource with a semaphore, not a small pool
+Semaphore db = new Semaphore(20);
+Runnable task = () -> { db.acquireUninterruptibly(); try { query(); } finally { db.release(); } };
+
+// Pinning: avoid synchronized around blocking I/O in hot paths
+class Cache {
+    private final ReentrantLock lock = new ReentrantLock();     // unmounts while waiting
+    Object get(String k) { lock.lock(); try { return loadRemote(k); } finally { lock.unlock(); } }
+    synchronized Object getPinned(String k) { return loadRemote(k); }  // blocks the carrier while pinned
+}
+// Diagnostics: -Djdk.tracePinnedThreads=full   |  JFR jdk.VirtualThreadPinned (20 ms)   |  jcmd <pid> Thread.dump_to_file -format=json dump.json`);
+OS.cards('cards',[['Little\'s Law','concurrency = throughput × latency; thread-per-request needs threads to grow with throughput.'],['Virtual thread','A java.lang.Thread not tied to an OS thread; M:N scheduled by the JDK; cheap, plentiful, always daemon, fixed priority.'],['Carrier','The platform thread a virtual thread is mounted on; invisible to Java code; no affinity; no time-sharing.'],['Mount / unmount','Scheduler mounts a virtual thread to run it; blocking JDK operations unmount it, freeing the carrier.'],['Never pool','Pools share expensive resources; virtual threads are cheap. Throttle with semaphores instead.'],['Pinning','Inside synchronized or native code a virtual thread cannot unmount; blocking there blocks the carrier; no compensation.'],['Compensation','For carrier-capturing operations (file I/O, Object.wait) the scheduler temporarily grows up to jdk.virtualThreadScheduler.maxPoolSize.'],['Stack chunks','Virtual-thread stacks are heap objects, grow/shrink, and are not GC roots.'],['Scheduler','Work-stealing ForkJoinPool, FIFO, parallelism = available processors (jdk.virtualThreadScheduler.parallelism); separate from the common pool.']]);
+OS.quiz('quiz',[
+{q:'Per JEP 444, why does pooling platform threads not solve the throughput problem?',o:['pools are slower','pooling avoids creation cost but does not raise the total number of threads','pools cannot block','pools are single-threaded'],a:1,why:'The limiting factor is the number of OS threads, which pooling leaves unchanged.'},
+{q:'Which workload benefits most from virtual threads?',o:['CPU-bound number crunching','many (thousands+) concurrent tasks that mostly wait on I/O','a single latency-critical request','parallel processing of a large array'],a:1,why:'JEP 444: high task count and not CPU-bound; virtual threads add scale, not speed; parallel streams handle data parallelism.'},
+{q:'A service must not exceed 20 concurrent calls to a downstream system. With virtual threads you should:',o:['use a thread pool of 20 virtual threads','use a Semaphore(20)','use a fixed pool of 20 platform threads','set jdk.virtualThreadScheduler.parallelism=20'],a:1,why:'The JEP: never pool virtual threads to limit concurrency; use constructs designed for it, such as semaphores.'},
+{q:'A virtual thread blocks on a socket read inside a synchronized method. What happens?',o:['it unmounts normally','it is pinned: the carrier blocks and the scheduler does not compensate','the JVM throws IllegalMonitorStateException','the scheduler adds a carrier'],a:1,why:'Pinning inside synchronized (or native frames) prevents unmounting; compensation applies only to captured carriers from OS/JDK limitations like file I/O and Object.wait().'},
+{q:'The virtual-thread scheduler is:',o:['the common ForkJoinPool','a dedicated work-stealing ForkJoinPool in FIFO mode','the OS scheduler','a single dispatcher thread'],a:1,why:'JEP 444: FIFO ForkJoinPool with parallelism = available processors; the common pool (LIFO) serves parallel streams.'},
+{q:'Thread.currentThread() inside a virtual thread returns:',o:['the carrier thread','the virtual thread itself','null','the scheduler thread'],a:1,why:'The carrier\'s identity, stack and thread-locals are unavailable to the virtual thread.'},
+{q:'Where are virtual-thread stacks stored?',o:['on the carrier\'s OS stack','in heap stack-chunk objects that are not GC roots','in Metaspace','in native memory outside the heap'],a:1,why:'Heap-allocated, growing and shrinking; not traversed as roots in stop-the-world pauses.'},
+{q:'Which statement about virtual threads and daemon status is true?',o:['they are non-daemon by default','they are always daemon; setDaemon has no effect','setDaemon(true) is required','they are daemon only under the executor'],a:1,why:'JEP 444 API differences: virtual threads are always daemon threads with fixed NORM_PRIORITY.'}]);
 </script></body></html>

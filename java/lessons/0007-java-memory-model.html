@@ -1,11 +1,11 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>OSTEP course — Operating Systems: Three Easy Pieces, taught interactively</title><style>
+<title>7 · The Java memory model — Java 21 course</title><style>
 /* OSTEP course — shared stylesheet. Three pieces, three hues. */
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
 :root{
   --ink:#151b2f; --ink-2:#1e2540; --ink-3:#28304f; --line:#3a4368;
   --paper:#eef0f7; --muted:#a9b1cf; --faint:#6e779a;
-  --virt:#e8b84a; --conc:#5bc8f5; --pers:#6bcb77; --sec:#f47fa0; --intro:#c9a8ff;
+  --virt:#e8b84a; --conc:#5bc8f5; --pers:#6bcb77; --sec:#f47fa0; --intro:#c9a8ff; --spec:#ffd166; --internals:#5bc8f5; --data:#6bcb77;
   --ok:#6bcb77; --bad:#ff6b6b;
   --accent:var(--virt);
   --radius:6px;
@@ -28,7 +28,7 @@ p,li{max-width:72ch}
 .hero{padding:44px 0 16px}
 .hero .chapters{color:var(--muted);font-size:.95rem;margin-bottom:6px}
 .lede{font-size:1.2rem;color:var(--muted);max-width:66ch}
-.piece-virt{--accent:var(--virt)} .piece-conc{--accent:var(--conc)} .piece-pers{--accent:var(--pers)} .piece-sec{--accent:var(--sec)} .piece-intro{--accent:var(--intro)}
+.piece-lang{--accent:var(--spec)} .piece-jvm{--accent:var(--internals)} .piece-loom{--accent:var(--data)} .piece-spec{--accent:var(--spec)} .piece-internals{--accent:var(--internals)} .piece-data{--accent:var(--data)} .piece-virt{--accent:var(--virt)} .piece-conc{--accent:var(--conc)} .piece-pers{--accent:var(--pers)} .piece-sec{--accent:var(--sec)} .piece-intro{--accent:var(--intro)}
 .fig{background:var(--ink-2);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;margin:22px 0}
 .fig figcaption,.cap{color:var(--muted);font-size:.9rem;margin-top:10px}
 .fig svg{max-width:100%;height:auto;display:block}
@@ -182,69 +182,80 @@ details>div{padding:0 16px 14px}
 }
 @media (max-width:420px){.cards{grid-template-columns:1fr}}
 
+/* ---------- runnable Python ---------- */
+.pyrun{border:1px solid var(--line);border-radius:var(--radius);background:#0f1424;margin:18px 0;overflow:hidden}
+.pyrun .pyhead{display:flex;gap:10px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--line);font-size:.85rem;color:var(--muted);background:var(--ink-2)}
+.pyrun .pyhead span:first-child{flex:1;font-weight:600;color:var(--paper)}
+.pyrun .pystatus{font-size:.78rem}
+.pyrun textarea{display:block;width:100%;border:none;background:#0f1424;color:var(--paper);font-family:'IBM Plex Mono',monospace;font-size:.86rem;line-height:1.5;padding:12px 14px;resize:vertical;outline:none;min-height:60px;tab-size:4}
+.pyrun .pyout{font-family:'IBM Plex Mono',monospace;font-size:.86rem;line-height:1.5;padding:12px 14px;margin:0;border:none;border-top:1px solid var(--line);border-left:none;border-radius:0;background:#0a0e1a;color:#cfe3ff;max-height:none;overflow:auto}
+
 </style>
-<style>.map{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:24px 0}.piece{border:1px solid var(--line);border-radius:8px;padding:16px;background:var(--ink-2);border-top:4px solid var(--accent)}.piece h3{margin:0 0 4px;color:var(--accent)}.piece p{font-size:.9rem;color:var(--muted);margin:0 0 10px}.piece a{display:block;text-decoration:none;color:var(--paper);padding:6px 0;border-top:1px solid var(--line);font-size:.92rem}.piece a:hover{color:var(--accent)}.piece a small{display:block;color:var(--faint);font-size:.78rem}.piece a.done::after{content:" ✓";color:var(--ok)}.how{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}.how .fig{margin:0}.how h4{margin:0 0 6px}@media(max-width:900px){.map{grid-template-columns:1fr 1fr}.how{grid-template-columns:1fr}}@media(max-width:600px){.map{grid-template-columns:1fr}}.big{font-size:1.05rem}</style></head>
-<body class="piece-intro"><div class="wrap">
-<header class="hero"><div class="chapters">Operating Systems: Three Easy Pieces · Remzi H. and Andrea C. Arpaci-Dusseau (v1.10, 2023) · security chapters by Peter Reiher</div>
-<h1>The whole book, as sixteen interactive lessons</h1>
-<p class="lede big">Built from the text of all 57 chapters plus the VMM appendix — every "crux", every summary, every number in the figures was extracted from the chapter PDFs, not recalled. Each lesson is short, visual, and ends in retrieval practice. Do them in order; the book's pieces build on each other.</p></header>
+<style>.hb{display:grid;grid-template-columns:1fr 1fr;gap:12px}.hb pre{margin:0}.out{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px}.out div{padding:8px;border-radius:6px;border:1px solid var(--line);background:#0f1424;text-align:center;font-family:'IBM Plex Mono',monospace;font-size:.8rem}.out div.ok{border-color:var(--ok)}.out div.no{opacity:.4;text-decoration:line-through}.edges{font-size:.85rem}.edges li{margin:3px 0}@media(max-width:700px){.hb{grid-template-columns:1fr}.out{grid-template-columns:1fr 1fr}}</style></head>
+<body class="piece-lang"><div class="wrap">
+<header class="hero"><div class="chapters">JLS 21 Chapter 17 Threads and Locks (§17.1 Synchronization · §17.2 Wait sets · §17.3 Sleep and yield · §17.4 Memory model · §17.5 final fields · §17.6–17.7)</div>
+<h1>The Java memory model: what a read is allowed to see</h1>
+<p class="lede">Chapter 17 does not say how threads are scheduled. It says which <em>values</em> a read of shared memory may return when other threads write it — and it answers with one relation, <b>happens-before</b>. If two conflicting accesses aren't ordered by it, the program has a <b>data race</b> and the compiler, the JIT and the CPU are all free to reorder in ways that look paradoxical. If they are ordered, the program behaves as if sequentially consistent. Everything else in Java concurrency — <code>synchronized</code>, <code>volatile</code>, <code>final</code>, <code>start</code>/<code>join</code>, <code>java.util.concurrent</code> — is a way to create those edges.</p></header>
+<div class="source"><b>Primary source:</b> <a href="https://docs.oracle.com/javase/specs/jls/se21/html/jls-17.html">JLS §17</a>, fetched in full; tables 17.4-A/B (reordering), 17.4-C/D (forward substitution), 17.4.5-A (happens-before consistency), 17.4.8-A (out-of-thin-air), example 17.5-1 (<code>FinalFieldExample</code>) and 17.6-1 (word tearing) are the spec's own. <code>java.util.concurrent.locks.Lock</code> javadoc for the lock/unlock equivalence.</div>
+<h2>What you'll be able to do</h2><ul id="obj"></ul>
 
-<figure class="fig"><svg viewBox="0 0 900 150" role="img" aria-label="three pieces">
-<rect x="20" y="30" width="270" height="90" rx="8" fill="#e8b84a"/><text x="155" y="68" text-anchor="middle" fill="#111" font-size="20" font-weight="700" font-family="Fraunces,serif">Virtualization</text><text x="155" y="95" text-anchor="middle" fill="#111" font-size="13">CPU (ch 4–10) · Memory (ch 13–23)</text>
-<rect x="315" y="30" width="270" height="90" rx="8" fill="#5bc8f5"/><text x="450" y="68" text-anchor="middle" fill="#111" font-size="20" font-weight="700" font-family="Fraunces,serif">Concurrency</text><text x="450" y="95" text-anchor="middle" fill="#111" font-size="13">threads, locks, CVs, semaphores, bugs (ch 26–33)</text>
-<rect x="610" y="30" width="270" height="90" rx="8" fill="#6bcb77"/><text x="745" y="68" text-anchor="middle" fill="#111" font-size="20" font-weight="700" font-family="Fraunces,serif">Persistence</text><text x="745" y="95" text-anchor="middle" fill="#111" font-size="13">devices, disks, file systems, distributed (ch 36–50)</text>
-<text x="450" y="140" text-anchor="middle" fill="#a9b1cf" font-size="13">+ Security (ch 53–57) and Virtual Machine Monitors (Appendix B)</text></svg></figure>
+<h2>Monitors, wait sets, and what sleep doesn't do</h2>
+<p><b>§17.1</b> Every object has a monitor; only one thread holds it at a time; a thread may lock it several times (reentrant) and each unlock reverses one lock. <code>synchronized (obj)</code> locks the computed object's monitor and unlocks on any completion; a <code>synchronized</code> instance method locks <code>this</code>, a static one locks the <code>Class</code> object. Deadlock is neither prevented nor detected. <b>§17.2</b> Every object also has a <em>wait set</em>. <code>wait()</code> requires holding the lock (else <code>IllegalMonitorStateException</code>), releases <em>all</em> n locks, sleeps until <code>notify</code>/<code>notifyAll</code>/interrupt/timeout — or a <b>spurious wake-up</b>, which the spec explicitly permits ("although not encouraged") and which is why <code>wait</code> must sit in a loop re-checking the condition — then re-acquires n locks. <code>notify</code> picks an arbitrary waiter; notifications cannot be lost to interrupts. <b>§17.3</b> <code>Thread.sleep</code> and <code>yield</code> have <em>no synchronization semantics</em>: the spec's own example, <code>while (!this.done) Thread.sleep(1000);</code> with a non-volatile <code>done</code>, may loop forever because the compiler may read the field once and cache it.</p>
 
-<h2>Course map</h2>
-<div class="map" id="map"></div>
+<h2>Actions, program order, synchronization order</h2>
+<p>The model reasons about <em>inter-thread actions</em>: normal reads/writes of <b>shared variables</b> (instance fields, static fields, array elements — never locals, parameters or exception parameters), <b>synchronization actions</b> (volatile read/write, lock, unlock, thread start/termination detection, the synthetic first/last actions of a thread), external actions, and thread-divergence actions. Two accesses to the same variable <b>conflict</b> if at least one is a write. Each thread's actions have a <b>program order</b>; all synchronization actions of an execution have a total <b>synchronization order</b> consistent with each program order.</p>
+<div class="crux"><b>synchronizes-with (§17.4.4)</b> — the release/acquire pairs: an unlock of monitor <em>m</em> → every subsequent lock of <em>m</em>; a volatile write of <em>v</em> → every subsequent read of <em>v</em>; the action that starts a thread → its first action; the default-value write of every variable → the first action of every thread; the final action of T1 → any action that detects T1 terminated (<code>join</code>, <code>isAlive</code>); an interrupt → the point where it is detected. <b>happens-before (§17.4.5)</b> = program order ∪ synchronizes-with ∪ (constructor end → finalizer start), closed transitively. A <b>data race</b> is a pair of conflicting accesses not ordered by happens-before. A program is <b>correctly synchronized</b> iff all sequentially consistent executions are race-free — and then <em>every</em> execution appears sequentially consistent (§17.4.3/17.4.5).</div>
+<div class="fig"><h4>Happens-before explorer: which outcomes can a reader observe?</h4><div class="controls"><select id="sc"><option value="race">no synchronization (data race)</option><option value="vol">volatile flag</option><option value="sync">synchronized block on both sides</option><option value="join">start()/join()</option><option value="final">final field, unsafe publication</option><option value="sleep">sleep() as "synchronization"</option></select></div><div class="hb"><pre id="code"></pre><div><ul class="edges" id="edges"></ul><div class="out" id="out"></div></div></div><div class="cap" id="hmsg"></div></div>
+<p>A read <em>r</em> of <em>v</em> may see a write <em>w</em> if <em>r</em> does not happen-before <em>w</em> and no other write <em>w'</em> to <em>v</em> lies between them in happens-before. Note what this does <em>not</em> say: with no edges at all, a read may see a write that comes <em>later</em> in the execution order (Table 17.4.5-A, both reads seeing 0) — "happens-before consistency" alone would even allow values out of thin air (Table 17.4.8-A), which the causality requirements of §17.4.8 forbid by insisting an execution be built up from committed actions that never depend on a data race. A happens-before edge also does not force real-time ordering: reorderings are legal as long as no observation can tell.</p>
 
-<h2>How to use this course</h2>
-<div class="how">
-<div class="fig"><h4>1. One lesson per sitting</h4><p>Each takes 25–45 minutes: read, play with the simulator until you can predict its output, flip the cards, then do the quiz <em>from memory</em>. Check off the objectives at the top only when you could explain them to someone else.</p></div>
-<div class="fig"><h4>2. Then read the chapter</h4><p>Every lesson links its primary source — the free chapter PDFs at <a href="https://pages.cs.wisc.edu/~remzi/OSTEP/">ostep.org</a>. The lesson gives you the map; the chapter has the jokes, the asides, and the homework simulators (<code>ostep-homework</code>) which are the best practice there is.</p></div>
-<div class="fig"><h4>3. Space it out</h4><p>Long-term retention comes from re-testing later, not from feeling fluent now. Redo a lesson's quiz two days later and again after a week; the <a href="reference/cheatsheets.html">cheat sheets</a> are for the fast pass, the <a href="reference/glossary.html">glossary</a> for vocabulary. Ask me in the chat for mixed quizzes across lessons.</p></div></div>
+<h2>The derived rules you actually use</h2>
+<ul><li>An unlock <em>happens-before</em> every subsequent lock of the same monitor — so everything the holder wrote is visible to the next holder. <code>Lock.lock()</code>/<code>unlock()</code> must provide the same effects (javadoc).</li><li>A volatile write <em>happens-before</em> every subsequent read of that field — and by transitivity everything the writer did before the write is visible to the reader after the read. This is the "flag" idiom; it costs nothing on the reader beyond a fresh load, but it does <em>not</em> make <code>count++</code> atomic (read-modify-write is three actions; use <code>AtomicInteger</code> or a lock).</li><li><code>start()</code> happens-before every action of the started thread; every action of a thread happens-before another thread's successful return from <code>join()</code> on it.</li><li>Default initialization happens-before everything — a field is never garbage, only stale.</li><li>Data races cannot corrupt array lengths, checked casts or virtual dispatch (§17.4.5): the JVM's own metadata is safe; only your variables are stale.</li><li><b>Word tearing is forbidden</b> (§17.6): adjacent bytes of a byte[] written by different threads must not interfere. <b>But</b> a non-volatile <code>long</code>/<code>double</code> write may be split into two 32-bit halves (§17.7); volatile 64-bit values and all references are atomic.</li></ul>
 
-<h2>What the book covers that this course does too</h2>
-<p>Chapters 1–2 (dialogue, introduction) → lesson 1. Chapters 3, 11, 12, 24, 25, 34, 35, 46, 47, 51, 52 are the book's short dialogues that open and close each part; their content is folded into the neighbouring lessons. The lab appendices (tutorial, systems and xv6 projects) and the deprecated monitors appendix are referenced in RESOURCES.md rather than taught.</p>
-<h2>Sister courses</h2><div class="how"><div class="fig"><h4><a href="python/index.html">Python 3.13</a></h4><p>The Language Reference, CPython internals (specializing interpreter, JIT, GC, GIL and free-threading), and pandas vs Polars — 20 interactive lessons with Python running in the browser.</p></div><div class="fig"><h4><a href="java/index.html">Java 21</a></h4><p>The JLS and JVMS, HotSpot (class loading, bytecode, tiered JIT, Generational ZGC), and virtual threads from JEP 444 down to VirtualThread.java — 17 interactive lessons with simulators.</p></div></div>
-<p class="tip">This workspace follows the <code>teach</code> skill layout: <code>MISSION.md</code> (why you're learning this), <code>RESOURCES.md</code> (sources), <code>NOTES.md</code>, <code>learning-records/</code>, <code>lessons/</code>, <code>reference/</code>, <code>assets/</code>. Tell me in the chat how a lesson landed and I'll adapt the next ones.</p>
+<h2>final fields: immutability without synchronization</h2>
+<p>§17.5 gives <code>final</code> fields stronger semantics than happens-before alone. A <b>freeze</b> occurs when the constructor that writes the field exits. If a thread sees a reference to the object only after the constructor finished — <em>even via a data race</em> — it is guaranteed to see the correct value of the final fields, and versions of objects reachable through them at least as up to date as at the freeze. The usage model: set finals in the constructor and don't let <code>this</code> escape before the constructor returns. The spec's example: with <code>final int x = 3; int y = 4;</code> assigned in the constructor and <code>f = new FinalFieldExample()</code> in one thread, a reader that sees <code>f != null</code> is guaranteed <code>f.x == 3</code> but may see <code>f.y == 0</code>. This is what makes <code>String</code> safe to share across a race (its fields are final; otherwise a racy reader could see a zero offset and compare "/tmp/usr".substring(4) equal to "/tmp"). Caveats: reflection can rewrite finals (a new freeze after each write, and reads may be reordered); finals initialized to constant expressions are inlined; <code>System.in/out/err</code> are "write-protected", treated as normal fields.</p>
+<div id="py1"></div>
+
+<h2>Flash cards</h2><div id="cards"></div>
+<h2>Retrieval practice</h2><div id="quiz"></div>
+<p class="tip">Ask me in the chat to reason through a specific publication idiom (double-checked locking with and without volatile, lazy holder class, immutable objects) using only §17 rules.</p>
 </div>
 <script>
-/* OSTEP course — shared components. Every page loads this file (inlined by build.py). */
+/* Java 21 course — shared components (from the OSTEP course). Every page loads this file (inlined by build.py). */
 window.OS = (function () {
   const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
   /* ---------- persistent storage (localStorage on a real site; in-memory fallback in sandboxes) ---------- */
   const mem = {};
   const store = {
-    get(k) { try { const v = localStorage.getItem('ostep:' + k); return v === null ? (mem[k] ?? null) : JSON.parse(v); } catch (e) { return mem[k] ?? null; } },
-    set(k, v) { mem[k] = v; try { localStorage.setItem('ostep:' + k, JSON.stringify(v)); } catch (e) {} },
-    del(k) { delete mem[k]; try { localStorage.removeItem('ostep:' + k); } catch (e) {} },
-    keys(prefix) { const out = new Set(Object.keys(mem).filter(k => k.startsWith(prefix))); try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith('ostep:' + prefix)) out.add(k.slice(6)); } } catch (e) {} return [...out]; },
-    available() { try { localStorage.setItem('ostep:test', '1'); localStorage.removeItem('ostep:test'); return true; } catch (e) { return false; } }
+    get(k) { try { const v = localStorage.getItem('java21:' + k); return v === null ? (mem[k] ?? null) : JSON.parse(v); } catch (e) { return mem[k] ?? null; } },
+    set(k, v) { mem[k] = v; try { localStorage.setItem('java21:' + k, JSON.stringify(v)); } catch (e) {} },
+    del(k) { delete mem[k]; try { localStorage.removeItem('java21:' + k); } catch (e) {} },
+    keys(prefix) { const out = new Set(Object.keys(mem).filter(k => k.startsWith(prefix))); try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith('java21:' + prefix)) out.add(k.slice(6)); } } catch (e) {} return [...out]; },
+    available() { try { localStorage.setItem('java21:test', '1'); localStorage.removeItem('java21:test'); return true; } catch (e) { return false; } }
   };
 
   /* ---------- course structure ---------- */
   const PIECES = [
-    ['intro', 'Introduction', [['0001-three-easy-pieces', 'Three easy pieces', 'ch 1–2']]],
-    ['virt', 'Virtualization', [
-      ['0002-processes', 'Processes & the process API', 'ch 4–5'],
-      ['0003-limited-direct-execution', 'Limited direct execution', 'ch 6'],
-      ['0004-scheduling', 'Scheduling', 'ch 7–10'],
-      ['0005-address-spaces', 'Address spaces & segments', 'ch 13–16'],
-      ['0006-paging-and-tlbs', 'Paging & TLBs', 'ch 17–20'],
-      ['0007-swapping', 'Swapping & policies', 'ch 21–23']]],
-    ['conc', 'Concurrency', [
-      ['0008-threads-and-locks', 'Threads & locks', 'ch 26–28'],
-      ['0009-cvs-and-semaphores', 'CVs & semaphores', 'ch 29–31'],
-      ['0010-bugs-and-events', 'Bugs & events', 'ch 32–33']]],
-    ['pers', 'Persistence', [
-      ['0011-devices-disks-raid', 'Devices, disks, RAID', 'ch 36–38'],
-      ['0012-files-and-vsfs', 'Files & a simple FS', 'ch 39–40'],
-      ['0013-ffs-journaling-lfs', 'FFS, journaling, LFS', 'ch 41–43'],
-      ['0014-ssd-and-integrity', 'SSDs & integrity', 'ch 44–45'],
-      ['0015-distributed-nfs-afs', 'Distributed FS', 'ch 48–50']]],
-    ['sec', 'Security', [['0016-security-and-vmms', 'Security & VMMs', 'ch 53–57, App B']]]
+    ['lang', 'The language, as specified (JLS 21)', [
+      ['0001-types-values-variables', 'Types, values, variables', 'JLS ch 4, 5'],
+      ['0002-classes-objects-initialization', 'Classes, objects, initialization order', 'JLS ch 8, 12'],
+      ['0003-records-sealed-interfaces', 'Records, sealed types, interfaces', 'JLS §8.10, §8.1.1.2, ch 9'],
+      ['0004-generics-and-erasure', 'Generics, wildcards, erasure', 'JLS §4.5–4.10, §8.4.8.3'],
+      ['0005-expressions-exceptions-switch', 'Expressions, exceptions, switch & patterns', 'JLS ch 11, 14, 15; JEPs 440/441'],
+      ['0006-lambdas-streams', 'Lambdas, method references, streams', 'JLS §15.27, §15.13, java.util.stream'],
+      ['0007-java-memory-model', 'The Java memory model', 'JLS ch 17']]],
+    ['jvm', 'The JVM (JVMS 21 + HotSpot)', [
+      ['0008-class-files-and-bytecode', 'Class files and bytecode', 'JVMS ch 4, 6'],
+      ['0009-loading-linking-initialization', 'Loading, linking, initialization, class loaders', 'JVMS ch 5'],
+      ['0010-execution-frames-invokedynamic', 'Execution: frames, invoke*, invokedynamic', 'JVMS ch 2, 5.4.3, 6'],
+      ['0011-hotspot-jit', 'HotSpot: interpreter, C1/C2, deoptimization', 'compilationPolicy.cpp, c2_globals.hpp'],
+      ['0012-heap-gc-generational-zgc', 'Objects, heap, GC, Generational ZGC', 'markWord.hpp, gcConfig.cpp, JEP 439']]],
+    ['loom', 'Java 21: virtual threads and new features', [
+      ['0013-virtual-threads-model', 'Virtual threads: the model (JEP 444)', 'JEP 444'],
+      ['0014-virtual-threads-internals', 'Virtual threads: continuations, carriers, scheduler', 'VirtualThread.java, Continuation.java, freeze/thaw'],
+      ['0015-structured-concurrency-scoped-values', 'Structured concurrency & scoped values', 'StructuredTaskScope, ScopedValue (preview)'],
+      ['0016-concurrency-toolkit', 'The concurrency toolkit: monitors, locks, executors', 'JLS §17.1–17.3, java.util.concurrent'],
+      ['0017-java-21-features', 'What Java 21 adds', 'JEPs 431, 440, 441, 442, 443, 445, 446, 453']]]
   ];
   const LESSONS = PIECES.flatMap(p => p[2].map(l => [l[0], l[1], p[0], l[2]]));
   const title = id => (LESSONS.find(l => l[0] === id) || [])[1] || id;
@@ -257,7 +268,7 @@ window.OS = (function () {
     const isLesson = i >= 0;
     const top = document.createElement('header'); top.className = 'topbar';
     top.innerHTML = `<button class="menu" aria-label="Open directory" aria-expanded="false">☰<span>Directory</span></button>
-      <a class="brand" href="${root}index.html"><span class="dot"></span>OSTEP course</a>
+      <a class="brand" href="${root}index.html"><span class="dot"></span>Java 21 course</a>
       <nav class="links"><a href="${root}reference/glossary.html">Glossary</a><a href="${root}reference/cheatsheets.html">Cheat sheets</a><a href="${root}notes.html">My notes</a></nav>
       ${isLesson ? `<span class="where">${i+1} / ${LESSONS.length}</span>` : ''}`;
     document.body.prepend(top);
@@ -341,6 +352,17 @@ window.OS = (function () {
     });
   }
 
+
+  /* ---------- Java code blocks: annotated, copyable, with a jshell hint (no JVM in the browser) ---------- */
+  function py(el, code, opts) {
+    el = typeof el === 'string' ? document.getElementById(el) : el; opts = opts || {};
+    el.classList.add('pyrun');
+    const src = code.trim();
+    const preview = /--enable-preview|StructuredTaskScope|ScopedValue|STR\./.test(src);
+    el.innerHTML = `<div class="pyhead"><span>Java 21${preview ? ' · needs --enable-preview' : ''}${opts.note ? ' · ' + esc(opts.note) : ''}</span><span class="pystatus">paste into jshell or a scratch file</span><button class="primary copy">Copy</button></div><pre class="pyout" style="display:block;white-space:pre-wrap;margin:0"><code>${esc(src)}</code></pre>`;
+    el.querySelector('.copy').onclick = () => { navigator.clipboard && navigator.clipboard.writeText(src).then(() => { el.querySelector('.pystatus').textContent = 'copied'; }).catch(() => {}); };
+  }
+
   /* ---------- flip cards ---------- */
   function cards(el, list) {
     el = typeof el === 'string' ? document.getElementById(el) : el;
@@ -385,17 +407,70 @@ window.OS = (function () {
     el.querySelectorAll('input').forEach(c => c.onchange = () => { const s = [...el.querySelectorAll('input:checked')].map(x => +x.dataset.i); if (pageId) store.set('obj:' + pageId, s); });
   }
 
-  return { chrome, quiz, cards, stepper, gantt, objectives, esc, store, LESSONS, PIECES, title };
+  return { chrome, quiz, cards, stepper, gantt, objectives, py, esc, store, LESSONS, PIECES, title };
 })();
 
 </script>
 <script>
-OS.chrome('index','');
-const P=[['intro','Introduction','What an OS is: the three pieces, design goals, history.',['0001-three-easy-pieces','Three easy pieces','ch 1–2']],
-['virt','Virtualization','The CPU and memory made private and plentiful.',['0002-processes','Processes & the process API','ch 4–5'],['0003-limited-direct-execution','Limited direct execution','ch 6'],['0004-scheduling','Scheduling: FIFO to CFS and multi-CPU','ch 7–10'],['0005-address-spaces','Address spaces, base/bounds, segments','ch 13–16'],['0006-paging-and-tlbs','Free space, paging, TLBs, small tables','ch 17–20'],['0007-swapping','Swapping, replacement, VAX/VMS & Linux','ch 21–23']],
-['conc','Concurrency','Threads and the primitives that make them safe.',['0008-threads-and-locks','Threads, thread API, locks','ch 26–28'],['0009-cvs-and-semaphores','Locked structures, CVs, semaphores','ch 29–31'],['0010-bugs-and-events','Concurrency bugs & event-based servers','ch 32–33']],
-['pers','Persistence + Security','Storage from the device up; then protecting it all.',['0011-devices-disks-raid','Devices, disks, RAID','ch 36–38'],['0012-files-and-vsfs','Files, directories, a simple file system','ch 39–40'],['0013-ffs-journaling-lfs','FFS, crash consistency, LFS','ch 41–43'],['0014-ssd-and-integrity','SSDs & data integrity','ch 44–45'],['0015-distributed-nfs-afs','Distributed systems, NFS, AFS','ch 48–50'],['0016-security-and-vmms','Security (ch 53–57) & VMMs','ch 53–57, App B']]];
-const m=document.getElementById('map');let idx=0;const S=OS.store;
-m.innerHTML=P.map(([cls,name,desc,...ls])=>`<div class="piece piece-${cls}"><h3>${name}</h3><p>${desc}</p>${ls.map(l=>{idx++;const q=S.get('quiz:'+l[0]),nt=(S.get('notes:'+l[0])||{}).text;return `<a href="lessons/${l[0]}.html" data-id="${l[0]}" class="${q&&q.score===q.total?'done':''}">${idx}. ${l[1]}<small>${l[2]}${q?` · quiz ${q.score}/${q.total}`:''}${nt?' · ✎ notes':''}</small></a>`;}).join('')}</div>`).join('');
-const done=OS.LESSONS.filter(l=>S.get('quiz:'+l[0])).length;const ph=document.createElement('p');ph.className='cap';ph.textContent=done?`${done} of 16 lesson quizzes attempted — see My notes & progress for details.`:'Quiz scores, checked objectives and notes are saved in this browser as you go.';document.getElementById('map').after(ph);
+OS.chrome('0007-java-memory-model');
+OS.objectives('obj',['Explain monitors, wait sets (spurious wake-ups, wait-in-a-loop) and why sleep/yield give no visibility.','Define conflicting accesses, synchronizes-with edges, happens-before, data race and correctly synchronized.','Use the derived rules for locks, volatile, start/join and default initialization to reason about visibility.','State the final-field freeze guarantee and the safe-publication usage model.','Recall the word-tearing rule and the non-atomic long/double exception.']);
+const S={race:{code:`// shared: int A = 0, B = 0
+Thread 1:        Thread 2:
+r2 = A;          r1 = B;
+B = 1;           A = 2;`,edges:['program order within each thread only','no synchronizes-with edges: every cross-thread pair is a data race'],out:[['r1=0,r2=0',1],['r1=1,r2=0',1],['r1=0,r2=2',1],['r1=1,r2=2',1]],m:'Table 17.4-A: even r1==1 && r2==2 is allowed — a compiler may reorder each thread\'s independent statements (Table 17.4-B). Nothing constrains what the reads see.'},
+vol:{code:`// shared: int data = 0; volatile boolean ready = false
+Thread 1:        Thread 2:
+data = 42;       if (ready)
+ready = true;      r = data;`,edges:['write ready=true synchronizes-with a later read of ready that sees true','hb(data=42, ready=true) by program order; hb(read ready, read data) by program order','transitively: hb(data=42, r = data) whenever the flag was seen true'],out:[['ready seen, r=42',1],['ready seen, r=0',0],['ready not seen',1],['r=0 after seeing true',0]],m:'The volatile write/read pair is a release/acquire edge; everything before the write is visible after the read. If ready is not volatile, r=0 is allowed.'},
+sync:{code:`// shared: int x = 0; Object m
+Thread 1:              Thread 2:
+synchronized (m) {     synchronized (m) {
+  x = 1;                 r = x;
+}                      }`,edges:['unlock(m) by T1 synchronizes-with a subsequent lock(m) by T2 (in synchronization order)','so if T2 locks after T1 unlocked: hb(x=1, r=x) → r=1','if T2 locked first: hb(r=x, x=1) → r=0'],out:[['r=1 (T2 after T1)',1],['r=0 (T2 before T1)',1],['r=garbage',0],['r=1 without any lock order',0]],m:'Both outcomes are possible, but each is sequentially consistent — the lock order decides, and there is no data race.'},
+join:{code:`// shared: int x = 0
+Thread t = new Thread(() -> x = 1);
+t.start();
+t.join();
+r = x;`,edges:['start() synchronizes-with the first action of t: hb(everything before start, x=1)','the last action of t synchronizes-with join() returning: hb(x=1, r=x)'],out:[['r=1',1],['r=0',0],['r=1 only if x is volatile',0],['unspecified',0]],m:'Thread start/termination edges make handing work to a thread and reading its results after join() fully safe without volatile or locks.'},
+final:{code:`class F { final int x; int y;
+  F() { x = 3; y = 4; } }
+// shared: static F f;
+Thread 1: f = new F();
+Thread 2: if (f != null) { i = f.x; j = f.y; }`,edges:['freeze of x when the constructor exits; T2 sees f only after that','§17.5: final fields correctly visible even through the race on f','y is a normal field: no edge orders the write of y before the read'],out:[['i=3, j=4',1],['i=3, j=0',1],['i=0, j=4',0],['i=0, j=0',0]],m:'Example 17.5-1: f.x is guaranteed to be 3; f.y could be 0. This is immutability without synchronization — provided this did not escape the constructor.'},
+sleep:{code:`// shared: boolean done = false (not volatile)
+Thread 1:                    Thread 2:
+while (!done)                done = true;
+  Thread.sleep(1000);`,edges:['sleep() and yield() have NO synchronization semantics (§17.3)','the compiler may read done once and reuse the cached value'],out:[['loop terminates eventually',1],['loop never terminates',1],['IllegalMonitorStateException',0],['done read once per iteration guaranteed',0]],m:'Both are allowed. The spec\'s own example: make done volatile (or use a lock/AtomicBoolean) to guarantee termination.'}};
+function show(){const s=S[document.getElementById('sc').value];document.getElementById('code').textContent=s.code;document.getElementById('edges').innerHTML=s.edges.map(e=>`<li>${e}</li>`).join('');document.getElementById('out').innerHTML=s.out.map(o=>`<div class="${o[1]?'ok':'no'}">${o[0]}</div>`).join('');document.getElementById('hmsg').textContent=s.m;}
+document.getElementById('sc').onchange=show;show();
+OS.py('py1',`// Not runnable in the browser — paste into jshell / a scratch file.
+class Counter {
+    private int n;                          // data race if incremented without a lock: n++ is read, add, write
+    private volatile boolean stop;          // volatile flag: writer's prior writes visible after the read that sees true
+    synchronized void inc() { n++; }        // unlock hb every later lock on this → the next inc() sees the new n
+    synchronized int get() { return n; }
+    void requestStop() { stop = true; }
+    void loop() { while (!stop) { /* ... */ } }   // terminates: unlike Thread.sleep, a volatile read is a synchronization action
+}
+final class Point {                         // immutable: finals set in the constructor, this never escapes
+    final int x, y;
+    Point(int x, int y) { this.x = x; this.y = y; }
+}
+// Safe hand-off without locks or volatile:
+int[] box = new int[1];
+Thread t = new Thread(() -> box[0] = 42);
+t.start(); t.join();                        // start hb run; run's last action hb join's return
+System.out.println(box[0]);                 // 42, guaranteed
+// wait() must be in a loop: spurious wake-ups are permitted (§17.2.1)
+synchronized (lock) { while (!condition) lock.wait(); }`);
+OS.cards('cards',[['Monitor','Per-object reentrant lock; synchronized statement/method performs lock then unlock on any completion; deadlock not prevented or detected.'],['Wait set','Per-object set of waiting threads; wait() releases all held locks, may wake spuriously, re-locks before returning; notify picks arbitrarily.'],['Shared variable','Fields, static fields, array elements. Locals, parameters and exception parameters are never shared.'],['synchronizes-with','Release→acquire edges: unlock→lock, volatile write→read, start→first action, last action→join/isAlive, interrupt→detection, default writes→everything.'],['happens-before','Program order + synchronizes-with (+ constructor→finalizer), transitively closed; defines which writes a read may see.'],['Data race','Two conflicting accesses (same variable, ≥1 write) not ordered by happens-before.'],['Correctly synchronized','All sequentially consistent executions are race-free ⇒ all executions look sequentially consistent.'],['final field freeze','At constructor exit; readers that obtain the reference afterwards see correct finals even through a race; don\'t leak this.'],['long/double tearing','Non-volatile 64-bit writes may be two 32-bit writes; volatile ones and references are always atomic; byte-level word tearing is forbidden.']]);
+OS.quiz('quiz',[
+{q:'Which of these has synchronization semantics per JLS §17?',o:['Thread.sleep()','a volatile read','Thread.yield()','a local variable write'],a:1,why:'§17.3: sleep and yield have no synchronization semantics; volatile reads/writes are synchronization actions.'},
+{q:'Thread 1: data = 1; flag = true (flag volatile). Thread 2 reads flag == true then data. data is:',o:['possibly 0','guaranteed 1','undefined','1 only if data is volatile too'],a:1,why:'volatile write→read synchronizes-with; combined with program order, hb(data=1, read data).'},
+{q:'A program is "correctly synchronized" when:',o:['it uses only synchronized methods','all sequentially consistent executions are free of data races','it never uses volatile','all fields are final'],a:1,why:'§17.4.5 defines it that way; the payoff is that every execution then appears sequentially consistent.'},
+{q:'Why must Object.wait() be called inside a loop?',o:['because notify() may be lost','because spurious wake-ups are permitted and the condition must be re-checked','because wait() does not release the lock','to avoid IllegalMonitorStateException'],a:1,why:'§17.2.1 permits implementations to remove threads from wait sets without notification; the loop re-tests the logical condition.'},
+{q:'FinalFieldExample: a racy reader that sees f != null reads f.x (final) and f.y (non-final). What is guaranteed?',o:['both 3 and 4','x == 3; y may be 0','y == 4; x may be 0','nothing'],a:1,why:'§17.5 final-field semantics give visibility for finals after the freeze; the normal field has no ordering edge.'},
+{q:'Which is a data race?',o:['two threads reading the same field','one thread writing and another reading the same field with no happens-before ordering','two threads locking the same monitor','two threads writing different locals'],a:1,why:'Conflicting = same variable and at least one write; unordered by hb → race. Reads alone never conflict; locals aren\'t shared.'},
+{q:'A non-volatile long is written by one thread and read by another with no synchronization. The JLS allows the reader to see:',o:['only the old or the new value','a mix of 32-bit halves from two writes','a NullPointerException','only the new value'],a:1,why:'§17.7 treats a non-volatile long/double write as two 32-bit writes; declare it volatile or synchronize.'},
+{q:'Can a data race make an array report the wrong length?',o:['yes','no; only your variables can be stale, not JVM metadata','only on 32-bit JVMs','only for long[]'],a:1,why:'§17.4.5: array lengths, checked casts and virtual dispatch are not directly affected by data races.'}]);
 </script></body></html>

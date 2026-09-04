@@ -1,11 +1,11 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>OSTEP course — Operating Systems: Three Easy Pieces, taught interactively</title><style>
+<title>12 · Objects, heap, GC, Generational ZGC — Java 21 course</title><style>
 /* OSTEP course — shared stylesheet. Three pieces, three hues. */
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
 :root{
   --ink:#151b2f; --ink-2:#1e2540; --ink-3:#28304f; --line:#3a4368;
   --paper:#eef0f7; --muted:#a9b1cf; --faint:#6e779a;
-  --virt:#e8b84a; --conc:#5bc8f5; --pers:#6bcb77; --sec:#f47fa0; --intro:#c9a8ff;
+  --virt:#e8b84a; --conc:#5bc8f5; --pers:#6bcb77; --sec:#f47fa0; --intro:#c9a8ff; --spec:#ffd166; --internals:#5bc8f5; --data:#6bcb77;
   --ok:#6bcb77; --bad:#ff6b6b;
   --accent:var(--virt);
   --radius:6px;
@@ -28,7 +28,7 @@ p,li{max-width:72ch}
 .hero{padding:44px 0 16px}
 .hero .chapters{color:var(--muted);font-size:.95rem;margin-bottom:6px}
 .lede{font-size:1.2rem;color:var(--muted);max-width:66ch}
-.piece-virt{--accent:var(--virt)} .piece-conc{--accent:var(--conc)} .piece-pers{--accent:var(--pers)} .piece-sec{--accent:var(--sec)} .piece-intro{--accent:var(--intro)}
+.piece-lang{--accent:var(--spec)} .piece-jvm{--accent:var(--internals)} .piece-loom{--accent:var(--data)} .piece-spec{--accent:var(--spec)} .piece-internals{--accent:var(--internals)} .piece-data{--accent:var(--data)} .piece-virt{--accent:var(--virt)} .piece-conc{--accent:var(--conc)} .piece-pers{--accent:var(--pers)} .piece-sec{--accent:var(--sec)} .piece-intro{--accent:var(--intro)}
 .fig{background:var(--ink-2);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;margin:22px 0}
 .fig figcaption,.cap{color:var(--muted);font-size:.9rem;margin-top:10px}
 .fig svg{max-width:100%;height:auto;display:block}
@@ -182,69 +182,90 @@ details>div{padding:0 16px 14px}
 }
 @media (max-width:420px){.cards{grid-template-columns:1fr}}
 
+/* ---------- runnable Python ---------- */
+.pyrun{border:1px solid var(--line);border-radius:var(--radius);background:#0f1424;margin:18px 0;overflow:hidden}
+.pyrun .pyhead{display:flex;gap:10px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--line);font-size:.85rem;color:var(--muted);background:var(--ink-2)}
+.pyrun .pyhead span:first-child{flex:1;font-weight:600;color:var(--paper)}
+.pyrun .pystatus{font-size:.78rem}
+.pyrun textarea{display:block;width:100%;border:none;background:#0f1424;color:var(--paper);font-family:'IBM Plex Mono',monospace;font-size:.86rem;line-height:1.5;padding:12px 14px;resize:vertical;outline:none;min-height:60px;tab-size:4}
+.pyrun .pyout{font-family:'IBM Plex Mono',monospace;font-size:.86rem;line-height:1.5;padding:12px 14px;margin:0;border:none;border-top:1px solid var(--line);border-left:none;border-radius:0;background:#0a0e1a;color:#cfe3ff;max-height:none;overflow:auto}
+
 </style>
-<style>.map{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:24px 0}.piece{border:1px solid var(--line);border-radius:8px;padding:16px;background:var(--ink-2);border-top:4px solid var(--accent)}.piece h3{margin:0 0 4px;color:var(--accent)}.piece p{font-size:.9rem;color:var(--muted);margin:0 0 10px}.piece a{display:block;text-decoration:none;color:var(--paper);padding:6px 0;border-top:1px solid var(--line);font-size:.92rem}.piece a:hover{color:var(--accent)}.piece a small{display:block;color:var(--faint);font-size:.78rem}.piece a.done::after{content:" ✓";color:var(--ok)}.how{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}.how .fig{margin:0}.how h4{margin:0 0 6px}@media(max-width:900px){.map{grid-template-columns:1fr 1fr}.how{grid-template-columns:1fr}}@media(max-width:600px){.map{grid-template-columns:1fr}}.big{font-size:1.05rem}</style></head>
-<body class="piece-intro"><div class="wrap">
-<header class="hero"><div class="chapters">Operating Systems: Three Easy Pieces · Remzi H. and Andrea C. Arpaci-Dusseau (v1.10, 2023) · security chapters by Peter Reiher</div>
-<h1>The whole book, as sixteen interactive lessons</h1>
-<p class="lede big">Built from the text of all 57 chapters plus the VMM appendix — every "crux", every summary, every number in the figures was extracted from the chapter PDFs, not recalled. Each lesson is short, visual, and ends in retrieval practice. Do them in order; the book's pieces build on each other.</p></header>
+<style>.hdr{display:flex;gap:4px;font-family:'IBM Plex Mono',monospace;font-size:.75rem;flex-wrap:wrap}.hdr span{padding:8px 6px;border:1px solid var(--line);border-radius:4px;background:#0f1424;text-align:center}.hdr .a{background:#5bc8f5;color:#111}.hdr .b{background:#e8b84a;color:#111}.hdr .c{background:#6bcb77;color:#111}.gcs td:first-child{color:var(--accent);white-space:nowrap}.regions{display:grid;grid-template-columns:repeat(16,1fr);gap:3px}.regions div{height:26px;border-radius:3px;background:#28304f;font-size:.6rem;text-align:center;line-height:26px;color:#111}.regions .y{background:#6bcb77}.regions .o{background:#e8b84a}.regions .f{background:#28304f;color:var(--muted)}.regions .h{background:#ff6b6b}.ptr{font-family:'IBM Plex Mono',monospace;font-size:.78rem;display:flex;gap:3px;flex-wrap:wrap}.ptr span{padding:6px 5px;border:1px solid var(--line);border-radius:4px;background:#0f1424}.ptr .m{background:#5bc8f5;color:#111}</style></head>
+<body class="piece-jvm"><div class="wrap">
+<header class="hero"><div class="chapters">HotSpot oops/markWord.hpp, oops/oop.hpp, runtime/objectMonitor.hpp, gc/shared/gcConfig.cpp · JVMS §2.5.3 Heap · JEP 439 Generational ZGC · java.lang.ref</div>
+<h1>Objects on the heap, and the collectors that manage them</h1>
+<p class="lede">The JVMS mandates only that there is a shared heap reclaimed by a garbage collector; HotSpot decides the rest. Every object begins with a two-word header whose bit layout is documented in <code>markWord.hpp</code>; the heap is divided among collectors you choose by flag, defaulting to G1 on a server-class machine; and JDK 21 ships the first Generational ZGC, a concurrent collector whose pauses stay under a millisecond by putting metadata into the pointers themselves. This lesson goes from the header bits to the barrier design of JEP 439.</p></header>
+<div class="source"><b>Primary sources:</b> HotSpot JDK 21u <code>markWord.hpp</code> (the bit-format comment), <code>oop.hpp</code> (header fields), <code>objectMonitor.hpp</code>, <code>gcConfig.cpp</code> + <code>os.cpp</code> (default GC and server-class rule); <a href="https://docs.oracle.com/javase/specs/jvms/se21/html/jvms-2.html#jvms-2.5.3">JVMS §2.5.3</a>; <a href="https://openjdk.org/jeps/439">JEP 439</a> Generational ZGC (full text fetched: goals, colored pointers, load/store barriers, remembered-set bitmaps, dense regions); JEP 444 for stack chunks; <code>java.lang.ref</code> sources.</div>
+<h2>What you'll be able to do</h2><ul id="obj"></ul>
 
-<figure class="fig"><svg viewBox="0 0 900 150" role="img" aria-label="three pieces">
-<rect x="20" y="30" width="270" height="90" rx="8" fill="#e8b84a"/><text x="155" y="68" text-anchor="middle" fill="#111" font-size="20" font-weight="700" font-family="Fraunces,serif">Virtualization</text><text x="155" y="95" text-anchor="middle" fill="#111" font-size="13">CPU (ch 4–10) · Memory (ch 13–23)</text>
-<rect x="315" y="30" width="270" height="90" rx="8" fill="#5bc8f5"/><text x="450" y="68" text-anchor="middle" fill="#111" font-size="20" font-weight="700" font-family="Fraunces,serif">Concurrency</text><text x="450" y="95" text-anchor="middle" fill="#111" font-size="13">threads, locks, CVs, semaphores, bugs (ch 26–33)</text>
-<rect x="610" y="30" width="270" height="90" rx="8" fill="#6bcb77"/><text x="745" y="68" text-anchor="middle" fill="#111" font-size="20" font-weight="700" font-family="Fraunces,serif">Persistence</text><text x="745" y="95" text-anchor="middle" fill="#111" font-size="13">devices, disks, file systems, distributed (ch 36–50)</text>
-<text x="450" y="140" text-anchor="middle" fill="#a9b1cf" font-size="13">+ Security (ch 53–57) and Virtual Machine Monitors (Appendix B)</text></svg></figure>
+<h2>The object header</h2>
+<p><code>oop.hpp</code>: an object is a <code>markWord _mark</code> followed by <code>_metadata</code> — a <code>Klass*</code> or, with compressed class pointers (default), a 32-bit <code>narrowKlass</code>; then the fields, laid out by the JVM (not in declaration order; 8-byte alignment; arrays add a length). The 64-bit mark word (<code>markWord.hpp</code>): <code>unused:25 | hash:31 | unused:1 | age:4 | unused:1 | lock:2</code>. The identity hash is generated lazily on the first <code>hashCode()</code>/<code>identityHashCode</code> call and stored here (which is why hashing an object then locking it forces monitor inflation); <b>age</b> counts survived young collections for tenuring; the two <b>lock bits</b> encode the states below.</p>
+<div class="fig"><h4>64-bit mark word</h4><div class="hdr"><span class="a" style="flex:25">unused (25)</span><span class="b" style="flex:31">identity hash (31)</span><span style="flex:1">·</span><span class="c" style="flex:4">age (4)</span><span style="flex:1">·</span><span class="a" style="flex:2">lock (2)</span></div><table><tr><th>lock bits</th><th>state</th><th>rest of the word</th></tr><tr><td>01</td><td>unlocked</td><td>regular header (hash, age)</td></tr><tr><td>00</td><td>locked</td><td>pointer to the displaced header on the owner's stack (stack-locking) or a locked regular header (fast/lightweight locking)</td></tr><tr><td>10</td><td>monitor</td><td>pointer to an inflated <code>ObjectMonitor</code>; the header is displaced into it</td></tr><tr><td>11</td><td>marked</td><td>used by GC to mark the object</td></tr><tr><td>all zero</td><td>inflating</td><td>a distinguished value while a stack lock is being inflated</td></tr></table><div class="cap">Uncontended <code>synchronized</code> is a CAS on this word. Contention or <code>Object.wait()</code> inflates it into an <code>ObjectMonitor</code> (<code>objectMonitor.hpp</code>: "the heavyweight version of a JavaMonitor… This inflation is typically due to contention or use of Object.wait()"), whose <code>_owner</code> field is padded away from <code>_header</code> to avoid false sharing. Lesson 16 covers the Java-level view.</div></div>
 
-<h2>Course map</h2>
-<div class="map" id="map"></div>
+<h2>Allocation and the generational hypothesis</h2>
+<p>Allocation is a pointer bump inside a <b>thread-local allocation buffer</b> (TLAB), so <code>new</code> is cheap; large objects go straight to old/humongous space. All HotSpot collectors except non-generational ZGC are <b>generational</b>: most objects die young, so the young generation (eden + survivor spaces, or young regions) is collected often and cheaply by copying live objects and bumping their age; survivors are tenured into the old generation after enough collections. Old-generation collection needs to know which old objects point at young ones without scanning the whole old generation — a <b>remembered set</b>, maintained by a <b>write barrier</b> on every reference store (card table in Serial/Parallel/G1: one byte per 512-byte card dirtied on a store; G1 also needs a memory fence there, as JEP 439 notes). <b>Roots</b> are the thread stacks, static fields, JNI handles… except that, per JEP 444, virtual-thread stacks live in heap <em>stack chunk</em> objects and are not roots.</p>
+<div class="fig"><h4>Region-based young collection (G1 / Generational ZGC style)</h4><div class="controls"><button class="primary" id="galloc">allocate</button><button id="gyoung">young collection</button><button id="greset">reset</button></div><div class="regions" id="regions"></div><div class="cap" id="gmsg">green = young (eden/survivor), yellow = old, red = humongous, grey = free. Allocate fills young regions; a young collection copies survivors and frees the rest.</div></div>
 
-<h2>How to use this course</h2>
-<div class="how">
-<div class="fig"><h4>1. One lesson per sitting</h4><p>Each takes 25–45 minutes: read, play with the simulator until you can predict its output, flip the cards, then do the quiz <em>from memory</em>. Check off the objectives at the top only when you could explain them to someone else.</p></div>
-<div class="fig"><h4>2. Then read the chapter</h4><p>Every lesson links its primary source — the free chapter PDFs at <a href="https://pages.cs.wisc.edu/~remzi/OSTEP/">ostep.org</a>. The lesson gives you the map; the chapter has the jokes, the asides, and the homework simulators (<code>ostep-homework</code>) which are the best practice there is.</p></div>
-<div class="fig"><h4>3. Space it out</h4><p>Long-term retention comes from re-testing later, not from feeling fluent now. Redo a lesson's quiz two days later and again after a week; the <a href="reference/cheatsheets.html">cheat sheets</a> are for the fast pass, the <a href="reference/glossary.html">glossary</a> for vocabulary. Ask me in the chat for mixed quizzes across lessons.</p></div></div>
+<h2>The collectors in JDK 21</h2>
+<table class="gcs"><tr><th>Collector</th><th>Flag</th><th>Character</th></tr>
+<tr><td>Serial</td><td><code>-XX:+UseSerialGC</code></td><td>Single-threaded, stop-the-world; the <em>default on non-server-class machines</em> (fewer than 2 processors or less than 2 GB, <code>os.cpp</code>); smallest footprint (containers, CLIs).</td></tr>
+<tr><td>Parallel</td><td><code>-XX:+UseParallelGC</code></td><td>Multi-threaded stop-the-world young and old; maximizes throughput, tolerates long pauses (batch jobs).</td></tr>
+<tr><td>G1</td><td><code>-XX:+UseG1GC</code></td><td><em>Default on server-class machines</em> (<code>gcConfig.cpp</code>: <code>select_gc_ergonomically</code>). Heap split into equal regions; concurrent marking of the old generation, incremental evacuation choosing the regions with the most garbage first ("garbage first"), pause-time goal (<code>-XX:MaxGCPauseMillis</code>, default 200 ms); humongous objects (≥ half a region) get their own regions — the reason a virtual thread's stack chunk reaching half a region may StackOverflowError (JEP 444).</td></tr>
+<tr><td>ZGC (non-generational)</td><td><code>-XX:+UseZGC</code></td><td>Concurrent everything (marking, relocation, reference processing); pauses in microseconds independent of heap size; heaps from hundreds of MB to many TB; but collects all objects every cycle, so it needs headroom to outrun allocation.</td></tr>
+<tr><td><b>Generational ZGC (JEP 439)</b></td><td><code>-XX:+UseZGC -XX:+ZGenerational</code></td><td>New in 21; young and old generations collected independently and concurrently; pauses &lt; 1 ms; no tuning of generation sizes, thread counts or tenuring. (Default ZGC mode in 23 via JEP 474; non-generational removed in 24, JEP 490.)</td></tr>
+<tr><td>Shenandoah</td><td><code>-XX:+UseShenandoahGC</code></td><td>Concurrent compacting collector from Red Hat, in some distributions.</td></tr></table>
 
-<h2>What the book covers that this course does too</h2>
-<p>Chapters 1–2 (dialogue, introduction) → lesson 1. Chapters 3, 11, 12, 24, 25, 34, 35, 46, 47, 51, 52 are the book's short dialogues that open and close each part; their content is folded into the neighbouring lessons. The lab appendices (tutorial, systems and xv6 projects) and the deprecated monitors appendix are referenced in RESOURCES.md rather than taught.</p>
-<h2>Sister courses</h2><div class="how"><div class="fig"><h4><a href="python/index.html">Python 3.13</a></h4><p>The Language Reference, CPython internals (specializing interpreter, JIT, GC, GIL and free-threading), and pandas vs Polars — 20 interactive lessons with Python running in the browser.</p></div><div class="fig"><h4><a href="java/index.html">Java 21</a></h4><p>The JLS and JVMS, HotSpot (class loading, bytecode, tiered JIT, Generational ZGC), and virtual threads from JEP 444 down to VirtualThread.java — 17 interactive lessons with simulators.</p></div></div>
-<p class="tip">This workspace follows the <code>teach</code> skill layout: <code>MISSION.md</code> (why you're learning this), <code>RESOURCES.md</code> (sources), <code>NOTES.md</code>, <code>learning-records/</code>, <code>lessons/</code>, <code>reference/</code>, <code>assets/</code>. Tell me in the chat how a lesson landed and I'll adapt the next ones.</p>
+<h2>Inside Generational ZGC</h2>
+<div class="crux"><b>Colored pointers (JEP 439).</b> A reference stored in a heap field is a 64-bit <em>colored</em> pointer: the object address in the high bits plus metadata bits in the <em>low</em> bits saying what is currently known about it (marked? address correct? remembered?). References in registers and on stacks are <em>colorless</em>. The conversion happens in <b>barriers</b>: the <b>load barrier</b>, injected where a reference field is loaded, strips the color and, if the object was relocated, updates the stale pointer (one shift instruction on x64 both tests "good color" and strips it); the new <b>store barrier</b>, injected where a reference field is written, colors the new value, records the field in the remembered set (old→young pointers), and reports the overwritten value for <b>SATB</b> marking. Both have a JIT-inlined fast path, a medium path (a store-barrier buffer) and a C++ slow path, and act at most once per field between marking phases; global phase values are patched into the code as immediates.</div>
+<div class="fig"><h4>A colored pointer</h4><div class="ptr"><span style="flex:8">object address (high bits)</span><span class="m">remembered</span><span class="m">marked (old)</span><span class="m">marked (young)</span><span class="m">remapped</span><span class="m">…</span></div><div class="cap">Removing the old multi-mapped memory trick lets ZGC add metadata bits without shrinking the maximum heap (it was capped at 16 TB) and stops reported heap usage tripling.</div></div>
+<p>Other design points from the JEP: the remembered set is <b>double-buffered bitmaps</b> per old region, precise to the field, swapped atomically at each young-collection start so mutators never wait and no fence is needed (unlike card tables); young collections are <b>two-pass</b> — mark fully, then relocate — so no to-space must be pre-reserved and relocation can even compact in place, which lets ZGC run with smaller heaps; <b>dense regions</b> are aged in place instead of copied; large objects can be allocated in the young generation; old-generation marking finds young→old references by running a young collection alongside; an explicit <code>System.gc()</code> first promotes everything so weak references and class unloading behave as expected. The JEP's Cassandra example: a quarter of the heap and four times the throughput of non-generational ZGC, with pauses under 1 ms.</p>
+
+<h2>References, finalization, cleaners</h2>
+<p><code>java.lang.ref</code>: <b>soft</b> references are cleared under memory pressure (caches), <b>weak</b> references as soon as no strong reference remains (<code>WeakHashMap</code>, canonicalizing maps), <b>phantom</b> references are enqueued after the object is finalizable and are the basis of <code>Cleaner</code>, the replacement for <code>finalize()</code> (deprecated for removal since JDK 18, JEP 421) — finalizers run on a dedicated thread, at an unknown time, can resurrect objects and slow allocation. Use <code>try-with-resources</code> for deterministic cleanup and <code>Cleaner</code> as a safety net.</p>
+<div id="py1"></div>
+
+<h2>Flash cards</h2><div id="cards"></div>
+<h2>Retrieval practice</h2><div id="quiz"></div>
+<p class="tip">Ask me in the chat to read a GC log (<code>-Xlog:gc*</code>) with you, or to compare G1 and Generational ZGC settings for a latency-sensitive service.</p>
 </div>
 <script>
-/* OSTEP course — shared components. Every page loads this file (inlined by build.py). */
+/* Java 21 course — shared components (from the OSTEP course). Every page loads this file (inlined by build.py). */
 window.OS = (function () {
   const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
   /* ---------- persistent storage (localStorage on a real site; in-memory fallback in sandboxes) ---------- */
   const mem = {};
   const store = {
-    get(k) { try { const v = localStorage.getItem('ostep:' + k); return v === null ? (mem[k] ?? null) : JSON.parse(v); } catch (e) { return mem[k] ?? null; } },
-    set(k, v) { mem[k] = v; try { localStorage.setItem('ostep:' + k, JSON.stringify(v)); } catch (e) {} },
-    del(k) { delete mem[k]; try { localStorage.removeItem('ostep:' + k); } catch (e) {} },
-    keys(prefix) { const out = new Set(Object.keys(mem).filter(k => k.startsWith(prefix))); try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith('ostep:' + prefix)) out.add(k.slice(6)); } } catch (e) {} return [...out]; },
-    available() { try { localStorage.setItem('ostep:test', '1'); localStorage.removeItem('ostep:test'); return true; } catch (e) { return false; } }
+    get(k) { try { const v = localStorage.getItem('java21:' + k); return v === null ? (mem[k] ?? null) : JSON.parse(v); } catch (e) { return mem[k] ?? null; } },
+    set(k, v) { mem[k] = v; try { localStorage.setItem('java21:' + k, JSON.stringify(v)); } catch (e) {} },
+    del(k) { delete mem[k]; try { localStorage.removeItem('java21:' + k); } catch (e) {} },
+    keys(prefix) { const out = new Set(Object.keys(mem).filter(k => k.startsWith(prefix))); try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith('java21:' + prefix)) out.add(k.slice(6)); } } catch (e) {} return [...out]; },
+    available() { try { localStorage.setItem('java21:test', '1'); localStorage.removeItem('java21:test'); return true; } catch (e) { return false; } }
   };
 
   /* ---------- course structure ---------- */
   const PIECES = [
-    ['intro', 'Introduction', [['0001-three-easy-pieces', 'Three easy pieces', 'ch 1–2']]],
-    ['virt', 'Virtualization', [
-      ['0002-processes', 'Processes & the process API', 'ch 4–5'],
-      ['0003-limited-direct-execution', 'Limited direct execution', 'ch 6'],
-      ['0004-scheduling', 'Scheduling', 'ch 7–10'],
-      ['0005-address-spaces', 'Address spaces & segments', 'ch 13–16'],
-      ['0006-paging-and-tlbs', 'Paging & TLBs', 'ch 17–20'],
-      ['0007-swapping', 'Swapping & policies', 'ch 21–23']]],
-    ['conc', 'Concurrency', [
-      ['0008-threads-and-locks', 'Threads & locks', 'ch 26–28'],
-      ['0009-cvs-and-semaphores', 'CVs & semaphores', 'ch 29–31'],
-      ['0010-bugs-and-events', 'Bugs & events', 'ch 32–33']]],
-    ['pers', 'Persistence', [
-      ['0011-devices-disks-raid', 'Devices, disks, RAID', 'ch 36–38'],
-      ['0012-files-and-vsfs', 'Files & a simple FS', 'ch 39–40'],
-      ['0013-ffs-journaling-lfs', 'FFS, journaling, LFS', 'ch 41–43'],
-      ['0014-ssd-and-integrity', 'SSDs & integrity', 'ch 44–45'],
-      ['0015-distributed-nfs-afs', 'Distributed FS', 'ch 48–50']]],
-    ['sec', 'Security', [['0016-security-and-vmms', 'Security & VMMs', 'ch 53–57, App B']]]
+    ['lang', 'The language, as specified (JLS 21)', [
+      ['0001-types-values-variables', 'Types, values, variables', 'JLS ch 4, 5'],
+      ['0002-classes-objects-initialization', 'Classes, objects, initialization order', 'JLS ch 8, 12'],
+      ['0003-records-sealed-interfaces', 'Records, sealed types, interfaces', 'JLS §8.10, §8.1.1.2, ch 9'],
+      ['0004-generics-and-erasure', 'Generics, wildcards, erasure', 'JLS §4.5–4.10, §8.4.8.3'],
+      ['0005-expressions-exceptions-switch', 'Expressions, exceptions, switch & patterns', 'JLS ch 11, 14, 15; JEPs 440/441'],
+      ['0006-lambdas-streams', 'Lambdas, method references, streams', 'JLS §15.27, §15.13, java.util.stream'],
+      ['0007-java-memory-model', 'The Java memory model', 'JLS ch 17']]],
+    ['jvm', 'The JVM (JVMS 21 + HotSpot)', [
+      ['0008-class-files-and-bytecode', 'Class files and bytecode', 'JVMS ch 4, 6'],
+      ['0009-loading-linking-initialization', 'Loading, linking, initialization, class loaders', 'JVMS ch 5'],
+      ['0010-execution-frames-invokedynamic', 'Execution: frames, invoke*, invokedynamic', 'JVMS ch 2, 5.4.3, 6'],
+      ['0011-hotspot-jit', 'HotSpot: interpreter, C1/C2, deoptimization', 'compilationPolicy.cpp, c2_globals.hpp'],
+      ['0012-heap-gc-generational-zgc', 'Objects, heap, GC, Generational ZGC', 'markWord.hpp, gcConfig.cpp, JEP 439']]],
+    ['loom', 'Java 21: virtual threads and new features', [
+      ['0013-virtual-threads-model', 'Virtual threads: the model (JEP 444)', 'JEP 444'],
+      ['0014-virtual-threads-internals', 'Virtual threads: continuations, carriers, scheduler', 'VirtualThread.java, Continuation.java, freeze/thaw'],
+      ['0015-structured-concurrency-scoped-values', 'Structured concurrency & scoped values', 'StructuredTaskScope, ScopedValue (preview)'],
+      ['0016-concurrency-toolkit', 'The concurrency toolkit: monitors, locks, executors', 'JLS §17.1–17.3, java.util.concurrent'],
+      ['0017-java-21-features', 'What Java 21 adds', 'JEPs 431, 440, 441, 442, 443, 445, 446, 453']]]
   ];
   const LESSONS = PIECES.flatMap(p => p[2].map(l => [l[0], l[1], p[0], l[2]]));
   const title = id => (LESSONS.find(l => l[0] === id) || [])[1] || id;
@@ -257,7 +278,7 @@ window.OS = (function () {
     const isLesson = i >= 0;
     const top = document.createElement('header'); top.className = 'topbar';
     top.innerHTML = `<button class="menu" aria-label="Open directory" aria-expanded="false">☰<span>Directory</span></button>
-      <a class="brand" href="${root}index.html"><span class="dot"></span>OSTEP course</a>
+      <a class="brand" href="${root}index.html"><span class="dot"></span>Java 21 course</a>
       <nav class="links"><a href="${root}reference/glossary.html">Glossary</a><a href="${root}reference/cheatsheets.html">Cheat sheets</a><a href="${root}notes.html">My notes</a></nav>
       ${isLesson ? `<span class="where">${i+1} / ${LESSONS.length}</span>` : ''}`;
     document.body.prepend(top);
@@ -341,6 +362,17 @@ window.OS = (function () {
     });
   }
 
+
+  /* ---------- Java code blocks: annotated, copyable, with a jshell hint (no JVM in the browser) ---------- */
+  function py(el, code, opts) {
+    el = typeof el === 'string' ? document.getElementById(el) : el; opts = opts || {};
+    el.classList.add('pyrun');
+    const src = code.trim();
+    const preview = /--enable-preview|StructuredTaskScope|ScopedValue|STR\./.test(src);
+    el.innerHTML = `<div class="pyhead"><span>Java 21${preview ? ' · needs --enable-preview' : ''}${opts.note ? ' · ' + esc(opts.note) : ''}</span><span class="pystatus">paste into jshell or a scratch file</span><button class="primary copy">Copy</button></div><pre class="pyout" style="display:block;white-space:pre-wrap;margin:0"><code>${esc(src)}</code></pre>`;
+    el.querySelector('.copy').onclick = () => { navigator.clipboard && navigator.clipboard.writeText(src).then(() => { el.querySelector('.pystatus').textContent = 'copied'; }).catch(() => {}); };
+  }
+
   /* ---------- flip cards ---------- */
   function cards(el, list) {
     el = typeof el === 'string' ? document.getElementById(el) : el;
@@ -385,17 +417,46 @@ window.OS = (function () {
     el.querySelectorAll('input').forEach(c => c.onchange = () => { const s = [...el.querySelectorAll('input:checked')].map(x => +x.dataset.i); if (pageId) store.set('obj:' + pageId, s); });
   }
 
-  return { chrome, quiz, cards, stepper, gantt, objectives, esc, store, LESSONS, PIECES, title };
+  return { chrome, quiz, cards, stepper, gantt, objectives, py, esc, store, LESSONS, PIECES, title };
 })();
 
 </script>
 <script>
-OS.chrome('index','');
-const P=[['intro','Introduction','What an OS is: the three pieces, design goals, history.',['0001-three-easy-pieces','Three easy pieces','ch 1–2']],
-['virt','Virtualization','The CPU and memory made private and plentiful.',['0002-processes','Processes & the process API','ch 4–5'],['0003-limited-direct-execution','Limited direct execution','ch 6'],['0004-scheduling','Scheduling: FIFO to CFS and multi-CPU','ch 7–10'],['0005-address-spaces','Address spaces, base/bounds, segments','ch 13–16'],['0006-paging-and-tlbs','Free space, paging, TLBs, small tables','ch 17–20'],['0007-swapping','Swapping, replacement, VAX/VMS & Linux','ch 21–23']],
-['conc','Concurrency','Threads and the primitives that make them safe.',['0008-threads-and-locks','Threads, thread API, locks','ch 26–28'],['0009-cvs-and-semaphores','Locked structures, CVs, semaphores','ch 29–31'],['0010-bugs-and-events','Concurrency bugs & event-based servers','ch 32–33']],
-['pers','Persistence + Security','Storage from the device up; then protecting it all.',['0011-devices-disks-raid','Devices, disks, RAID','ch 36–38'],['0012-files-and-vsfs','Files, directories, a simple file system','ch 39–40'],['0013-ffs-journaling-lfs','FFS, crash consistency, LFS','ch 41–43'],['0014-ssd-and-integrity','SSDs & data integrity','ch 44–45'],['0015-distributed-nfs-afs','Distributed systems, NFS, AFS','ch 48–50'],['0016-security-and-vmms','Security (ch 53–57) & VMMs','ch 53–57, App B']]];
-const m=document.getElementById('map');let idx=0;const S=OS.store;
-m.innerHTML=P.map(([cls,name,desc,...ls])=>`<div class="piece piece-${cls}"><h3>${name}</h3><p>${desc}</p>${ls.map(l=>{idx++;const q=S.get('quiz:'+l[0]),nt=(S.get('notes:'+l[0])||{}).text;return `<a href="lessons/${l[0]}.html" data-id="${l[0]}" class="${q&&q.score===q.total?'done':''}">${idx}. ${l[1]}<small>${l[2]}${q?` · quiz ${q.score}/${q.total}`:''}${nt?' · ✎ notes':''}</small></a>`;}).join('')}</div>`).join('');
-const done=OS.LESSONS.filter(l=>S.get('quiz:'+l[0])).length;const ph=document.createElement('p');ph.className='cap';ph.textContent=done?`${done} of 16 lesson quizzes attempted — see My notes & progress for details.`:'Quiz scores, checked objectives and notes are saved in this browser as you go.';document.getElementById('map').after(ph);
+OS.chrome('0012-heap-gc-generational-zgc');
+OS.objectives('obj',['Decode the 64-bit mark word: hash, age, lock states and inflation.','Explain TLAB allocation, generations, remembered sets and write barriers, and which roots exist (stack chunks are not roots).','Compare Serial, Parallel, G1, ZGC and Generational ZGC and state the ergonomic default.','Describe colored pointers, load and store barriers, SATB marking and bitmap remembered sets in Generational ZGC.','Distinguish soft, weak and phantom references and why Cleaner replaces finalize().']);
+/* region sim */
+let R;function rreset(){R={cells:Array(32).fill('f'),alloc:0,gcs:0};rdraw('');}
+function rdraw(m){document.getElementById('regions').innerHTML=R.cells.map(c=>`<div class="${c}">${c==='y'?'Y':c==='o'?'O':c==='h'?'H':''}</div>`).join('');if(m)document.getElementById('gmsg').textContent=m;}
+document.getElementById('galloc').onclick=()=>{let n=0;for(let i=0;i<R.cells.length&&n<4;i++){if(R.cells[i]==='f'){R.cells[i]=(Math.random()<.12)?'h':'y';n++;}}R.alloc+=n;rdraw(n?`allocated ${n} young regions (TLAB bump allocation; occasional humongous object gets its own region)`:'heap full of young regions → a young collection is required before allocating');};
+document.getElementById('gyoung').onclick=()=>{let freed=0,promoted=0,kept=0;R.cells=R.cells.map(c=>{if(c==='y'){const r=Math.random();if(r<.6){freed++;return 'f';}if(r<.8){promoted++;return 'o';}kept++;return 'y';}if(c==='h'){if(Math.random()<.5){freed++;return 'f';}return 'h';}return c;});R.gcs++;rdraw(`young collection #${R.gcs}: freed ${freed} regions, promoted ${promoted} (age ≥ threshold → old), kept ${kept} as survivors. Old regions untouched — only the remembered set told us which old fields point into young.`);};
+document.getElementById('greset').onclick=rreset;rreset();
+OS.py('py1',`// Header, hash, and inflation: run with -XX:+UnlockDiagnosticVMOptions and JOL (openjdk.org/projects/code-tools/jol) to print layouts
+Object o = new Object();          // mark word: lock bits 01 (unlocked), hash 0 (not yet computed), age 0
+int h = System.identityHashCode(o);   // hash generated lazily and stored in the mark word
+synchronized (o) { /* uncontended: CAS on the mark word → lightweight lock */ }
+// a second thread contending, or o.wait(), inflates the lock into an ObjectMonitor (lock bits 10)
+
+// Choosing collectors:
+//   java -XX:+UseSerialGC   App          // default on < 2 CPUs or < 2 GB
+//   java -XX:+UseG1GC -XX:MaxGCPauseMillis=100 App
+//   java -XX:+UseZGC -XX:+ZGenerational App    // JDK 21 Generational ZGC
+//   java -Xlog:gc*,gc+heap=debug App           // unified logging
+// References:
+var cache = new java.util.WeakHashMap<Key, Value>();          // entries vanish when keys are otherwise unreachable
+var cleaner = java.lang.ref.Cleaner.create();
+class Resource implements AutoCloseable {
+    private final java.lang.ref.Cleaner.Cleanable c;
+    Resource() { c = cleaner.register(this, () -> nativeFree()); }   // safety net; must not capture 'this'
+    public void close() { c.clean(); }                              // deterministic path
+}`);
+OS.cards('cards',[['Mark word (64-bit)','unused:25 | hash:31 | unused:1 | age:4 | unused:1 | lock:2; lock 01 unlocked, 00 locked, 10 inflated monitor, 11 GC mark.'],['Klass pointer','Second header word: Klass* or 32-bit narrowKlass (compressed class pointers) pointing at the class metadata in Metaspace.'],['TLAB','Thread-local allocation buffer: allocation is a pointer bump; refilled from eden/young regions.'],['Remembered set / write barrier','Records old→young pointers so young collections needn\'t scan the old generation; card table (Serial/Parallel/G1) vs precise bitmaps (Generational ZGC).'],['Default GC','G1 on server-class machines (≥ 2 processors and ≥ 2 GB), otherwise Serial (gcConfig.cpp, os.cpp).'],['G1','Region-based, concurrent old marking, incremental evacuation of the garbage-richest regions, pause goal 200 ms; humongous objects ≥ half a region.'],['Colored pointer','ZGC heap reference = address (high bits) + metadata bits (low bits); load barrier strips/remaps, store barrier colors and records.'],['SATB + store barrier','Snapshot-at-the-beginning marking driven by the store barrier reporting overwritten values; act-once per field per phase.'],['Reference kinds','Soft (memory-pressure caches), weak (cleared when unreachable), phantom (post-finalization; Cleaner); finalize() deprecated for removal.']]);
+OS.quiz('quiz',[
+{q:'What do lock bits 10 in the mark word mean?',o:['unlocked','locked by stack lock','inflated ObjectMonitor; header displaced','marked by GC'],a:2,why:'markWord.hpp: [ptr | 10] monitor — inflated lock, header swapped out into the ObjectMonitor.'},
+{q:'On a machine with 1 CPU and 1 GB RAM, which collector does JDK 21 pick by default?',o:['G1','Serial','Parallel','ZGC'],a:1,why:'gcConfig.cpp selects G1 only on server-class machines (≥ 2 processors, ≥ 2 GB); otherwise Serial.'},
+{q:'Why does a young collection not scan the whole old generation?',o:['old objects are immutable','a remembered set maintained by write barriers records old→young pointers','young objects have no references','it does scan it'],a:1,why:'Generational collectors rely on barriers on reference stores to track cross-generation pointers.'},
+{q:'In Generational ZGC, marking responsibility moved from the load barrier to the:',o:['GC threads only','store barrier (SATB, overwritten value reported)','allocation path','safepoint'],a:1,why:'JEP 439: load barriers now only strip color and remap; store barriers maintain the remembered set and mark.'},
+{q:'Where does Generational ZGC put pointer metadata?',o:['in the object header','in the low-order bits of the colored heap pointer','in a side table','in registers'],a:1,why:'The JEP puts metadata in the low bits and the address in the high bits so one shift checks and strips the color.'},
+{q:'What advantage do ZGC\'s double-buffered remembered-set bitmaps have over card tables?',o:['they use less CPU for stores','precise field tracking and no memory fence; Java threads never wait for clearing','they need no barriers','they work without a young generation'],a:1,why:'JEP 439 contrasts them with G1\'s card marking, which requires a fence; the two bitmaps are swapped at each young collection start.'},
+{q:'Per JEP 444, are virtual-thread stacks GC roots?',o:['yes, like platform stacks','no; they are heap stack-chunk objects reached like any other object','only when mounted','only under G1'],a:1,why:'Their references are not traversed in stop-the-world root scanning, which keeps pauses independent of the number of virtual threads.'},
+{q:'Which reference type underlies Cleaner?',o:['soft','weak','phantom','strong'],a:2,why:'Phantom references are enqueued after the referent becomes finalizable, allowing post-mortem cleanup without resurrection.'}]);
 </script></body></html>

@@ -1,11 +1,11 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>OSTEP course — Operating Systems: Three Easy Pieces, taught interactively</title><style>
+<title>11 · HotSpot: interpreter, C1/C2, deoptimization — Java 21 course</title><style>
 /* OSTEP course — shared stylesheet. Three pieces, three hues. */
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
 :root{
   --ink:#151b2f; --ink-2:#1e2540; --ink-3:#28304f; --line:#3a4368;
   --paper:#eef0f7; --muted:#a9b1cf; --faint:#6e779a;
-  --virt:#e8b84a; --conc:#5bc8f5; --pers:#6bcb77; --sec:#f47fa0; --intro:#c9a8ff;
+  --virt:#e8b84a; --conc:#5bc8f5; --pers:#6bcb77; --sec:#f47fa0; --intro:#c9a8ff; --spec:#ffd166; --internals:#5bc8f5; --data:#6bcb77;
   --ok:#6bcb77; --bad:#ff6b6b;
   --accent:var(--virt);
   --radius:6px;
@@ -28,7 +28,7 @@ p,li{max-width:72ch}
 .hero{padding:44px 0 16px}
 .hero .chapters{color:var(--muted);font-size:.95rem;margin-bottom:6px}
 .lede{font-size:1.2rem;color:var(--muted);max-width:66ch}
-.piece-virt{--accent:var(--virt)} .piece-conc{--accent:var(--conc)} .piece-pers{--accent:var(--pers)} .piece-sec{--accent:var(--sec)} .piece-intro{--accent:var(--intro)}
+.piece-lang{--accent:var(--spec)} .piece-jvm{--accent:var(--internals)} .piece-loom{--accent:var(--data)} .piece-spec{--accent:var(--spec)} .piece-internals{--accent:var(--internals)} .piece-data{--accent:var(--data)} .piece-virt{--accent:var(--virt)} .piece-conc{--accent:var(--conc)} .piece-pers{--accent:var(--pers)} .piece-sec{--accent:var(--sec)} .piece-intro{--accent:var(--intro)}
 .fig{background:var(--ink-2);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;margin:22px 0}
 .fig figcaption,.cap{color:var(--muted);font-size:.9rem;margin-top:10px}
 .fig svg{max-width:100%;height:auto;display:block}
@@ -182,69 +182,85 @@ details>div{padding:0 16px 14px}
 }
 @media (max-width:420px){.cards{grid-template-columns:1fr}}
 
+/* ---------- runnable Python ---------- */
+.pyrun{border:1px solid var(--line);border-radius:var(--radius);background:#0f1424;margin:18px 0;overflow:hidden}
+.pyrun .pyhead{display:flex;gap:10px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--line);font-size:.85rem;color:var(--muted);background:var(--ink-2)}
+.pyrun .pyhead span:first-child{flex:1;font-weight:600;color:var(--paper)}
+.pyrun .pystatus{font-size:.78rem}
+.pyrun textarea{display:block;width:100%;border:none;background:#0f1424;color:var(--paper);font-family:'IBM Plex Mono',monospace;font-size:.86rem;line-height:1.5;padding:12px 14px;resize:vertical;outline:none;min-height:60px;tab-size:4}
+.pyrun .pyout{font-family:'IBM Plex Mono',monospace;font-size:.86rem;line-height:1.5;padding:12px 14px;margin:0;border:none;border-top:1px solid var(--line);border-left:none;border-radius:0;background:#0a0e1a;color:#cfe3ff;max-height:none;overflow:auto}
+
 </style>
-<style>.map{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:24px 0}.piece{border:1px solid var(--line);border-radius:8px;padding:16px;background:var(--ink-2);border-top:4px solid var(--accent)}.piece h3{margin:0 0 4px;color:var(--accent)}.piece p{font-size:.9rem;color:var(--muted);margin:0 0 10px}.piece a{display:block;text-decoration:none;color:var(--paper);padding:6px 0;border-top:1px solid var(--line);font-size:.92rem}.piece a:hover{color:var(--accent)}.piece a small{display:block;color:var(--faint);font-size:.78rem}.piece a.done::after{content:" ✓";color:var(--ok)}.how{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}.how .fig{margin:0}.how h4{margin:0 0 6px}@media(max-width:900px){.map{grid-template-columns:1fr 1fr}.how{grid-template-columns:1fr}}@media(max-width:600px){.map{grid-template-columns:1fr}}.big{font-size:1.05rem}</style></head>
-<body class="piece-intro"><div class="wrap">
-<header class="hero"><div class="chapters">Operating Systems: Three Easy Pieces · Remzi H. and Andrea C. Arpaci-Dusseau (v1.10, 2023) · security chapters by Peter Reiher</div>
-<h1>The whole book, as sixteen interactive lessons</h1>
-<p class="lede big">Built from the text of all 57 chapters plus the VMM appendix — every "crux", every summary, every number in the figures was extracted from the chapter PDFs, not recalled. Each lesson is short, visual, and ends in retrieval practice. Do them in order; the book's pieces build on each other.</p></header>
+<style>.tier{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}.tier div{background:#0f1424;border:1px solid var(--line);border-radius:6px;padding:10px;font-size:.82rem}.tier b{display:block;color:var(--accent);font-size:1rem}.tier div.on{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,#0f1424)}.cnt{font-family:'IBM Plex Mono',monospace;font-size:.82rem}.opt td:first-child{color:var(--accent);white-space:nowrap}@media(max-width:760px){.tier{grid-template-columns:1fr 1fr}}</style></head>
+<body class="piece-jvm"><div class="wrap">
+<header class="hero"><div class="chapters">HotSpot JDK 21 sources: compiler/compilerDefinitions.hpp, compiler/compilationPolicy.cpp, compiler/compiler_globals.hpp, opto/c2_globals.hpp, runtime/deoptimization.hpp, runtime/safepoint.hpp · JVMS §2.13 Public Design, Private Implementation</div>
+<h1>HotSpot: from bytecode to machine code, and back</h1>
+<p class="lede">The JVMS ends by saying that translating bytecode into native code "just in time" is the implementor's business. HotSpot's business is a <em>tiered</em> pipeline: a template interpreter starts everything, counters find hot methods and loops, the C1 compiler produces quick code with profiling, and C2 produces aggressively speculative code that can be <em>deoptimized</em> back to the interpreter when a speculation fails. This lesson gives the tiers, the thresholds and transitions straight from the source, and the optimizations that make "write clean code and let the JIT handle it" mostly true.</p></header>
+<div class="source"><b>Primary sources:</b> HotSpot JDK 21u sources read for this lesson — <code>compilerDefinitions.hpp</code> (CompLevel enum), <code>compilationPolicy.cpp</code> (the state-transition comment, quoted below), <code>compiler_globals.hpp</code> (Tier3/Tier4 thresholds), <code>c2_globals.hpp</code>/<code>c2_globals_x86.hpp</code> (inlining limits), <code>safepoint.hpp</code>, <code>deoptimization.hpp</code>; JVMS §2.13. Diagnostics mentioned: <code>-XX:+PrintCompilation</code>, <code>-XX:+UnlockDiagnosticVMOptions -XX:+PrintInlining</code>, JFR.</div>
+<h2>What you'll be able to do</h2><ul id="obj"></ul>
 
-<figure class="fig"><svg viewBox="0 0 900 150" role="img" aria-label="three pieces">
-<rect x="20" y="30" width="270" height="90" rx="8" fill="#e8b84a"/><text x="155" y="68" text-anchor="middle" fill="#111" font-size="20" font-weight="700" font-family="Fraunces,serif">Virtualization</text><text x="155" y="95" text-anchor="middle" fill="#111" font-size="13">CPU (ch 4–10) · Memory (ch 13–23)</text>
-<rect x="315" y="30" width="270" height="90" rx="8" fill="#5bc8f5"/><text x="450" y="68" text-anchor="middle" fill="#111" font-size="20" font-weight="700" font-family="Fraunces,serif">Concurrency</text><text x="450" y="95" text-anchor="middle" fill="#111" font-size="13">threads, locks, CVs, semaphores, bugs (ch 26–33)</text>
-<rect x="610" y="30" width="270" height="90" rx="8" fill="#6bcb77"/><text x="745" y="68" text-anchor="middle" fill="#111" font-size="20" font-weight="700" font-family="Fraunces,serif">Persistence</text><text x="745" y="95" text-anchor="middle" fill="#111" font-size="13">devices, disks, file systems, distributed (ch 36–50)</text>
-<text x="450" y="140" text-anchor="middle" fill="#a9b1cf" font-size="13">+ Security (ch 53–57) and Virtual Machine Monitors (Appendix B)</text></svg></figure>
+<h2>The tiers</h2>
+<div class="tier"><div><b>0 · interpreter</b>CompLevel_none. Template interpreter: a machine-code stub per bytecode, generated at startup. Profiles invocation and back-edge counts.</div><div><b>1 · C1 simple</b>CompLevel_simple: C1 without profiling — for trivial methods, or when C2 can't compile something.</div><div><b>2 · C1 limited profile</b>Invocation and back-edge counters only; a holding pattern when C2 is busy.</div><div><b>3 · C1 full profile</b>Counters + MethodData (MDO): type profiles at call sites, branch frequencies, null-check outcomes — the input C2 needs.</div><div><b>4 · C2 / JVMCI</b>CompLevel_full_optimization: the server compiler (or Graal via JVMCI): speculative, inlining-heavy, escape-analysing.</div></div>
+<div class="crux"><b>Transitions (from compilationPolicy.cpp):</b> (a) <b>0 → 3 → 4</b>, the common path; profiling may start at 0 and finish at 3. (b) 0 → 2 → 3 → 4 when the load on C2 is too high, so the method runs at level 2 without over-profiling while it waits. (c) 0 → (3→2) → 4 when the C1 queue is long enough that profiling fully happens at level 0, so the in-queue request is downgraded to 2. (d) 0 → 3 → 1 or 0 → 2 → 1 for methods found trivial (or that C2 cannot compile). (e) 0 → 4 directly after a deoptimization that needs no reprofiling, or if C1 fails. And "state 0 can be reached from any other state via deoptimization", so loops are possible.</div>
+<p><b>Thresholds</b> (<code>compiler_globals.hpp</code> defaults): tier 3 is requested when invocations exceed <code>Tier3InvocationThreshold</code> = <b>200</b>, or invocations > <code>Tier3MinInvocationThreshold</code> 100 and invocations + back-edges exceed <code>Tier3CompileThreshold</code> = <b>2000</b>; tier 4 when invocations exceed <code>Tier4InvocationThreshold</code> = <b>5000</b>, or > 600 with invocations + back-edges > <code>Tier4CompileThreshold</code> = <b>15000</b>. Loops compile separately by <b>on-stack replacement</b> (OSR) when back-edge counts pass <code>Tier3BackEdgeThreshold</code> 60000 / <code>Tier4BackEdgeThreshold</code> 40000: the running interpreter frame is replaced mid-loop by a compiled one. The thresholds scale with compiler-queue load (<code>Tier?LoadFeedback</code>). Compilation runs on background compiler threads; the method keeps executing at its current level until the new code is installed in the code cache.</p>
+<div class="fig"><h4>Warm-up simulator</h4><div class="controls"><label>calls per iteration <input type="number" id="calls" value="50" min="1" style="width:80px"></label><label>loop iterations per call <input type="number" id="loops" value="10" min="0" style="width:80px"></label><button class="primary" id="tick">run 1 iteration</button><button id="t10">run 10</button><button id="treset">reset</button></div><div class="tier" id="tv"></div><div class="cap cnt" id="tmsg"></div></div>
 
-<h2>Course map</h2>
-<div class="map" id="map"></div>
+<h2>What C2 does with a hot method</h2>
+<table class="opt"><tr><th>Optimization</th><th>What it does</th><th>Knobs / notes</th></tr>
+<tr><td>Inlining</td><td>Replaces calls with the callee's body — the enabler of everything else. Small callees always (<code>MaxInlineSize</code> 35 bytecodes), hot callees up to <code>FreqInlineSize</code> (325 on x86), already-compiled callees larger than <code>InlineSmallCode</code> (1000 native bytes) are not, nesting up to <code>MaxInlineLevel</code> 15, recursion up to <code>MaxRecursiveInlineLevel</code> 1.</td><td><code>-XX:+PrintInlining</code>; megamorphic call sites block it</td></tr>
+<tr><td>Class hierarchy analysis + type profiles</td><td>A virtual call with one loaded implementor (CHA) or one/two observed receiver types (mono/bimorphic profile) is devirtualized with a cheap type guard and inlined.</td><td>loading a new subclass later invalidates → deopt</td></tr>
+<tr><td>Speculation on profiles</td><td>Never-taken branches are compiled as <em>uncommon traps</em>; implicit null checks use the SIGSEGV handler instead of explicit tests; never-thrown exceptions' handlers are omitted.</td><td>first violation → deoptimize, reprofile</td></tr>
+<tr><td>Escape analysis</td><td>Objects that never escape the compiled region are <em>scalar-replaced</em> (fields become registers) — no allocation, no GC pressure; also lock elision for non-escaping monitors.</td><td><code>opto/escape.hpp</code>; <code>-XX:+DoEscapeAnalysis</code> (default on)</td></tr>
+<tr><td>Loop optimizations</td><td>Range-check elimination, loop unrolling, loop invariant code motion, auto-vectorization (SuperWord) of simple array loops, loop predication.</td><td></td></tr>
+<tr><td>Intrinsics</td><td>Recognized methods (<code>Math.sqrt</code>, <code>System.arraycopy</code>, <code>String.indexOf</code>, CRC, AES, <code>Unsafe</code> atomics) replaced by hand-tuned machine code.</td><td></td></tr>
+<tr><td>Lock coarsening / biased-locking removal</td><td>Adjacent monitor regions merged; (biased locking was removed in JDK 18).</td><td></td></tr></table>
 
-<h2>How to use this course</h2>
-<div class="how">
-<div class="fig"><h4>1. One lesson per sitting</h4><p>Each takes 25–45 minutes: read, play with the simulator until you can predict its output, flip the cards, then do the quiz <em>from memory</em>. Check off the objectives at the top only when you could explain them to someone else.</p></div>
-<div class="fig"><h4>2. Then read the chapter</h4><p>Every lesson links its primary source — the free chapter PDFs at <a href="https://pages.cs.wisc.edu/~remzi/OSTEP/">ostep.org</a>. The lesson gives you the map; the chapter has the jokes, the asides, and the homework simulators (<code>ostep-homework</code>) which are the best practice there is.</p></div>
-<div class="fig"><h4>3. Space it out</h4><p>Long-term retention comes from re-testing later, not from feeling fluent now. Redo a lesson's quiz two days later and again after a week; the <a href="reference/cheatsheets.html">cheat sheets</a> are for the fast pass, the <a href="reference/glossary.html">glossary</a> for vocabulary. Ask me in the chat for mixed quizzes across lessons.</p></div></div>
+<h2>Deoptimization and safepoints</h2>
+<p>Compiled code embeds assumptions: "this branch is never taken", "this call site sees only <code>ArrayList</code>", "no subclass of <code>Shape</code> exists". When one fails — the branch is taken, a new class is loaded, a profile changes — the JVM <b>deoptimizes</b> (<code>deoptimization.hpp</code>): it reconstructs the interpreter frames the compiled frame had folded together (using the <em>debug info</em> recorded at every safepoint in the compiled code, including scalar-replaced objects it must re-materialize) and continues in the interpreter at level 0, usually recompiling later with better profiles. Deoptimization happens only at <b>safepoints</b>: points where the JVM knows the exact state of every thread's frames and which references live where. Compiled code polls for a pending safepoint at method returns and loop back-edges; the VMThread's <code>SafepointSynchronize::begin()</code> "rolls all JavaThreads forward" to their next poll and waits (<code>safepoint.hpp</code>) — the same mechanism stop-the-world GC pauses use, and why a long-running counted loop without a poll can delay a pause (time-to-safepoint). Since JDK 10, <b>thread-local handshakes</b> let the VM run an operation on one thread without stopping all of them; JDK 21's ZGC relies on that.</p>
+<div id="py1"></div>
+<div class="tip"><b>Practical rules that follow.</b> Keep hot methods small so they inline; keep call sites monomorphic where it matters (one concrete type per site); prefer <code>final</code>/private helpers; avoid megamorphic interface calls in inner loops; don't fear short-lived objects (escape analysis and the young generation handle them); always warm up before measuring (JMH); read <code>-XX:+PrintCompilation</code> lines: <code>%</code> = OSR, <code>s</code> = synchronized, <code>!</code> = has exception handlers, <code>n</code> = native, level in the 4th column, "made not entrant" = deoptimized.</div>
 
-<h2>What the book covers that this course does too</h2>
-<p>Chapters 1–2 (dialogue, introduction) → lesson 1. Chapters 3, 11, 12, 24, 25, 34, 35, 46, 47, 51, 52 are the book's short dialogues that open and close each part; their content is folded into the neighbouring lessons. The lab appendices (tutorial, systems and xv6 projects) and the deprecated monitors appendix are referenced in RESOURCES.md rather than taught.</p>
-<h2>Sister courses</h2><div class="how"><div class="fig"><h4><a href="python/index.html">Python 3.13</a></h4><p>The Language Reference, CPython internals (specializing interpreter, JIT, GC, GIL and free-threading), and pandas vs Polars — 20 interactive lessons with Python running in the browser.</p></div><div class="fig"><h4><a href="java/index.html">Java 21</a></h4><p>The JLS and JVMS, HotSpot (class loading, bytecode, tiered JIT, Generational ZGC), and virtual threads from JEP 444 down to VirtualThread.java — 17 interactive lessons with simulators.</p></div></div>
-<p class="tip">This workspace follows the <code>teach</code> skill layout: <code>MISSION.md</code> (why you're learning this), <code>RESOURCES.md</code> (sources), <code>NOTES.md</code>, <code>learning-records/</code>, <code>lessons/</code>, <code>reference/</code>, <code>assets/</code>. Tell me in the chat how a lesson landed and I'll adapt the next ones.</p>
+<h2>Flash cards</h2><div id="cards"></div>
+<h2>Retrieval practice</h2><div id="quiz"></div>
+<p class="tip">Ask me in the chat to interpret a PrintCompilation or PrintInlining log you paste, or to write a JMH benchmark that shows escape analysis removing an allocation.</p>
 </div>
 <script>
-/* OSTEP course — shared components. Every page loads this file (inlined by build.py). */
+/* Java 21 course — shared components (from the OSTEP course). Every page loads this file (inlined by build.py). */
 window.OS = (function () {
   const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
   /* ---------- persistent storage (localStorage on a real site; in-memory fallback in sandboxes) ---------- */
   const mem = {};
   const store = {
-    get(k) { try { const v = localStorage.getItem('ostep:' + k); return v === null ? (mem[k] ?? null) : JSON.parse(v); } catch (e) { return mem[k] ?? null; } },
-    set(k, v) { mem[k] = v; try { localStorage.setItem('ostep:' + k, JSON.stringify(v)); } catch (e) {} },
-    del(k) { delete mem[k]; try { localStorage.removeItem('ostep:' + k); } catch (e) {} },
-    keys(prefix) { const out = new Set(Object.keys(mem).filter(k => k.startsWith(prefix))); try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith('ostep:' + prefix)) out.add(k.slice(6)); } } catch (e) {} return [...out]; },
-    available() { try { localStorage.setItem('ostep:test', '1'); localStorage.removeItem('ostep:test'); return true; } catch (e) { return false; } }
+    get(k) { try { const v = localStorage.getItem('java21:' + k); return v === null ? (mem[k] ?? null) : JSON.parse(v); } catch (e) { return mem[k] ?? null; } },
+    set(k, v) { mem[k] = v; try { localStorage.setItem('java21:' + k, JSON.stringify(v)); } catch (e) {} },
+    del(k) { delete mem[k]; try { localStorage.removeItem('java21:' + k); } catch (e) {} },
+    keys(prefix) { const out = new Set(Object.keys(mem).filter(k => k.startsWith(prefix))); try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith('java21:' + prefix)) out.add(k.slice(6)); } } catch (e) {} return [...out]; },
+    available() { try { localStorage.setItem('java21:test', '1'); localStorage.removeItem('java21:test'); return true; } catch (e) { return false; } }
   };
 
   /* ---------- course structure ---------- */
   const PIECES = [
-    ['intro', 'Introduction', [['0001-three-easy-pieces', 'Three easy pieces', 'ch 1–2']]],
-    ['virt', 'Virtualization', [
-      ['0002-processes', 'Processes & the process API', 'ch 4–5'],
-      ['0003-limited-direct-execution', 'Limited direct execution', 'ch 6'],
-      ['0004-scheduling', 'Scheduling', 'ch 7–10'],
-      ['0005-address-spaces', 'Address spaces & segments', 'ch 13–16'],
-      ['0006-paging-and-tlbs', 'Paging & TLBs', 'ch 17–20'],
-      ['0007-swapping', 'Swapping & policies', 'ch 21–23']]],
-    ['conc', 'Concurrency', [
-      ['0008-threads-and-locks', 'Threads & locks', 'ch 26–28'],
-      ['0009-cvs-and-semaphores', 'CVs & semaphores', 'ch 29–31'],
-      ['0010-bugs-and-events', 'Bugs & events', 'ch 32–33']]],
-    ['pers', 'Persistence', [
-      ['0011-devices-disks-raid', 'Devices, disks, RAID', 'ch 36–38'],
-      ['0012-files-and-vsfs', 'Files & a simple FS', 'ch 39–40'],
-      ['0013-ffs-journaling-lfs', 'FFS, journaling, LFS', 'ch 41–43'],
-      ['0014-ssd-and-integrity', 'SSDs & integrity', 'ch 44–45'],
-      ['0015-distributed-nfs-afs', 'Distributed FS', 'ch 48–50']]],
-    ['sec', 'Security', [['0016-security-and-vmms', 'Security & VMMs', 'ch 53–57, App B']]]
+    ['lang', 'The language, as specified (JLS 21)', [
+      ['0001-types-values-variables', 'Types, values, variables', 'JLS ch 4, 5'],
+      ['0002-classes-objects-initialization', 'Classes, objects, initialization order', 'JLS ch 8, 12'],
+      ['0003-records-sealed-interfaces', 'Records, sealed types, interfaces', 'JLS §8.10, §8.1.1.2, ch 9'],
+      ['0004-generics-and-erasure', 'Generics, wildcards, erasure', 'JLS §4.5–4.10, §8.4.8.3'],
+      ['0005-expressions-exceptions-switch', 'Expressions, exceptions, switch & patterns', 'JLS ch 11, 14, 15; JEPs 440/441'],
+      ['0006-lambdas-streams', 'Lambdas, method references, streams', 'JLS §15.27, §15.13, java.util.stream'],
+      ['0007-java-memory-model', 'The Java memory model', 'JLS ch 17']]],
+    ['jvm', 'The JVM (JVMS 21 + HotSpot)', [
+      ['0008-class-files-and-bytecode', 'Class files and bytecode', 'JVMS ch 4, 6'],
+      ['0009-loading-linking-initialization', 'Loading, linking, initialization, class loaders', 'JVMS ch 5'],
+      ['0010-execution-frames-invokedynamic', 'Execution: frames, invoke*, invokedynamic', 'JVMS ch 2, 5.4.3, 6'],
+      ['0011-hotspot-jit', 'HotSpot: interpreter, C1/C2, deoptimization', 'compilationPolicy.cpp, c2_globals.hpp'],
+      ['0012-heap-gc-generational-zgc', 'Objects, heap, GC, Generational ZGC', 'markWord.hpp, gcConfig.cpp, JEP 439']]],
+    ['loom', 'Java 21: virtual threads and new features', [
+      ['0013-virtual-threads-model', 'Virtual threads: the model (JEP 444)', 'JEP 444'],
+      ['0014-virtual-threads-internals', 'Virtual threads: continuations, carriers, scheduler', 'VirtualThread.java, Continuation.java, freeze/thaw'],
+      ['0015-structured-concurrency-scoped-values', 'Structured concurrency & scoped values', 'StructuredTaskScope, ScopedValue (preview)'],
+      ['0016-concurrency-toolkit', 'The concurrency toolkit: monitors, locks, executors', 'JLS §17.1–17.3, java.util.concurrent'],
+      ['0017-java-21-features', 'What Java 21 adds', 'JEPs 431, 440, 441, 442, 443, 445, 446, 453']]]
   ];
   const LESSONS = PIECES.flatMap(p => p[2].map(l => [l[0], l[1], p[0], l[2]]));
   const title = id => (LESSONS.find(l => l[0] === id) || [])[1] || id;
@@ -257,7 +273,7 @@ window.OS = (function () {
     const isLesson = i >= 0;
     const top = document.createElement('header'); top.className = 'topbar';
     top.innerHTML = `<button class="menu" aria-label="Open directory" aria-expanded="false">☰<span>Directory</span></button>
-      <a class="brand" href="${root}index.html"><span class="dot"></span>OSTEP course</a>
+      <a class="brand" href="${root}index.html"><span class="dot"></span>Java 21 course</a>
       <nav class="links"><a href="${root}reference/glossary.html">Glossary</a><a href="${root}reference/cheatsheets.html">Cheat sheets</a><a href="${root}notes.html">My notes</a></nav>
       ${isLesson ? `<span class="where">${i+1} / ${LESSONS.length}</span>` : ''}`;
     document.body.prepend(top);
@@ -341,6 +357,17 @@ window.OS = (function () {
     });
   }
 
+
+  /* ---------- Java code blocks: annotated, copyable, with a jshell hint (no JVM in the browser) ---------- */
+  function py(el, code, opts) {
+    el = typeof el === 'string' ? document.getElementById(el) : el; opts = opts || {};
+    el.classList.add('pyrun');
+    const src = code.trim();
+    const preview = /--enable-preview|StructuredTaskScope|ScopedValue|STR\./.test(src);
+    el.innerHTML = `<div class="pyhead"><span>Java 21${preview ? ' · needs --enable-preview' : ''}${opts.note ? ' · ' + esc(opts.note) : ''}</span><span class="pystatus">paste into jshell or a scratch file</span><button class="primary copy">Copy</button></div><pre class="pyout" style="display:block;white-space:pre-wrap;margin:0"><code>${esc(src)}</code></pre>`;
+    el.querySelector('.copy').onclick = () => { navigator.clipboard && navigator.clipboard.writeText(src).then(() => { el.querySelector('.pystatus').textContent = 'copied'; }).catch(() => {}); };
+  }
+
   /* ---------- flip cards ---------- */
   function cards(el, list) {
     el = typeof el === 'string' ? document.getElementById(el) : el;
@@ -385,17 +412,54 @@ window.OS = (function () {
     el.querySelectorAll('input').forEach(c => c.onchange = () => { const s = [...el.querySelectorAll('input:checked')].map(x => +x.dataset.i); if (pageId) store.set('obj:' + pageId, s); });
   }
 
-  return { chrome, quiz, cards, stepper, gantt, objectives, esc, store, LESSONS, PIECES, title };
+  return { chrome, quiz, cards, stepper, gantt, objectives, py, esc, store, LESSONS, PIECES, title };
 })();
 
 </script>
 <script>
-OS.chrome('index','');
-const P=[['intro','Introduction','What an OS is: the three pieces, design goals, history.',['0001-three-easy-pieces','Three easy pieces','ch 1–2']],
-['virt','Virtualization','The CPU and memory made private and plentiful.',['0002-processes','Processes & the process API','ch 4–5'],['0003-limited-direct-execution','Limited direct execution','ch 6'],['0004-scheduling','Scheduling: FIFO to CFS and multi-CPU','ch 7–10'],['0005-address-spaces','Address spaces, base/bounds, segments','ch 13–16'],['0006-paging-and-tlbs','Free space, paging, TLBs, small tables','ch 17–20'],['0007-swapping','Swapping, replacement, VAX/VMS & Linux','ch 21–23']],
-['conc','Concurrency','Threads and the primitives that make them safe.',['0008-threads-and-locks','Threads, thread API, locks','ch 26–28'],['0009-cvs-and-semaphores','Locked structures, CVs, semaphores','ch 29–31'],['0010-bugs-and-events','Concurrency bugs & event-based servers','ch 32–33']],
-['pers','Persistence + Security','Storage from the device up; then protecting it all.',['0011-devices-disks-raid','Devices, disks, RAID','ch 36–38'],['0012-files-and-vsfs','Files, directories, a simple file system','ch 39–40'],['0013-ffs-journaling-lfs','FFS, crash consistency, LFS','ch 41–43'],['0014-ssd-and-integrity','SSDs & data integrity','ch 44–45'],['0015-distributed-nfs-afs','Distributed systems, NFS, AFS','ch 48–50'],['0016-security-and-vmms','Security (ch 53–57) & VMMs','ch 53–57, App B']]];
-const m=document.getElementById('map');let idx=0;const S=OS.store;
-m.innerHTML=P.map(([cls,name,desc,...ls])=>`<div class="piece piece-${cls}"><h3>${name}</h3><p>${desc}</p>${ls.map(l=>{idx++;const q=S.get('quiz:'+l[0]),nt=(S.get('notes:'+l[0])||{}).text;return `<a href="lessons/${l[0]}.html" data-id="${l[0]}" class="${q&&q.score===q.total?'done':''}">${idx}. ${l[1]}<small>${l[2]}${q?` · quiz ${q.score}/${q.total}`:''}${nt?' · ✎ notes':''}</small></a>`;}).join('')}</div>`).join('');
-const done=OS.LESSONS.filter(l=>S.get('quiz:'+l[0])).length;const ph=document.createElement('p');ph.className='cap';ph.textContent=done?`${done} of 16 lesson quizzes attempted — see My notes & progress for details.`:'Quiz scores, checked objectives and notes are saved in this browser as you go.';document.getElementById('map').after(ph);
+OS.chrome('0011-hotspot-jit');
+OS.objectives('obj',['Name the five compilation levels and what each profiles or optimizes.','Reproduce the common state transitions and the tier 3/4 thresholds, including OSR.','Explain inlining limits, devirtualization by CHA/profiles, uncommon traps, escape analysis and intrinsics.','Describe deoptimization (why, when, how frames are reconstructed) and safepoints/handshakes.','Apply the practical rules: small monomorphic hot code, warm-up, reading PrintCompilation.']);
+let W;function wreset(){W={inv:0,be:0,lvl:0,q:null,log:[]};wdraw();}
+function wdraw(){const names=['0 interpreter','1 C1 simple','2 C1 limited','3 C1 profiled','4 C2'];document.getElementById('tv').innerHTML=names.map((n,i)=>`<div class="${i===W.lvl?'on':''}"><b>${n.split(' ')[0]}</b>${n.slice(2)}</div>`).join('');document.getElementById('tmsg').textContent=`invocations ${W.inv} · back-edges ${W.be} · level ${W.lvl}${W.q!==null?' · queued for level '+W.q:''}\n`+W.log.slice(-4).join('\n');}
+function step(){const c=+document.getElementById('calls').value,l=+document.getElementById('loops').value;W.inv+=c;W.be+=c*l;if(W.q!==null){W.log.push(`compile finished → installed level ${W.q} code`);W.lvl=W.q;W.q=null;}
+ if(W.lvl===0&&(W.inv>200||(W.inv>100&&W.inv+W.be>2000))){W.q=3;W.log.push(`Tier3 predicate true (i=${W.inv}, i+b=${W.inv+W.be}) → enqueue C1 level 3 (background)`);}
+ else if(W.lvl===3&&(W.inv>5000||(W.inv>600&&W.inv+W.be>15000))){W.q=4;W.log.push(`Tier4 predicate true (i=${W.inv}, i+b=${W.inv+W.be}) → enqueue C2 level 4`);}
+ else if(W.lvl===0&&W.be>60000&&W.q===null){W.q=3;W.log.push('Tier3 back-edge threshold 60000 → OSR compile of the hot loop');}
+ wdraw();}
+document.getElementById('tick').onclick=step;document.getElementById('t10').onclick=()=>{for(let i=0;i<10;i++)step();};document.getElementById('treset').onclick=wreset;wreset();
+OS.py('py1',`// Observe the tiers: java -XX:+PrintCompilation Demo   (columns: timestamp, id, flags, tier, method, size)
+//   %  = OSR compilation     s = synchronized     ! = has exception handlers     n = native
+//   "made not entrant" = the compiled version was deoptimized/invalidated
+public class Demo {
+    interface Shape { double area(); }
+    record Circle(double r) implements Shape { public double area() { return Math.PI * r * r; } }   // Math.PI * r * r inlines; sqrt-style intrinsics apply to Math.*
+    record Square(double s) implements Shape { public double area() { return s * s; } }
+    static double total(Shape[] shapes) {                // monomorphic → devirtualized+inlined; add a 3rd type → megamorphic vtable call
+        double t = 0;
+        for (Shape s : shapes) t += s.area();            // back-edges counted; OSR after 60000
+        return t;
+    }
+    static long noAlloc(int n) {
+        long acc = 0;
+        for (int i = 0; i < n; i++) { var p = new int[]{i, i + 1}; acc += p[0] + p[1]; }   // escape analysis: p scalar-replaced, no allocation after C2
+        return acc;
+    }
+    public static void main(String[] a) {
+        Shape[] shapes = { new Circle(1), new Circle(2) };
+        for (int i = 0; i < 20_000; i++) total(shapes);  // 0 → 3 → 4
+        shapes = new Shape[]{ new Square(1) };
+        total(shapes);                                   // type guard fails → uncommon trap → deoptimize → reprofile → recompile bimorphic
+        System.out.println(noAlloc(1_000_000));
+    }
+}`);
+OS.cards('cards',[['Template interpreter','Level 0: a generated machine-code stub per bytecode; counts invocations and back-edges to find hot code.'],['C1 vs C2','C1 (levels 1–3): fast compile, light optimization, adds profiling; C2 (level 4): slow compile, speculative and aggressive.'],['Common transition','0 → 3 → 4; variants via level 2 under load, level 1 for trivial methods, 0 ← any level by deoptimization.'],['Tier thresholds','Tier3: 200 invocations or (>100 and inv+backedges > 2000); Tier4: 5000 or (>600 and > 15000); OSR back-edges 60000/40000.'],['OSR','On-stack replacement: a hot loop\'s interpreter frame is swapped for a compiled frame mid-loop (% in PrintCompilation).'],['Inlining limits','MaxInlineSize 35 bytecodes, FreqInlineSize 325 (x86), InlineSmallCode 1000 native bytes, MaxInlineLevel 15, MaxRecursiveInlineLevel 1.'],['Uncommon trap','Compiled code for a never-observed path is replaced by a trap that deoptimizes when reached.'],['Escape analysis','Non-escaping objects are scalar-replaced (no allocation) and their locks elided.'],['Safepoint / handshake','Point where thread state is fully known; polls at returns and back-edges; VMThread rolls all threads to one for STW ops; handshakes target a single thread.']]);
+OS.quiz('quiz',[
+{q:'Which level adds full profiling (MethodData) for C2?',o:['1','2','3','4'],a:2,why:'CompLevel_full_profile (3) = C1 with invocation/backedge counters plus the MDO.'},
+{q:'The most common tier path for a hot method is:',o:['0 → 1 → 4','0 → 3 → 4','0 → 2 → 1','0 → 4 directly'],a:1,why:'compilationPolicy.cpp lists 0 → 3 → 4 as the most common path.'},
+{q:'With default thresholds, a method called 250 times with no loops is queued for:',o:['level 4 immediately','level 3 (Tier3InvocationThreshold = 200 exceeded)','nothing until 5000 calls','OSR'],a:1,why:'Invocations > 200 satisfy the tier-3 predicate; tier 4 needs > 5000 (or > 600 with inv+backedges > 15000).'},
+{q:'When does a method at level 3 move to 2 while still in the queue?',o:['when profiling is done at level 0 because the C1 queue is long','never','when it is trivial','when C2 finished'],a:0,why:'Transition (c): 0 → (3→2) → 4 downgrades the queued request so the method runs faster without full profiling while C2 is busy.'},
+{q:'A virtual call site that has only ever seen one receiver class is compiled by C2 as:',o:['a vtable call','a type guard + inlined body (monomorphic devirtualization)','an interface lookup','an invokedynamic'],a:1,why:'Profiles/CHA allow speculative inlining behind a guard; a new type triggers an uncommon trap and reprofiling.'},
+{q:'Deoptimization requires:',o:['a full GC','a safepoint where debug info can rebuild interpreter frames','recompilation first','the method to be synchronized'],a:1,why:'Compiled frames are unfolded into interpreter frames using debug info recorded at safepoints; scalar-replaced objects are re-materialized.'},
+{q:'Escape analysis lets C2:',o:['allocate on a separate heap','eliminate allocations and locks for objects that don\'t escape','skip verification','inline recursive calls'],a:1,why:'Scalar replacement turns fields into registers and elides monitors on non-escaping objects.'},
+{q:'In -XX:+PrintCompilation, a % flag means:',o:['synchronized method','an OSR compilation of a loop','made not entrant','native method'],a:1,why:'% marks on-stack-replacement compiles; s = synchronized, ! = exception handlers, n = native.'}]);
 </script></body></html>

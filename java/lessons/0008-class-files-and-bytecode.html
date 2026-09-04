@@ -1,11 +1,11 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>OSTEP course — Operating Systems: Three Easy Pieces, taught interactively</title><style>
+<title>8 · Class files and bytecode — Java 21 course</title><style>
 /* OSTEP course — shared stylesheet. Three pieces, three hues. */
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
 :root{
   --ink:#151b2f; --ink-2:#1e2540; --ink-3:#28304f; --line:#3a4368;
   --paper:#eef0f7; --muted:#a9b1cf; --faint:#6e779a;
-  --virt:#e8b84a; --conc:#5bc8f5; --pers:#6bcb77; --sec:#f47fa0; --intro:#c9a8ff;
+  --virt:#e8b84a; --conc:#5bc8f5; --pers:#6bcb77; --sec:#f47fa0; --intro:#c9a8ff; --spec:#ffd166; --internals:#5bc8f5; --data:#6bcb77;
   --ok:#6bcb77; --bad:#ff6b6b;
   --accent:var(--virt);
   --radius:6px;
@@ -28,7 +28,7 @@ p,li{max-width:72ch}
 .hero{padding:44px 0 16px}
 .hero .chapters{color:var(--muted);font-size:.95rem;margin-bottom:6px}
 .lede{font-size:1.2rem;color:var(--muted);max-width:66ch}
-.piece-virt{--accent:var(--virt)} .piece-conc{--accent:var(--conc)} .piece-pers{--accent:var(--pers)} .piece-sec{--accent:var(--sec)} .piece-intro{--accent:var(--intro)}
+.piece-lang{--accent:var(--spec)} .piece-jvm{--accent:var(--internals)} .piece-loom{--accent:var(--data)} .piece-spec{--accent:var(--spec)} .piece-internals{--accent:var(--internals)} .piece-data{--accent:var(--data)} .piece-virt{--accent:var(--virt)} .piece-conc{--accent:var(--conc)} .piece-pers{--accent:var(--pers)} .piece-sec{--accent:var(--sec)} .piece-intro{--accent:var(--intro)}
 .fig{background:var(--ink-2);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;margin:22px 0}
 .fig figcaption,.cap{color:var(--muted);font-size:.9rem;margin-top:10px}
 .fig svg{max-width:100%;height:auto;display:block}
@@ -182,69 +182,95 @@ details>div{padding:0 16px 14px}
 }
 @media (max-width:420px){.cards{grid-template-columns:1fr}}
 
+/* ---------- runnable Python ---------- */
+.pyrun{border:1px solid var(--line);border-radius:var(--radius);background:#0f1424;margin:18px 0;overflow:hidden}
+.pyrun .pyhead{display:flex;gap:10px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--line);font-size:.85rem;color:var(--muted);background:var(--ink-2)}
+.pyrun .pyhead span:first-child{flex:1;font-weight:600;color:var(--paper)}
+.pyrun .pystatus{font-size:.78rem}
+.pyrun textarea{display:block;width:100%;border:none;background:#0f1424;color:var(--paper);font-family:'IBM Plex Mono',monospace;font-size:.86rem;line-height:1.5;padding:12px 14px;resize:vertical;outline:none;min-height:60px;tab-size:4}
+.pyrun .pyout{font-family:'IBM Plex Mono',monospace;font-size:.86rem;line-height:1.5;padding:12px 14px;margin:0;border:none;border-top:1px solid var(--line);border-left:none;border-radius:0;background:#0a0e1a;color:#cfe3ff;max-height:none;overflow:auto}
+
 </style>
-<style>.map{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:24px 0}.piece{border:1px solid var(--line);border-radius:8px;padding:16px;background:var(--ink-2);border-top:4px solid var(--accent)}.piece h3{margin:0 0 4px;color:var(--accent)}.piece p{font-size:.9rem;color:var(--muted);margin:0 0 10px}.piece a{display:block;text-decoration:none;color:var(--paper);padding:6px 0;border-top:1px solid var(--line);font-size:.92rem}.piece a:hover{color:var(--accent)}.piece a small{display:block;color:var(--faint);font-size:.78rem}.piece a.done::after{content:" ✓";color:var(--ok)}.how{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}.how .fig{margin:0}.how h4{margin:0 0 6px}@media(max-width:900px){.map{grid-template-columns:1fr 1fr}.how{grid-template-columns:1fr}}@media(max-width:600px){.map{grid-template-columns:1fr}}.big{font-size:1.05rem}</style></head>
-<body class="piece-intro"><div class="wrap">
-<header class="hero"><div class="chapters">Operating Systems: Three Easy Pieces · Remzi H. and Andrea C. Arpaci-Dusseau (v1.10, 2023) · security chapters by Peter Reiher</div>
-<h1>The whole book, as sixteen interactive lessons</h1>
-<p class="lede big">Built from the text of all 57 chapters plus the VMM appendix — every "crux", every summary, every number in the figures was extracted from the chapter PDFs, not recalled. Each lesson is short, visual, and ends in retrieval practice. Do them in order; the book's pieces build on each other.</p></header>
+<style>.cf{display:grid;grid-template-columns:200px 1fr;gap:4px 12px;font-size:.85rem}.cf div:nth-child(odd){font-family:'IBM Plex Mono',monospace;color:var(--accent)}.hex{font-family:'IBM Plex Mono',monospace;font-size:.8rem;background:#0f1424;border:1px solid var(--line);border-radius:6px;padding:10px;line-height:1.7}.hex span{padding:1px 3px;border-radius:3px;cursor:pointer}.hex span:hover,.hex span.on{background:color-mix(in srgb,var(--accent) 35%,transparent)}.vm{display:grid;grid-template-columns:1.1fr 1fr 1fr;gap:10px}.vm div{background:#0f1424;border:1px solid var(--line);border-radius:6px;padding:10px;font-family:'IBM Plex Mono',monospace;font-size:.8rem;min-height:150px}.vm h4{margin:0 0 6px;font-family:'IBM Plex Sans',sans-serif;font-size:.8rem;color:var(--muted)}.vm .ins{padding:2px 6px;border-radius:3px}.vm .ins.cur{background:color-mix(in srgb,var(--accent) 30%,transparent)}.vm .ins.done{opacity:.45}.stk{display:flex;flex-direction:column-reverse;gap:3px}.stk span{padding:4px 8px;background:#28304f;border-radius:3px}@media(max-width:760px){.vm{grid-template-columns:1fr}.cf{grid-template-columns:1fr}}</style></head>
+<body class="piece-jvm"><div class="wrap">
+<header class="hero"><div class="chapters">JVMS 21 Chapter 4 The class File Format · Chapter 6 The Instruction Set · Chapter 2 §2.11 Instruction Set Summary · HotSpot classFileParser.cpp, bytecodes.hpp</div>
+<h1>Class files and bytecode: the contract between javac and the JVM</h1>
+<p class="lede">Everything the JVM knows about your program arrives as a <code>.class</code> file: a big-endian binary with a magic number, a constant pool that acts as the symbol table, and per-method bytecode for a stack machine with one-byte opcodes. This lesson reads one from the first byte to the last instruction, explains why the instruction set is deliberately non-orthogonal, and sets up lesson 9 (how those bytes become a running class) and lesson 10 (how invocation works).</p></header>
+<div class="source"><b>Primary sources:</b> <a href="https://docs.oracle.com/javase/specs/jvms/se21/html/jvms-4.html">JVMS §4</a> (ClassFile structure, constant pool, descriptors, attributes, verification), <a href="https://docs.oracle.com/javase/specs/jvms/se21/html/jvms-2.html#jvms-2.11">§2.11</a> (fetched: one-byte opcodes, type-support table, computational types), <a href="https://docs.oracle.com/javase/specs/jvms/se21/html/jvms-6.html">§6</a>; HotSpot <code>classFileParser.cpp</code> (magic, versions, preview rule) and <code>bytecodes.hpp</code> (opcode numbers). Tool: <code>javap -v -p</code>.</div>
+<h2>What you'll be able to do</h2><ul id="obj"></ul>
 
-<figure class="fig"><svg viewBox="0 0 900 150" role="img" aria-label="three pieces">
-<rect x="20" y="30" width="270" height="90" rx="8" fill="#e8b84a"/><text x="155" y="68" text-anchor="middle" fill="#111" font-size="20" font-weight="700" font-family="Fraunces,serif">Virtualization</text><text x="155" y="95" text-anchor="middle" fill="#111" font-size="13">CPU (ch 4–10) · Memory (ch 13–23)</text>
-<rect x="315" y="30" width="270" height="90" rx="8" fill="#5bc8f5"/><text x="450" y="68" text-anchor="middle" fill="#111" font-size="20" font-weight="700" font-family="Fraunces,serif">Concurrency</text><text x="450" y="95" text-anchor="middle" fill="#111" font-size="13">threads, locks, CVs, semaphores, bugs (ch 26–33)</text>
-<rect x="610" y="30" width="270" height="90" rx="8" fill="#6bcb77"/><text x="745" y="68" text-anchor="middle" fill="#111" font-size="20" font-weight="700" font-family="Fraunces,serif">Persistence</text><text x="745" y="95" text-anchor="middle" fill="#111" font-size="13">devices, disks, file systems, distributed (ch 36–50)</text>
-<text x="450" y="140" text-anchor="middle" fill="#a9b1cf" font-size="13">+ Security (ch 53–57) and Virtual Machine Monitors (Appendix B)</text></svg></figure>
+<h2>Anatomy of a class file</h2>
+<div class="cf"><div>u4 magic</div><div><code>0xCAFEBABE</code> (<code>JAVA_CLASSFILE_MAGIC</code> in HotSpot)</div><div>u2 minor, u2 major</div><div>Java 21 = major <b>65</b> (45 = JDK 1.0.2; 52 = 8; 61 = 17). Legal: 45–55 any minor; ≥ 56 with minor 0; or major = current with minor 65535 for <em>preview</em> class files, which need <code>--enable-preview</code> (rule quoted from <code>classFileParser.cpp</code>).</div><div>constant_pool</div><div>1-indexed table of tagged entries: <code>Utf8</code>, <code>Integer/Float/Long/Double</code> (the 8-byte ones take two slots — a documented "poor design choice"), <code>Class</code>, <code>String</code>, <code>Fieldref/Methodref/InterfaceMethodref</code> (→ Class + NameAndType), <code>NameAndType</code>, <code>MethodHandle</code>, <code>MethodType</code>, <code>Dynamic</code>, <code>InvokeDynamic</code>, <code>Module</code>, <code>Package</code>. Everything symbolic — names, descriptors, referenced classes — lives here and is resolved lazily (lesson 9).</div><div>u2 access_flags</div><div><code>ACC_PUBLIC</code> 0x0001, <code>FINAL</code> 0x0010, <code>SUPER</code> 0x0020, <code>INTERFACE</code> 0x0200, <code>ABSTRACT</code> 0x0400, <code>SYNTHETIC</code> 0x1000, <code>ANNOTATION</code> 0x2000, <code>ENUM</code> 0x4000, <code>MODULE</code> 0x8000</div><div>this_class, super_class, interfaces[]</div><div>constant-pool indices; <code>super_class</code> is 0 only for <code>Object</code>; interfaces always have <code>Object</code> as superclass</div><div>fields[], methods[]</div><div>each: access flags, name index, descriptor index, attributes. Field descriptors: <code>I J Z B C S F D</code>, <code>Lpkg/Name;</code>, <code>[</code> prefix per dimension. Method descriptors: <code>(IJLjava/lang/String;)V</code></div><div>attributes[]</div><div><code>Code</code> (max_stack, max_locals, code[], exception_table, then nested <code>StackMapTable</code>, <code>LineNumberTable</code>, <code>LocalVariableTable</code>), <code>ConstantValue</code> (static finals — lesson 9's step 6), <code>Exceptions</code>, <code>Signature</code> (generics survive erasure here), <code>BootstrapMethods</code> (§4.7.23, for invokedynamic/condy), <code>InnerClasses</code>, <code>NestHost</code>/<code>NestMembers</code> (§4.7.28–29, private access between nestmates since JDK 11), <code>Record</code>, <code>PermittedSubclasses</code> (§4.7.31), <code>SourceFile</code>, <code>RuntimeVisibleAnnotations</code>, <code>MethodParameters</code>, <code>Module</code>…</div></div>
+<div class="fig"><h4>Hover the bytes</h4><div class="hex" id="hex"></div><div class="cap" id="hmsg">The first 24 bytes of a real class file. Hover a field.</div></div>
 
-<h2>Course map</h2>
-<div class="map" id="map"></div>
+<h2>Bytecode: a stack machine with one-byte opcodes</h2>
+<div class="crux"><b>§2.11:</b> an instruction is a one-byte opcode followed by zero or more operands (big-endian when multi-byte). The stream is byte-aligned except <code>tableswitch</code>/<code>lookupswitch</code>, padded to 4 bytes. The interpreter loop is literally "fetch opcode at pc; fetch operands; execute; repeat". One byte limits the set to 256 opcodes — HotSpot's <code>bytecodes.hpp</code> numbers 202 of them (<code>nop</code> 0x00 … <code>jsr_w</code> 0xc9, plus <code>breakpoint</code> 0xca) and reuses the rest for internal <em>fast</em> variants it rewrites at run time. The set is intentionally <b>not orthogonal</b>: type letters <code>i l f d a</code> (and <code>b s c</code> only for array access and pushes); <code>boolean</code>, <code>byte</code>, <code>char</code>, <code>short</code> are loaded sign/zero-extended and computed as <code>int</code>. Computational-type categories: 1 (int, float, reference, returnAddress) vs 2 (long, double — two operand-stack units and two local slots).</div>
+<p>Each frame has a <b>local variable array</b> (parameters first; slot 0 is <code>this</code> for instance methods) and an <b>operand stack</b>, both sized at compile time in the <code>Code</code> attribute. Families: loads/stores (<code>iload_2</code>, <code>astore</code>, <code>ldc</code>, <code>bipush</code>, <code>iconst_1</code>), arithmetic (<code>iadd</code>, <code>ldiv</code> — the only integer ops that throw are div/rem by zero; floats never throw), conversions (<code>i2l</code> widening, <code>d2i</code> narrowing with saturation), object/array (<code>new</code>, <code>newarray</code>, <code>getfield</code>, <code>putstatic</code>, <code>arraylength</code>, <code>checkcast</code>, <code>instanceof</code>), stack management (<code>dup</code>, <code>pop2</code>, <code>swap</code>), control (<code>if_icmpge</code>, <code>goto</code>, <code>tableswitch</code> for dense cases, <code>lookupswitch</code> for sparse), invocation (<code>invokevirtual</code>, <code>invokeinterface</code>, <code>invokespecial</code>, <code>invokestatic</code>, <code>invokedynamic</code> — lesson 10), returns (<code>ireturn</code>… <code>return</code>), <code>athrow</code>, <code>monitorenter</code>/<code>monitorexit</code>. Comparisons of long/float/double first produce an int via <code>lcmp</code>/<code>fcmpl</code>/<code>dcmpg</code> (the <em>l</em>/<em>g</em> variants decide what NaN yields), then an int branch.</p>
+<div class="fig"><h4>Step through <code>static int sum(int[] a)</code></h4><div class="controls"><button class="primary" id="st">step</button><button id="rs">reset</button></div><div class="vm"><div id="vins"><h4>bytecode (javap -c)</h4></div><div><h4>locals</h4><div id="vloc"></div></div><div><h4>operand stack</h4><div class="stk" id="vstk"></div></div></div><div class="cap" id="vmsg"></div></div>
+<pre><code>// javac output for: static int sum(int[] a) { int s = 0; for (int i = 0; i &lt; a.length; i++) s += a[i]; return s; }
+ 0: iconst_0        // push 0
+ 1: istore_1        // s = 0          (local 1)
+ 2: iconst_0
+ 3: istore_2        // i = 0          (local 2)
+ 4: iload_2
+ 5: aload_0
+ 6: arraylength
+ 7: if_icmpge 20    // if i &gt;= a.length goto 20
+10: iload_1
+11: aload_0
+12: iload_2
+13: iaload          // a[i]  (NullPointerException / ArrayIndexOutOfBoundsException here)
+14: iadd
+15: istore_1        // s = s + a[i]
+16: iinc 2, 1       // i++  (operates directly on the local, no stack traffic)
+19: goto 4
+20: iload_1
+21: ireturn</code></pre>
 
-<h2>How to use this course</h2>
-<div class="how">
-<div class="fig"><h4>1. One lesson per sitting</h4><p>Each takes 25–45 minutes: read, play with the simulator until you can predict its output, flip the cards, then do the quiz <em>from memory</em>. Check off the objectives at the top only when you could explain them to someone else.</p></div>
-<div class="fig"><h4>2. Then read the chapter</h4><p>Every lesson links its primary source — the free chapter PDFs at <a href="https://pages.cs.wisc.edu/~remzi/OSTEP/">ostep.org</a>. The lesson gives you the map; the chapter has the jokes, the asides, and the homework simulators (<code>ostep-homework</code>) which are the best practice there is.</p></div>
-<div class="fig"><h4>3. Space it out</h4><p>Long-term retention comes from re-testing later, not from feeling fluent now. Redo a lesson's quiz two days later and again after a week; the <a href="reference/cheatsheets.html">cheat sheets</a> are for the fast pass, the <a href="reference/glossary.html">glossary</a> for vocabulary. Ask me in the chat for mixed quizzes across lessons.</p></div></div>
+<h2>Exceptions, verification, and what javac hides</h2>
+<p>Exception handling is a <b>table</b> per <code>Code</code> attribute: (start_pc, end_pc, handler_pc, catch_type); when an exception is thrown, the JVM scans the current method's table <em>in order</em> for a range containing the faulting pc whose type matches, else pops the frame and rethrows in the caller (§2.10). <code>finally</code> blocks are duplicated by javac into each path plus a catch-all handler — there is no "finally" bytecode. Since Java 7 (<code>jsr</code>/<code>ret</code> are no longer used by javac), <b>verification</b> (§4.10) is by type-checking against the <code>StackMapTable</code>: the compiler records the types of locals and stack at every branch target, so the verifier can check each basic block in one pass without inferring types by fixpoint. The verifier guarantees stack discipline, type-safe locals, that <code>&lt;init&gt;</code> is called exactly once on a new object, and that <code>protected</code> access rules hold. Other javac artifacts: <code>&lt;init&gt;</code> constructors and one <code>&lt;clinit&gt;</code> per class (§2.9), synthetic bridge methods for generics (lesson 4), <code>lambda$main$0</code> private methods plus <code>invokedynamic</code> for lambdas, string concatenation via <code>invokedynamic</code> to <code>StringConcatFactory</code>, switch on strings via <code>hashCode</code> + <code>lookupswitch</code>, pattern switches via <code>invokedynamic</code> to <code>SwitchBootstraps.typeSwitch</code>, and enum switches via a synthetic <code>$SwitchMap$</code> array.</p>
 
-<h2>What the book covers that this course does too</h2>
-<p>Chapters 1–2 (dialogue, introduction) → lesson 1. Chapters 3, 11, 12, 24, 25, 34, 35, 46, 47, 51, 52 are the book's short dialogues that open and close each part; their content is folded into the neighbouring lessons. The lab appendices (tutorial, systems and xv6 projects) and the deprecated monitors appendix are referenced in RESOURCES.md rather than taught.</p>
-<h2>Sister courses</h2><div class="how"><div class="fig"><h4><a href="python/index.html">Python 3.13</a></h4><p>The Language Reference, CPython internals (specializing interpreter, JIT, GC, GIL and free-threading), and pandas vs Polars — 20 interactive lessons with Python running in the browser.</p></div><div class="fig"><h4><a href="java/index.html">Java 21</a></h4><p>The JLS and JVMS, HotSpot (class loading, bytecode, tiered JIT, Generational ZGC), and virtual threads from JEP 444 down to VirtualThread.java — 17 interactive lessons with simulators.</p></div></div>
-<p class="tip">This workspace follows the <code>teach</code> skill layout: <code>MISSION.md</code> (why you're learning this), <code>RESOURCES.md</code> (sources), <code>NOTES.md</code>, <code>learning-records/</code>, <code>lessons/</code>, <code>reference/</code>, <code>assets/</code>. Tell me in the chat how a lesson landed and I'll adapt the next ones.</p>
+<h2>Flash cards</h2><div id="cards"></div>
+<h2>Retrieval practice</h2><div id="quiz"></div>
+<p class="tip">Ask me in the chat to annotate a <code>javap -v</code> dump of your own class, or to hand-assemble a method with a StackMapTable.</p>
 </div>
 <script>
-/* OSTEP course — shared components. Every page loads this file (inlined by build.py). */
+/* Java 21 course — shared components (from the OSTEP course). Every page loads this file (inlined by build.py). */
 window.OS = (function () {
   const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
   /* ---------- persistent storage (localStorage on a real site; in-memory fallback in sandboxes) ---------- */
   const mem = {};
   const store = {
-    get(k) { try { const v = localStorage.getItem('ostep:' + k); return v === null ? (mem[k] ?? null) : JSON.parse(v); } catch (e) { return mem[k] ?? null; } },
-    set(k, v) { mem[k] = v; try { localStorage.setItem('ostep:' + k, JSON.stringify(v)); } catch (e) {} },
-    del(k) { delete mem[k]; try { localStorage.removeItem('ostep:' + k); } catch (e) {} },
-    keys(prefix) { const out = new Set(Object.keys(mem).filter(k => k.startsWith(prefix))); try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith('ostep:' + prefix)) out.add(k.slice(6)); } } catch (e) {} return [...out]; },
-    available() { try { localStorage.setItem('ostep:test', '1'); localStorage.removeItem('ostep:test'); return true; } catch (e) { return false; } }
+    get(k) { try { const v = localStorage.getItem('java21:' + k); return v === null ? (mem[k] ?? null) : JSON.parse(v); } catch (e) { return mem[k] ?? null; } },
+    set(k, v) { mem[k] = v; try { localStorage.setItem('java21:' + k, JSON.stringify(v)); } catch (e) {} },
+    del(k) { delete mem[k]; try { localStorage.removeItem('java21:' + k); } catch (e) {} },
+    keys(prefix) { const out = new Set(Object.keys(mem).filter(k => k.startsWith(prefix))); try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith('java21:' + prefix)) out.add(k.slice(6)); } } catch (e) {} return [...out]; },
+    available() { try { localStorage.setItem('java21:test', '1'); localStorage.removeItem('java21:test'); return true; } catch (e) { return false; } }
   };
 
   /* ---------- course structure ---------- */
   const PIECES = [
-    ['intro', 'Introduction', [['0001-three-easy-pieces', 'Three easy pieces', 'ch 1–2']]],
-    ['virt', 'Virtualization', [
-      ['0002-processes', 'Processes & the process API', 'ch 4–5'],
-      ['0003-limited-direct-execution', 'Limited direct execution', 'ch 6'],
-      ['0004-scheduling', 'Scheduling', 'ch 7–10'],
-      ['0005-address-spaces', 'Address spaces & segments', 'ch 13–16'],
-      ['0006-paging-and-tlbs', 'Paging & TLBs', 'ch 17–20'],
-      ['0007-swapping', 'Swapping & policies', 'ch 21–23']]],
-    ['conc', 'Concurrency', [
-      ['0008-threads-and-locks', 'Threads & locks', 'ch 26–28'],
-      ['0009-cvs-and-semaphores', 'CVs & semaphores', 'ch 29–31'],
-      ['0010-bugs-and-events', 'Bugs & events', 'ch 32–33']]],
-    ['pers', 'Persistence', [
-      ['0011-devices-disks-raid', 'Devices, disks, RAID', 'ch 36–38'],
-      ['0012-files-and-vsfs', 'Files & a simple FS', 'ch 39–40'],
-      ['0013-ffs-journaling-lfs', 'FFS, journaling, LFS', 'ch 41–43'],
-      ['0014-ssd-and-integrity', 'SSDs & integrity', 'ch 44–45'],
-      ['0015-distributed-nfs-afs', 'Distributed FS', 'ch 48–50']]],
-    ['sec', 'Security', [['0016-security-and-vmms', 'Security & VMMs', 'ch 53–57, App B']]]
+    ['lang', 'The language, as specified (JLS 21)', [
+      ['0001-types-values-variables', 'Types, values, variables', 'JLS ch 4, 5'],
+      ['0002-classes-objects-initialization', 'Classes, objects, initialization order', 'JLS ch 8, 12'],
+      ['0003-records-sealed-interfaces', 'Records, sealed types, interfaces', 'JLS §8.10, §8.1.1.2, ch 9'],
+      ['0004-generics-and-erasure', 'Generics, wildcards, erasure', 'JLS §4.5–4.10, §8.4.8.3'],
+      ['0005-expressions-exceptions-switch', 'Expressions, exceptions, switch & patterns', 'JLS ch 11, 14, 15; JEPs 440/441'],
+      ['0006-lambdas-streams', 'Lambdas, method references, streams', 'JLS §15.27, §15.13, java.util.stream'],
+      ['0007-java-memory-model', 'The Java memory model', 'JLS ch 17']]],
+    ['jvm', 'The JVM (JVMS 21 + HotSpot)', [
+      ['0008-class-files-and-bytecode', 'Class files and bytecode', 'JVMS ch 4, 6'],
+      ['0009-loading-linking-initialization', 'Loading, linking, initialization, class loaders', 'JVMS ch 5'],
+      ['0010-execution-frames-invokedynamic', 'Execution: frames, invoke*, invokedynamic', 'JVMS ch 2, 5.4.3, 6'],
+      ['0011-hotspot-jit', 'HotSpot: interpreter, C1/C2, deoptimization', 'compilationPolicy.cpp, c2_globals.hpp'],
+      ['0012-heap-gc-generational-zgc', 'Objects, heap, GC, Generational ZGC', 'markWord.hpp, gcConfig.cpp, JEP 439']]],
+    ['loom', 'Java 21: virtual threads and new features', [
+      ['0013-virtual-threads-model', 'Virtual threads: the model (JEP 444)', 'JEP 444'],
+      ['0014-virtual-threads-internals', 'Virtual threads: continuations, carriers, scheduler', 'VirtualThread.java, Continuation.java, freeze/thaw'],
+      ['0015-structured-concurrency-scoped-values', 'Structured concurrency & scoped values', 'StructuredTaskScope, ScopedValue (preview)'],
+      ['0016-concurrency-toolkit', 'The concurrency toolkit: monitors, locks, executors', 'JLS §17.1–17.3, java.util.concurrent'],
+      ['0017-java-21-features', 'What Java 21 adds', 'JEPs 431, 440, 441, 442, 443, 445, 446, 453']]]
   ];
   const LESSONS = PIECES.flatMap(p => p[2].map(l => [l[0], l[1], p[0], l[2]]));
   const title = id => (LESSONS.find(l => l[0] === id) || [])[1] || id;
@@ -257,7 +283,7 @@ window.OS = (function () {
     const isLesson = i >= 0;
     const top = document.createElement('header'); top.className = 'topbar';
     top.innerHTML = `<button class="menu" aria-label="Open directory" aria-expanded="false">☰<span>Directory</span></button>
-      <a class="brand" href="${root}index.html"><span class="dot"></span>OSTEP course</a>
+      <a class="brand" href="${root}index.html"><span class="dot"></span>Java 21 course</a>
       <nav class="links"><a href="${root}reference/glossary.html">Glossary</a><a href="${root}reference/cheatsheets.html">Cheat sheets</a><a href="${root}notes.html">My notes</a></nav>
       ${isLesson ? `<span class="where">${i+1} / ${LESSONS.length}</span>` : ''}`;
     document.body.prepend(top);
@@ -341,6 +367,17 @@ window.OS = (function () {
     });
   }
 
+
+  /* ---------- Java code blocks: annotated, copyable, with a jshell hint (no JVM in the browser) ---------- */
+  function py(el, code, opts) {
+    el = typeof el === 'string' ? document.getElementById(el) : el; opts = opts || {};
+    el.classList.add('pyrun');
+    const src = code.trim();
+    const preview = /--enable-preview|StructuredTaskScope|ScopedValue|STR\./.test(src);
+    el.innerHTML = `<div class="pyhead"><span>Java 21${preview ? ' · needs --enable-preview' : ''}${opts.note ? ' · ' + esc(opts.note) : ''}</span><span class="pystatus">paste into jshell or a scratch file</span><button class="primary copy">Copy</button></div><pre class="pyout" style="display:block;white-space:pre-wrap;margin:0"><code>${esc(src)}</code></pre>`;
+    el.querySelector('.copy').onclick = () => { navigator.clipboard && navigator.clipboard.writeText(src).then(() => { el.querySelector('.pystatus').textContent = 'copied'; }).catch(() => {}); };
+  }
+
   /* ---------- flip cards ---------- */
   function cards(el, list) {
     el = typeof el === 'string' ? document.getElementById(el) : el;
@@ -385,17 +422,27 @@ window.OS = (function () {
     el.querySelectorAll('input').forEach(c => c.onchange = () => { const s = [...el.querySelectorAll('input:checked')].map(x => +x.dataset.i); if (pageId) store.set('obj:' + pageId, s); });
   }
 
-  return { chrome, quiz, cards, stepper, gantt, objectives, esc, store, LESSONS, PIECES, title };
+  return { chrome, quiz, cards, stepper, gantt, objectives, py, esc, store, LESSONS, PIECES, title };
 })();
 
 </script>
 <script>
-OS.chrome('index','');
-const P=[['intro','Introduction','What an OS is: the three pieces, design goals, history.',['0001-three-easy-pieces','Three easy pieces','ch 1–2']],
-['virt','Virtualization','The CPU and memory made private and plentiful.',['0002-processes','Processes & the process API','ch 4–5'],['0003-limited-direct-execution','Limited direct execution','ch 6'],['0004-scheduling','Scheduling: FIFO to CFS and multi-CPU','ch 7–10'],['0005-address-spaces','Address spaces, base/bounds, segments','ch 13–16'],['0006-paging-and-tlbs','Free space, paging, TLBs, small tables','ch 17–20'],['0007-swapping','Swapping, replacement, VAX/VMS & Linux','ch 21–23']],
-['conc','Concurrency','Threads and the primitives that make them safe.',['0008-threads-and-locks','Threads, thread API, locks','ch 26–28'],['0009-cvs-and-semaphores','Locked structures, CVs, semaphores','ch 29–31'],['0010-bugs-and-events','Concurrency bugs & event-based servers','ch 32–33']],
-['pers','Persistence + Security','Storage from the device up; then protecting it all.',['0011-devices-disks-raid','Devices, disks, RAID','ch 36–38'],['0012-files-and-vsfs','Files, directories, a simple file system','ch 39–40'],['0013-ffs-journaling-lfs','FFS, crash consistency, LFS','ch 41–43'],['0014-ssd-and-integrity','SSDs & data integrity','ch 44–45'],['0015-distributed-nfs-afs','Distributed systems, NFS, AFS','ch 48–50'],['0016-security-and-vmms','Security (ch 53–57) & VMMs','ch 53–57, App B']]];
-const m=document.getElementById('map');let idx=0;const S=OS.store;
-m.innerHTML=P.map(([cls,name,desc,...ls])=>`<div class="piece piece-${cls}"><h3>${name}</h3><p>${desc}</p>${ls.map(l=>{idx++;const q=S.get('quiz:'+l[0]),nt=(S.get('notes:'+l[0])||{}).text;return `<a href="lessons/${l[0]}.html" data-id="${l[0]}" class="${q&&q.score===q.total?'done':''}">${idx}. ${l[1]}<small>${l[2]}${q?` · quiz ${q.score}/${q.total}`:''}${nt?' · ✎ notes':''}</small></a>`;}).join('')}</div>`).join('');
-const done=OS.LESSONS.filter(l=>S.get('quiz:'+l[0])).length;const ph=document.createElement('p');ph.className='cap';ph.textContent=done?`${done} of 16 lesson quizzes attempted — see My notes & progress for details.`:'Quiz scores, checked objectives and notes are saved in this browser as you go.';document.getElementById('map').after(ph);
+OS.chrome('0008-class-files-and-bytecode');
+OS.objectives('obj',['Name the sections of a class file, the magic/version rules (65 = Java 21, preview minor 65535) and the main constant-pool tags.','Read field and method descriptors and the key attributes (Code, StackMapTable, ConstantValue, BootstrapMethods, NestHost, Record, PermittedSubclasses).','Explain the one-byte opcode design, type letters, computational types and categories.','Trace locals/operand stack for a small method from javap output.','Describe the exception table, StackMapTable-based verification, and the synthetic artifacts javac emits.']);
+const HEX=[['CA FE BA BE','magic: 0xCAFEBABE'],['00 00','minor_version: 0 (65535 would mark a preview class file)'],['00 41','major_version: 0x41 = 65 → Java 21'],['00 1D','constant_pool_count: 29 → entries #1..#28 (count is one more than the number of entries; long/double take two slots)'],['0A 00 02 00 03','cp #1: CONSTANT_Methodref (tag 10) → class #2, name_and_type #3  (typically java/lang/Object.<init>:()V)'],['07 00 04','cp #2: CONSTANT_Class (tag 7) → Utf8 #4'],['0C 00 05 00 06','cp #3: CONSTANT_NameAndType (tag 12) → name #5, descriptor #6'],['01 00 10 6A 61 76 61 2F 6C 61 6E 67 2F 4F 62 6A 65 63 74','cp #4: CONSTANT_Utf8 (tag 1), length 16: "java/lang/Object"']];
+document.getElementById('hex').innerHTML=HEX.map((h,i)=>`<span data-i="${i}">${h[0]}</span> `).join('');document.querySelectorAll('.hex span').forEach(s=>{s.onmouseenter=s.onclick=()=>{document.querySelectorAll('.hex span').forEach(x=>x.classList.remove('on'));s.classList.add('on');document.getElementById('hmsg').textContent=HEX[+s.dataset.i][1];};});
+const A=[3,4,5];const INS=[['iconst_0',s=>s.stack.push(0)],['istore_1',s=>s.loc[1]=s.stack.pop()],['iconst_0',s=>s.stack.push(0)],['istore_2',s=>s.loc[2]=s.stack.pop()],['iload_2',s=>s.stack.push(s.loc[2])],['aload_0',s=>s.stack.push('a→[3,4,5]')],['arraylength',s=>{s.stack.pop();s.stack.push(A.length);}],['if_icmpge 20',s=>{const b=s.stack.pop(),a=s.stack.pop();if(a>=b)s.pc=15;}],['iload_1',s=>s.stack.push(s.loc[1])],['aload_0',s=>s.stack.push('a→[3,4,5]')],['iload_2',s=>s.stack.push(s.loc[2])],['iaload',s=>{const i=s.stack.pop();s.stack.pop();s.stack.push(A[i]);}],['iadd',s=>{const b=s.stack.pop(),a=s.stack.pop();s.stack.push(a+b);}],['istore_1',s=>s.loc[1]=s.stack.pop()],['iinc 2, 1',s=>s.loc[2]++],['goto 4',s=>{s.pc=3;}],['iload_1',s=>s.stack.push(s.loc[1])],['ireturn',s=>{s.ret=s.stack.pop();s.done=true;}]];
+let st;function reset(){st={pc:0,loc:{0:'a→[3,4,5]',1:'—',2:'—'},stack:[],done:false,ret:null,n:0};draw('');}
+function draw(m){document.getElementById('vins').innerHTML='<h4>bytecode (javap -c)</h4>'+INS.map((x,i)=>`<div class="ins ${i===st.pc&&!st.done?'cur':''}">${x[0]}</div>`).join('');document.getElementById('vloc').innerHTML=`0: ${st.loc[0]}<br>1 (s): ${st.loc[1]}<br>2 (i): ${st.loc[2]}`;document.getElementById('vstk').innerHTML=st.stack.map(v=>`<span>${v}</span>`).join('')||'<span style="opacity:.4">empty</span>';document.getElementById('vmsg').textContent=st.done?`ireturn → ${st.ret} (frame popped; value pushed on the caller's operand stack) after ${st.n} instructions`:m||`next: ${INS[st.pc][0]}`;}
+document.getElementById('st').onclick=()=>{if(st.done)return;const ins=INS[st.pc];const before=st.pc;ins[1](st);st.n++;if(st.pc===before)st.pc++;draw();};document.getElementById('rs').onclick=reset;reset();
+OS.cards('cards',[['0xCAFEBABE / major 65','Magic number and the Java 21 class-file version; preview files use minor 65535 and need --enable-preview.'],['Constant pool','1-indexed tagged table of Utf8, numeric, Class, String, Fieldref/Methodref, NameAndType, MethodHandle/Type, Dynamic/InvokeDynamic entries; symbolic refs resolved lazily.'],['Descriptor','Field: I J Z B C S F D, Lpkg/Name;, [ per dimension. Method: (params)return, e.g. (I[Ljava/lang/String;)V.'],['Code attribute','max_stack, max_locals, bytecode, exception table (start, end, handler, type), sub-attributes StackMapTable/LineNumberTable/LocalVariableTable.'],['Computational types','boolean/byte/char/short computed as int; category 1 (int, float, reference) vs 2 (long, double: two slots).'],['Non-orthogonal ISA','One-byte opcode ⇒ type letters only for i/l/f/d/a (b/s/c for arrays and pushes); conversions bridge the gaps.'],['Exception table','Handlers searched in table order for the faulting pc; finally is duplicated by javac plus a catch-all entry; no finally opcode.'],['StackMapTable verification','Type states recorded at branch targets so the verifier type-checks in one pass; replaced type inference (Java 7+).'],['Synthetic artifacts','<init>/<clinit>, bridge methods, lambda$… + invokedynamic, StringConcatFactory, SwitchBootstraps, $SwitchMap$ arrays.']]);
+OS.quiz('quiz',[
+{q:'A class file starts with CA FE BA BE 00 00 00 41. Which Java version compiled it?',o:['Java 17','Java 21','Java 8','Java 11'],a:1,why:'Major version 0x41 = 65 corresponds to Java 21 (JAVA_21_VERSION in classFileParser.cpp).'},
+{q:'How does a Java 21 class file mark that it uses preview features?',o:['a Preview attribute','minor_version = 65535 with the current major','major_version + 1','an access flag ACC_PREVIEW'],a:1,why:'The version rule in classFileParser.cpp: major = current, minor = 65535, and the JVM must run with --enable-preview.'},
+{q:'The method descriptor (I[Ljava/lang/String;)V denotes:',o:['(int, String) returning void','(int, String[]) returning void','(Integer, String) returning Object','(int[], String) returning void'],a:1,why:'[ prefixes an array dimension; L…; is a class type; V is void.'},
+{q:'Why are there no dedicated bytecodes for boolean arithmetic?',o:['booleans are stored as strings','boolean/byte/char/short are computed as int; only array ops have b/c/s forms','booleans are always boxed','the verifier forbids them'],a:1,why:'JVMS §2.11.1: the one-byte opcode budget forces a non-orthogonal set; small types are widened to int.'},
+{q:'A long value occupies how many operand-stack units and local-variable slots?',o:['1 and 1','2 and 2','1 and 2','2 and 1'],a:1,why:'Category-2 computational types (long, double) take two units on the operand stack and two consecutive local slots.'},
+{q:'How is a finally block represented in bytecode?',o:['a finally opcode','the block is duplicated on each exit path plus a catch-all exception-table entry','via jsr/ret in modern javac','it is not represented'],a:1,why:'Modern javac inlines finally code and adds an any-type handler; jsr/ret are no longer generated.'},
+{q:'What does the StackMapTable attribute enable?',o:['faster garbage collection','single-pass type-checking verification at branch targets','lazy resolution','JIT profiling'],a:1,why:'§4.10: the compiler records local/stack types at each target so the verifier needn\'t infer them by iteration.'},
+{q:'iinc 2, 1 in the sum() example:',o:['pushes local 2 then adds 1 on the stack','increments local 2 in place without touching the operand stack','increments the loop bound','is a jump'],a:1,why:'iinc operates directly on a local variable; it is why i++ compiles to one instruction.'}]);
 </script></body></html>

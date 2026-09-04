@@ -1,0 +1,476 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>16 · The concurrency toolkit — Java 21 course</title><style>
+/* OSTEP course — shared stylesheet. Three pieces, three hues. */
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+:root{
+  --ink:#151b2f; --ink-2:#1e2540; --ink-3:#28304f; --line:#3a4368;
+  --paper:#eef0f7; --muted:#a9b1cf; --faint:#6e779a;
+  --virt:#e8b84a; --conc:#5bc8f5; --pers:#6bcb77; --sec:#f47fa0; --intro:#c9a8ff; --spec:#ffd166; --internals:#5bc8f5; --data:#6bcb77;
+  --ok:#6bcb77; --bad:#ff6b6b;
+  --accent:var(--virt);
+  --radius:6px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--ink);color:var(--paper);font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:17px;line-height:1.6}
+a{color:var(--accent)}
+code,pre,kbd,.mono{font-family:'IBM Plex Mono',ui-monospace,monospace}
+code{background:var(--ink-3);padding:1px 5px;border-radius:4px;font-size:.9em}
+pre{background:#0f1424;border:1px solid var(--line);border-left:4px solid var(--accent);padding:14px 16px;overflow:auto;border-radius:var(--radius);font-size:.86em;line-height:1.5}
+pre code{background:none;padding:0;font-size:inherit}
+h1,h2,h3,h4{font-family:'Fraunces',Georgia,serif;font-weight:700;line-height:1.15;margin:0 0 .4em}
+h1{font-size:2.6rem;letter-spacing:-.01em}
+h2{font-size:1.9rem;margin-top:2.6rem;padding-top:1.2rem;border-top:1px solid var(--line)}
+h3{font-size:1.3rem;margin-top:1.8rem;color:var(--accent)}
+h4{font-size:1.05rem;margin-top:1.2rem}
+p,li{max-width:72ch}
+.wrap{max-width:1100px;margin:0 auto;padding:0 28px 96px}
+.hero{padding:44px 0 16px}
+.hero .chapters{color:var(--muted);font-size:.95rem;margin-bottom:6px}
+.lede{font-size:1.2rem;color:var(--muted);max-width:66ch}
+.piece-lang{--accent:var(--spec)} .piece-jvm{--accent:var(--internals)} .piece-loom{--accent:var(--data)} .piece-spec{--accent:var(--spec)} .piece-internals{--accent:var(--internals)} .piece-data{--accent:var(--data)} .piece-virt{--accent:var(--virt)} .piece-conc{--accent:var(--conc)} .piece-pers{--accent:var(--pers)} .piece-sec{--accent:var(--sec)} .piece-intro{--accent:var(--intro)}
+.fig{background:var(--ink-2);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;margin:22px 0}
+.fig figcaption,.cap{color:var(--muted);font-size:.9rem;margin-top:10px}
+.fig svg{max-width:100%;height:auto;display:block}
+svg text{font-family:'IBM Plex Sans',sans-serif}
+svg .mono{font-family:'IBM Plex Mono',monospace}
+.crux{border:1px solid var(--accent);border-radius:var(--radius);padding:14px 18px;margin:22px 0;background:color-mix(in srgb,var(--accent) 8%,transparent)}
+.crux b{color:var(--accent)}
+.tip{border-left:4px solid var(--muted);padding:6px 16px;margin:18px 0;color:var(--muted)}
+.tip b{color:var(--paper)}
+table{border-collapse:collapse;width:100%;margin:16px 0;font-size:.95rem}
+th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{color:var(--muted);font-weight:500}
+td.mono,th.mono{font-family:'IBM Plex Mono',monospace}
+button,.btn{font:inherit;font-size:.9rem;background:var(--ink-3);color:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:7px 13px;cursor:pointer}
+button:hover{border-color:var(--accent)}
+button.primary{background:var(--accent);color:#111;border-color:var(--accent);font-weight:600}
+button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+input[type=range]{accent-color:var(--accent)}
+input[type=text],input[type=number],select{font:inherit;background:#0f1424;color:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:6px 10px}
+.controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:10px 0}
+.controls label{font-size:.9rem;color:var(--muted)}
+details{border:1px solid var(--line);border-radius:var(--radius);margin:10px 0;background:var(--ink-2)}
+summary{cursor:pointer;padding:12px 16px;font-weight:600;list-style:none}
+summary::before{content:"+";display:inline-block;width:1.2em;color:var(--accent)}
+details[open] summary::before{content:"–"}
+details>div{padding:0 16px 14px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;margin:16px 0}
+.card{perspective:900px;min-height:140px;cursor:pointer}
+.card .inner{position:relative;width:100%;height:100%;min-height:140px;transition:transform .45s;transform-style:preserve-3d}
+.card.flipped .inner{transform:rotateY(180deg)}
+.card .face{position:absolute;inset:0;padding:14px;border-radius:var(--radius);border:1px solid var(--line);background:var(--ink-2);backface-visibility:hidden;display:flex;align-items:center;justify-content:center;text-align:center;font-size:.95rem}
+.card .back{transform:rotateY(180deg);background:var(--ink-3);border-color:var(--accent);font-size:.88rem;line-height:1.45}
+.card .front{font-weight:600}
+@media (prefers-reduced-motion:reduce){.card .inner{transition:none}}
+.quiz .q{border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin:12px 0;background:var(--ink-2)}
+.quiz .q p{margin:0 0 10px;font-weight:600}
+.quiz .opts{display:grid;gap:8px}
+.quiz .opt{text-align:left;background:var(--ink);width:100%}
+.quiz .opt.right{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 15%,var(--ink))}
+.quiz .opt.wrong{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 15%,var(--ink))}
+.quiz .why{margin-top:10px;color:var(--muted);font-size:.93rem;display:none}
+.quiz .q.done .why{display:block}
+.quiz .score{margin-top:12px;font-weight:600}
+.stepper .stage{min-height:60px;background:#0f1424;border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin:10px 0}
+.stepper .idx{color:var(--muted);font-size:.85rem}
+.gantt{display:grid;gap:6px;margin:10px 0}
+.gantt .row{display:grid;grid-template-columns:60px 1fr;align-items:center;gap:8px;font-size:.85rem}
+.gantt .track{position:relative;height:26px;background:#0f1424;border-radius:4px;overflow:hidden}
+.gantt .seg{position:absolute;top:0;bottom:0;display:flex;align-items:center;justify-content:center;font-size:.75rem;color:#111;font-weight:600;border-right:1px solid rgba(0,0,0,.3)}
+.cells{display:grid;gap:4px;margin:10px 0}
+.cell{background:#0f1424;border:1px solid var(--line);border-radius:4px;padding:6px;text-align:center;font-family:'IBM Plex Mono',monospace;font-size:.8rem;min-height:36px;display:flex;align-items:center;justify-content:center}
+.cell.hit{background:color-mix(in srgb,var(--ok) 35%,#0f1424);border-color:var(--ok)}
+.cell.miss{background:color-mix(in srgb,var(--bad) 35%,#0f1424);border-color:var(--bad)}
+.cell.active{outline:2px solid var(--accent)}
+.cell.free{opacity:.45}
+.hl{background:color-mix(in srgb,var(--accent) 30%,transparent);padding:1px 5px;border-radius:3px}
+.k{color:var(--accent);font-weight:600}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media (max-width:760px){.two{grid-template-columns:1fr}.topbar{gap:10px}h1{font-size:2rem}}
+.nav-bottom{display:flex;justify-content:space-between;gap:16px;margin-top:56px;padding-top:20px;border-top:1px solid var(--line)}
+.nav-bottom a{text-decoration:none;padding:12px 16px;border:1px solid var(--line);border-radius:var(--radius);color:var(--paper)}
+.source{background:var(--ink-2);border-radius:var(--radius);padding:14px 18px;margin:22px 0;font-size:.95rem}
+.source b{color:var(--accent)}
+.objectives li{list-style:none;margin:6px 0}
+.objectives input{margin-right:8px;accent-color:var(--accent)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.85rem;color:var(--muted)}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:5px;vertical-align:-2px}
+.tag{display:inline-block;font-size:.75rem;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted);margin-right:6px}
+.log{font-family:'IBM Plex Mono',monospace;font-size:.82rem;background:#0f1424;border:1px solid var(--line);border-radius:var(--radius);padding:10px 12px;max-height:220px;overflow:auto;white-space:pre-wrap}
+@media print{body{background:#fff;color:#111}.topbar,.nav-bottom,button{display:none}.fig,.crux,details,.source{border-color:#bbb;background:#fff}pre{background:#f5f5f5;color:#111}}
+
+/* ---------- site chrome: sticky header + directory drawer ---------- */
+.topbar{position:sticky;top:0;z-index:30;display:flex;gap:14px;align-items:center;padding:10px 16px;background:color-mix(in srgb,var(--ink) 92%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);font-size:.9rem}
+.topbar .menu{display:flex;align-items:center;gap:8px;padding:8px 12px;font-size:1rem}
+.topbar .menu span{font-size:.85rem}
+.topbar .brand{color:var(--paper);text-decoration:none;font-weight:600;display:flex;align-items:center;gap:8px}
+.topbar .dot{width:10px;height:10px;border-radius:50%;background:var(--accent);display:inline-block}
+.topbar .links{display:flex;gap:16px;margin-left:8px}
+.topbar .links a{color:var(--muted);text-decoration:none}
+.topbar .links a:hover{color:var(--paper)}
+.topbar .where{margin-left:auto;color:var(--faint);font-variant-numeric:tabular-nums}
+.drawer{position:fixed;top:0;left:0;bottom:0;width:min(340px,88vw);background:var(--ink-2);border-right:1px solid var(--line);z-index:50;transform:translateX(-102%);transition:transform .25s;overflow-y:auto;padding:0 0 24px;box-shadow:0 0 40px rgba(0,0,0,.5)}
+.drawer-open .drawer{transform:none}
+.scrim{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:40;opacity:0;pointer-events:none;transition:opacity .2s}
+.drawer-open .scrim{opacity:1;pointer-events:auto}
+.drawer .dhead{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--ink-2)}
+.drawer .close,.notes-sheet .close{font-size:1.3rem;line-height:1;padding:4px 10px}
+.drawer .dgroup{padding:8px 0 4px}
+.drawer .dname{padding:8px 16px 4px;color:var(--accent);font-family:'Fraunces',serif;font-weight:700}
+.drawer .ditem{display:flex;gap:10px;align-items:center;padding:9px 16px;color:var(--paper);text-decoration:none;border-left:3px solid transparent;font-size:.92rem}
+.drawer .ditem:hover{background:var(--ink-3)}
+.drawer .ditem.cur{border-left-color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
+.drawer .ditem .n{color:var(--faint);min-width:1.4em;font-variant-numeric:tabular-nums}
+.drawer .ditem .t{flex:1;line-height:1.25}
+.drawer .ditem .t small{display:block;color:var(--faint);font-size:.75rem}
+.drawer .badges{display:flex;gap:6px;align-items:center}
+.drawer .badges i{font-style:normal;color:var(--accent)}
+.drawer .badges em{font-style:normal;font-size:.75rem;padding:1px 6px;border-radius:999px;background:var(--ink-3);color:var(--muted);font-variant-numeric:tabular-nums}
+.drawer .dfoot{padding:16px;color:var(--faint);font-size:.8rem}
+/* ---------- notes: floating button + bottom sheet ---------- */
+.notes-fab{position:fixed;right:16px;bottom:16px;z-index:35;display:flex;gap:8px;align-items:center;padding:12px 16px;border-radius:999px;background:var(--accent);color:#111;border:none;font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,.4)}
+.notes-sheet{position:fixed;left:0;right:0;bottom:0;z-index:45;background:var(--ink-2);border-top:1px solid var(--line);border-radius:14px 14px 0 0;transform:translateY(105%);transition:transform .25s;box-shadow:0 -10px 40px rgba(0,0,0,.5);max-width:900px;margin:0 auto;padding-bottom:env(safe-area-inset-bottom)}
+.notes-open .notes-sheet{transform:none}
+.notes-open .notes-fab{display:none}
+.notes-sheet .nhead{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line)}
+.notes-sheet .nhead b{flex:1;font-size:.95rem}
+.notes-sheet .nstatus{color:var(--faint);font-size:.8rem}
+.notes-sheet textarea{display:block;width:100%;min-height:36vh;max-height:60vh;resize:vertical;border:none;background:#0f1424;color:var(--paper);font:inherit;font-size:1rem;line-height:1.5;padding:14px 16px;outline:none}
+.notes-sheet .nfoot{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;font-size:.85rem;color:var(--muted)}
+/* ---------- wide widgets scroll sideways instead of breaking the page ---------- */
+.tw{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:16px 0}
+.tw table{margin:0;min-width:520px}
+.fig{overflow-x:auto}
+@media (prefers-reduced-motion:reduce){.drawer,.notes-sheet,.scrim{transition:none}}
+/* ---------- phones ---------- */
+@media (max-width:760px){
+  body{font-size:16px}
+  .wrap{padding:0 16px 110px}
+  h1{font-size:1.85rem} h2{font-size:1.45rem;margin-top:2rem} h3{font-size:1.15rem}
+  .lede{font-size:1.05rem}
+  .topbar{padding:8px 12px;gap:10px}
+  .topbar .links{display:none}
+  .topbar .menu span{display:none}
+  .topbar .menu{padding:8px 11px}
+  .fig{padding:12px 12px;margin:16px -4px;border-radius:8px}
+  .crux,.source{padding:12px 14px}
+  pre{font-size:.8em;padding:12px 12px}
+  button,.btn{padding:10px 14px;font-size:.92rem}
+  .controls{gap:8px}
+  .controls label{display:flex;align-items:center;gap:6px}
+  input[type=number]{max-width:96px}
+  .cards{grid-template-columns:1fr 1fr;gap:8px}
+  .card,.card .inner{min-height:120px}
+  .card .face{font-size:.88rem;padding:10px}
+  .cells{min-width:420px}
+  .quiz .opt{padding:12px 12px;line-height:1.35}
+  .nav-bottom{flex-direction:column}
+  .nav-bottom a{text-align:center}
+  .notes-fab span{display:none}
+  .notes-fab{padding:14px;right:12px;bottom:12px}
+  .notes-sheet textarea{min-height:44vh}
+  .stepper .stage{padding:12px}
+  .gantt .row{grid-template-columns:44px 1fr;font-size:.75rem}
+  /* lesson-specific grids collapse */
+  .lde,.il,.two,.cry,.flash,.dl,.fdt,.how,.cards.wide,.vm{grid-template-columns:1fr}
+  .map{grid-template-columns:1fr}
+  .net{grid-template-columns:1fr}.net .arrow{padding:0;transform:rotate(90deg)}
+  .phil{grid-template-columns:repeat(2,1fr)}
+  .jobs{max-width:100%}
+  .trace{min-width:620px}.tl{min-width:720px}.disk{min-width:560px}
+}
+@media (max-width:420px){.cards{grid-template-columns:1fr}}
+
+/* ---------- runnable Python ---------- */
+.pyrun{border:1px solid var(--line);border-radius:var(--radius);background:#0f1424;margin:18px 0;overflow:hidden}
+.pyrun .pyhead{display:flex;gap:10px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--line);font-size:.85rem;color:var(--muted);background:var(--ink-2)}
+.pyrun .pyhead span:first-child{flex:1;font-weight:600;color:var(--paper)}
+.pyrun .pystatus{font-size:.78rem}
+.pyrun textarea{display:block;width:100%;border:none;background:#0f1424;color:var(--paper);font-family:'IBM Plex Mono',monospace;font-size:.86rem;line-height:1.5;padding:12px 14px;resize:vertical;outline:none;min-height:60px;tab-size:4}
+.pyrun .pyout{font-family:'IBM Plex Mono',monospace;font-size:.86rem;line-height:1.5;padding:12px 14px;margin:0;border:none;border-top:1px solid var(--line);border-left:none;border-radius:0;background:#0a0e1a;color:#cfe3ff;max-height:none;overflow:auto}
+
+</style>
+<style>.dec{display:grid;gap:8px}.dec div{background:#0f1424;border:1px solid var(--line);border-radius:6px;padding:10px;font-size:.88rem}.dec b{color:var(--accent)}.lk td:first-child{color:var(--accent);white-space:nowrap}.mon{display:grid;grid-template-columns:1fr 1fr;gap:12px}.q{font-family:'IBM Plex Mono',monospace;font-size:.8rem;background:#0f1424;border:1px solid var(--line);border-radius:6px;padding:10px;min-height:120px;white-space:pre-wrap}@media(max-width:700px){.mon{grid-template-columns:1fr}}</style></head>
+<body class="piece-loom"><div class="wrap">
+<header class="hero"><div class="chapters">JLS §17.1–17.3 · java.util.concurrent (JDK 21u sources: locks/AbstractQueuedSynchronizer, ReentrantLock, LockSupport, ForkJoinPool, Executors, ThreadPerTaskExecutor) · HotSpot objectMonitor.hpp</div>
+<h1>The concurrency toolkit: monitors, locks, executors — and how to choose</h1>
+<p class="lede">Java gives you two lock families (intrinsic monitors and <code>java.util.concurrent.locks</code>), one synchronizer framework underneath most of the second (AQS), a handful of executor shapes, and — since 21 — virtual threads that change which shape to pick. This closing lesson of the concurrency track lays out the pieces with their exact semantics, then gives a decision procedure that respects both the memory model (lesson 7) and pinning (lessons 13–14).</p></header>
+<div class="source"><b>Primary sources:</b> <a href="https://docs.oracle.com/javase/specs/jls/se21/html/jls-17.html">JLS §17.1–17.3</a> (monitors, wait sets, sleep/yield — fetched); JDK 21u javadoc in the sources for <code>AbstractQueuedSynchronizer</code> ("first-in-first-out wait queues… a single atomic int value to represent state"), <code>ReentrantLock</code> (fairness), <code>LockSupport</code> (permits: at most one, don't accumulate; virtual-thread aware per JEP 444), <code>ForkJoinPool</code> (work stealing, asyncMode, common pool, ManagedBlocker), <code>Executors</code>; <code>objectMonitor.hpp</code> for inflation.</div>
+<h2>What you'll be able to do</h2><ul id="obj"></ul>
+
+<h2>Intrinsic monitors</h2>
+<p><code>synchronized</code> uses the object's monitor (JLS §17.1): reentrant, released on any exit, no fairness, no timeout, no interruptible acquire. In HotSpot (lesson 12) an uncontended acquire is a CAS on the mark word; contention or <code>wait()</code> <em>inflates</em> to an <code>ObjectMonitor</code> with an entry list and a wait set. <code>wait</code>/<code>notify</code>/<code>notifyAll</code> (§17.2) implement condition waiting: call only while holding the lock, loop on the condition, prefer <code>notifyAll</code> unless every waiter is interchangeable. In JDK 21 a virtual thread blocking inside <code>synchronized</code> or in <code>Object.wait()</code> <b>pins</b> its carrier (the latter with compensation) — the main reason to prefer <code>ReentrantLock</code> around slow operations.</p>
+<div class="fig"><h4>Monitor simulator: entry set and wait set</h4><div class="controls"><button class="primary" data-m="acq">T1 enters synchronized</button><button data-m="acq2">T2 tries to enter</button><button data-m="wait">holder calls wait()</button><button data-m="notify">holder calls notify()</button><button data-m="exit">holder exits</button><button data-m="reset">reset</button></div><div class="mon"><div class="q" id="mq"></div><div class="cap" id="mm"></div></div></div>
+
+<h2>java.util.concurrent.locks</h2>
+<table class="lk"><tr><th>Class</th><th>Semantics</th><th>Use</th></tr>
+<tr><td>Lock / ReentrantLock</td><td>Explicit <code>lock()</code>/<code>unlock()</code> (always in <code>finally</code>); <code>tryLock()</code>, <code>tryLock(timeout)</code>, <code>lockInterruptibly()</code>; optional <b>fairness</b> (longest-waiting thread wins; slower; and "fairness of locks does not guarantee fairness of thread scheduling"); same memory effects as monitors (javadoc: lock ⇔ Lock action, unlock ⇔ Unlock action).</td><td>timeouts, interruptibility, multiple conditions, hand-over-hand locking, virtual-thread friendliness</td></tr>
+<tr><td>Condition</td><td><code>await()</code>/<code>signal()</code>/<code>signalAll()</code> bound to a Lock; several per lock (e.g. notFull/notEmpty); same spurious-wakeup rule → loop.</td><td>bounded buffers, state machines</td></tr>
+<tr><td>ReentrantReadWriteLock</td><td>Many readers or one writer; write→read downgrade allowed, not upgrade; risk of writer starvation in non-fair mode.</td><td>read-mostly structures with long critical sections</td></tr>
+<tr><td>StampedLock</td><td>Write / read / <b>optimistic read</b> (a stamp validated afterwards, no blocking); not reentrant; not a Lock.</td><td>very read-heavy, short reads</td></tr>
+<tr><td>Semaphore</td><td>N permits; <code>acquire</code>/<code>release</code> (no ownership: any thread may release).</td><td>throttling — JEP 444's recommended replacement for "pool of size N"</td></tr>
+<tr><td>CountDownLatch, CyclicBarrier, Phaser</td><td>one-shot countdown; reusable rendezvous; multi-phase barrier with dynamic parties.</td><td>start/finish coordination</td></tr>
+<tr><td>Atomic*, VarHandle, LongAdder</td><td>lock-free CAS operations with volatile semantics; <code>LongAdder</code> stripes counters to reduce contention.</td><td>counters, flags, lock-free structures</td></tr></table>
+<div class="crux"><b>AbstractQueuedSynchronizer.</b> The framework beneath <code>ReentrantLock</code>, <code>Semaphore</code>, <code>CountDownLatch</code>, <code>ReentrantReadWriteLock</code> and the pre-JDK-8 <code>FutureTask</code>: a single atomic <code>int state</code> (<code>getState</code>/<code>setState</code>/<code>compareAndSetState</code>) whose meaning the subclass defines via <code>tryAcquire</code>/<code>tryRelease</code> (exclusive) and <code>tryAcquireShared</code>/<code>tryReleaseShared</code>, plus a <b>FIFO wait queue</b> (a CLH-lock variant) of blocked threads parked with <code>LockSupport.park</code>. For <code>ReentrantLock</code>, state = hold count and the owner is tracked in the <code>AbstractOwnableSynchronizer</code> superclass; for <code>Semaphore</code>, state = permits; for <code>CountDownLatch</code>, state = count. <code>LockSupport</code> is the primitive: each thread has at most one <b>permit</b>; <code>park()</code> consumes it or blocks (may return spuriously), <code>unpark(t)</code> makes it available — and since JEP 444 parking a virtual thread unmounts it. Write your own lock by extending AQS; never with <code>wait/notify</code> spin loops.</div>
+
+<h2>Executors and pools</h2>
+<p><code>Executors.newFixedThreadPool(n)</code> (n platform threads, unbounded queue), <code>newCachedThreadPool()</code> (unbounded threads, 60 s idle timeout — the JEP's crash example at 10,000 tasks), <code>newSingleThreadExecutor()</code>, <code>newScheduledThreadPool(n)</code>, <code>newWorkStealingPool()</code> (a <code>ForkJoinPool</code>), and JDK 21's <code>newThreadPerTaskExecutor(factory)</code>/<code>newVirtualThreadPerTaskExecutor()</code> (a <code>ThreadPerTaskExecutor</code>: no queue, no pool, a new thread per task; <code>ExecutorService</code> is <code>AutoCloseable</code> since 19 and <code>close()</code> waits). Behind the classic ones is <code>ThreadPoolExecutor</code>: core size, maximum size, keep-alive, a work queue and a <code>RejectedExecutionHandler</code>; threads beyond core are created only when the queue is <em>full</em>, so an unbounded queue never grows the pool — the classic surprise. <code>ForkJoinPool</code> is different: <b>work-stealing</b> per-worker deques (LIFO for fork/join recursion, FIFO in <code>asyncMode</code> for event-style tasks), a <code>commonPool()</code> sized to processors − 1 that runs parallel streams and <code>CompletableFuture</code> defaults, and <code>ManagedBlocker</code> to add compensation threads when a worker blocks — the same mechanism the virtual-thread scheduler uses. <code>CompletableFuture</code> composes asynchronous stages; with virtual threads it remains useful for fan-out/fan-in, but JEP 444's point is that plain blocking code in a virtual thread is now the simpler option.</p>
+<div class="fig"><h4>Decision procedure</h4><div class="dec" id="dec"></div></div>
+<div id="py1"></div>
+
+<h2>Correctness checklist (from the memory model)</h2>
+<ul><li>Every shared mutable field is guarded by one policy — a lock, <code>volatile</code>, an atomic, or confinement — and the policy is documented (<code>@GuardedBy</code> in comments).</li><li><code>volatile</code> gives visibility and ordering, not atomicity of compound actions; <code>count++</code> needs <code>AtomicInteger</code>/<code>LongAdder</code> or a lock.</li><li>Immutable objects (final fields, no <code>this</code> escape) are free to share; prefer records.</li><li>Publish safely: through a lock, a volatile, a concurrent collection, or thread start/join; never via a plain field with a data race (except immutable objects).</li><li>Hold locks briefly; never call unknown code (listeners) while holding one; acquire multiple locks in a fixed global order.</li><li>Use <code>ConcurrentHashMap.compute*</code> and friends for atomic map updates instead of check-then-act.</li><li>Prefer higher-level constructs (executors, latches, queues) to raw threads and <code>wait/notify</code>; prefer <code>ReentrantLock</code> to <code>synchronized</code> around I/O when virtual threads are in play.</li></ul>
+
+<h2>Flash cards</h2><div id="cards"></div>
+<h2>Retrieval practice</h2><div id="quiz"></div>
+<p class="tip">Ask me in the chat to design a bounded buffer three ways (wait/notify, Condition, BlockingQueue) or to review a ThreadPoolExecutor configuration.</p>
+</div>
+<script>
+/* Java 21 course — shared components (from the OSTEP course). Every page loads this file (inlined by build.py). */
+window.OS = (function () {
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+  /* ---------- persistent storage (localStorage on a real site; in-memory fallback in sandboxes) ---------- */
+  const mem = {};
+  const store = {
+    get(k) { try { const v = localStorage.getItem('java21:' + k); return v === null ? (mem[k] ?? null) : JSON.parse(v); } catch (e) { return mem[k] ?? null; } },
+    set(k, v) { mem[k] = v; try { localStorage.setItem('java21:' + k, JSON.stringify(v)); } catch (e) {} },
+    del(k) { delete mem[k]; try { localStorage.removeItem('java21:' + k); } catch (e) {} },
+    keys(prefix) { const out = new Set(Object.keys(mem).filter(k => k.startsWith(prefix))); try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith('java21:' + prefix)) out.add(k.slice(6)); } } catch (e) {} return [...out]; },
+    available() { try { localStorage.setItem('java21:test', '1'); localStorage.removeItem('java21:test'); return true; } catch (e) { return false; } }
+  };
+
+  /* ---------- course structure ---------- */
+  const PIECES = [
+    ['lang', 'The language, as specified (JLS 21)', [
+      ['0001-types-values-variables', 'Types, values, variables', 'JLS ch 4, 5'],
+      ['0002-classes-objects-initialization', 'Classes, objects, initialization order', 'JLS ch 8, 12'],
+      ['0003-records-sealed-interfaces', 'Records, sealed types, interfaces', 'JLS §8.10, §8.1.1.2, ch 9'],
+      ['0004-generics-and-erasure', 'Generics, wildcards, erasure', 'JLS §4.5–4.10, §8.4.8.3'],
+      ['0005-expressions-exceptions-switch', 'Expressions, exceptions, switch & patterns', 'JLS ch 11, 14, 15; JEPs 440/441'],
+      ['0006-lambdas-streams', 'Lambdas, method references, streams', 'JLS §15.27, §15.13, java.util.stream'],
+      ['0007-java-memory-model', 'The Java memory model', 'JLS ch 17']]],
+    ['jvm', 'The JVM (JVMS 21 + HotSpot)', [
+      ['0008-class-files-and-bytecode', 'Class files and bytecode', 'JVMS ch 4, 6'],
+      ['0009-loading-linking-initialization', 'Loading, linking, initialization, class loaders', 'JVMS ch 5'],
+      ['0010-execution-frames-invokedynamic', 'Execution: frames, invoke*, invokedynamic', 'JVMS ch 2, 5.4.3, 6'],
+      ['0011-hotspot-jit', 'HotSpot: interpreter, C1/C2, deoptimization', 'compilationPolicy.cpp, c2_globals.hpp'],
+      ['0012-heap-gc-generational-zgc', 'Objects, heap, GC, Generational ZGC', 'markWord.hpp, gcConfig.cpp, JEP 439']]],
+    ['loom', 'Java 21: virtual threads and new features', [
+      ['0013-virtual-threads-model', 'Virtual threads: the model (JEP 444)', 'JEP 444'],
+      ['0014-virtual-threads-internals', 'Virtual threads: continuations, carriers, scheduler', 'VirtualThread.java, Continuation.java, freeze/thaw'],
+      ['0015-structured-concurrency-scoped-values', 'Structured concurrency & scoped values', 'StructuredTaskScope, ScopedValue (preview)'],
+      ['0016-concurrency-toolkit', 'The concurrency toolkit: monitors, locks, executors', 'JLS §17.1–17.3, java.util.concurrent'],
+      ['0017-java-21-features', 'What Java 21 adds', 'JEPs 431, 440, 441, 442, 443, 445, 446, 453']]]
+  ];
+  const LESSONS = PIECES.flatMap(p => p[2].map(l => [l[0], l[1], p[0], l[2]]));
+  const title = id => (LESSONS.find(l => l[0] === id) || [])[1] || id;
+  let pageId = null, root = '../';
+
+  /* ---------- chrome: sticky header, slide-out directory, notes drawer, prev/next ---------- */
+  function chrome(id, rootPath) {
+    pageId = id; root = rootPath === undefined ? '../' : rootPath;
+    const i = LESSONS.findIndex(l => l[0] === id);
+    const isLesson = i >= 0;
+    const top = document.createElement('header'); top.className = 'topbar';
+    top.innerHTML = `<button class="menu" aria-label="Open directory" aria-expanded="false">☰<span>Directory</span></button>
+      <a class="brand" href="${root}index.html"><span class="dot"></span>Java 21 course</a>
+      <nav class="links"><a href="${root}reference/glossary.html">Glossary</a><a href="${root}reference/cheatsheets.html">Cheat sheets</a><a href="${root}notes.html">My notes</a></nav>
+      ${isLesson ? `<span class="where">${i+1} / ${LESSONS.length}</span>` : ''}`;
+    document.body.prepend(top);
+    // directory drawer
+    const drawer = document.createElement('aside'); drawer.className = 'drawer'; drawer.setAttribute('aria-label', 'Course directory');
+    const scores = Object.fromEntries(LESSONS.map(l => [l[0], store.get('quiz:' + l[0])]));
+    const notes = new Set(store.keys('notes:').map(k => k.slice(6)).filter(k => (store.get('notes:' + k) || {}).text));
+    drawer.innerHTML = `<div class="dhead"><b>Directory</b><button class="close" aria-label="Close">×</button></div>
+      <a class="ditem ${id === 'index' ? 'cur' : ''}" href="${root}index.html">Course hub</a>
+      ${PIECES.map(([cls, name, ls]) => `<div class="dgroup piece-${cls}"><div class="dname">${name}</div>${ls.map(l => {
+        const n = LESSONS.findIndex(x => x[0] === l[0]) + 1, s = scores[l[0]];
+        return `<a class="ditem ${l[0] === id ? 'cur' : ''}" href="${root}lessons/${l[0]}.html"><span class="n">${n}</span><span class="t">${l[1]}<small>${l[3]}</small></span><span class="badges">${notes.has(l[0]) ? '<i title="you have notes">✎</i>' : ''}${s ? `<em title="best quiz score">${s.score}/${s.total}</em>` : ''}</span></a>`; }).join('')}</div>`).join('')}
+      <div class="dgroup piece-intro"><div class="dname">Reference</div>
+        <a class="ditem ${id === 'glossary' ? 'cur' : ''}" href="${root}reference/glossary.html"><span class="t">Glossary</span></a>
+        <a class="ditem ${id === 'cheatsheets' ? 'cur' : ''}" href="${root}reference/cheatsheets.html"><span class="t">Cheat sheets</span></a>
+        <a class="ditem ${id === 'notes' ? 'cur' : ''}" href="${root}notes.html"><span class="t">My notes &amp; progress</span></a></div>
+      <div class="dfoot">${store.available() ? 'Notes and scores are saved in this browser.' : 'Notes and scores are kept for this session only (storage unavailable here).'}</div>`;
+    document.body.append(drawer);
+    const scrim = document.createElement('div'); scrim.className = 'scrim'; document.body.append(scrim);
+    const open = o => { document.body.classList.toggle('drawer-open', o); top.querySelector('.menu').setAttribute('aria-expanded', o); if (o) drawer.querySelector('.cur, .ditem')?.focus(); };
+    top.querySelector('.menu').onclick = () => open(!document.body.classList.contains('drawer-open'));
+    drawer.querySelector('.close').onclick = () => open(false); scrim.onclick = () => open(false);
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') { open(false); notesOpen(false); } });
+    // prev/next for lessons
+    if (isLesson) {
+      const nav = document.createElement('div'); nav.className = 'nav-bottom';
+      const prev = LESSONS[i-1], next = LESSONS[i+1];
+      nav.innerHTML = (prev ? `<a href="${prev[0]}.html">← ${i}. ${prev[1]}</a>` : '<span></span>') +
+                      (next ? `<a href="${next[0]}.html">${i+2}. ${next[1]} →</a>` : `<a href="${root}index.html">Back to course hub →</a>`);
+      document.querySelector('.wrap').append(nav);
+    }
+    // wrap tables so they scroll sideways on phones
+    document.querySelectorAll('.wrap table').forEach(t => { if (t.parentElement.classList.contains('tw')) return; const w = document.createElement('div'); w.className = 'tw'; t.replaceWith(w); w.append(t); });
+    // notes drawer (every page except the notes page itself)
+    if (id !== 'notes') notesUI(id, isLesson ? `${i+1}. ${LESSONS[i][1]}` : (document.title.split(' — ')[0]));
+  }
+
+  /* ---------- notes: floating button + bottom sheet, autosaved ---------- */
+  let notesOpen = () => {};
+  function notesUI(id, label) {
+    const btn = document.createElement('button'); btn.className = 'notes-fab'; btn.innerHTML = '✎ <span>Notes</span>'; btn.setAttribute('aria-label', 'Open notes');
+    const sheet = document.createElement('section'); sheet.className = 'notes-sheet'; sheet.setAttribute('aria-label', 'Notes for this page');
+    const saved = store.get('notes:' + id) || {};
+    sheet.innerHTML = `<div class="nhead"><b>Notes · ${esc(label)}</b><span class="nstatus"></span><button class="close" aria-label="Close notes">×</button></div>
+      <textarea placeholder="Your notes for this page. Markdown is fine. Saved automatically.">${esc(saved.text || '')}</textarea>
+      <div class="nfoot"><span class="ncount"></span><a href="${root}notes.html">All notes &amp; export →</a></div>`;
+    document.body.append(btn, sheet);
+    const ta = sheet.querySelector('textarea'), status = sheet.querySelector('.nstatus'), count = sheet.querySelector('.ncount');
+    const upd = () => { count.textContent = ta.value.trim() ? ta.value.trim().split(/\s+/).length + ' words' : ''; };
+    let t; ta.addEventListener('input', () => { status.textContent = 'saving…'; clearTimeout(t); t = setTimeout(() => { store.set('notes:' + id, { text: ta.value, title: label, updated: new Date().toISOString() }); status.textContent = 'saved'; upd(); }, 400); });
+    upd();
+    notesOpen = o => { document.body.classList.toggle('notes-open', o); if (o) ta.focus(); };
+    btn.onclick = () => notesOpen(!document.body.classList.contains('notes-open'));
+    sheet.querySelector('.close').onclick = () => notesOpen(false);
+  }
+
+  /* ---------- quiz: immediate feedback; best score persisted ---------- */
+  function quiz(el, qs) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('quiz');
+    let score = 0, answered = 0;
+    const best = pageId ? store.get('quiz:' + pageId) : null;
+    el.innerHTML = qs.map((q, i) => `<div class="q" data-i="${i}"><p>${i+1}. ${q.q}</p>
+      <div class="opts">${q.o.map((o, j) => `<button class="opt" data-j="${j}">${esc(o)}</button>`).join('')}</div>
+      <div class="why">${q.why}</div></div>`).join('') + `<div class="score">${best ? `Best so far: ${best.score}/${best.total} (${new Date(best.date).toLocaleDateString()})` : ''}</div>`;
+    el.querySelectorAll('.q').forEach(qd => {
+      const q = qs[+qd.dataset.i];
+      qd.querySelectorAll('.opt').forEach(b => b.addEventListener('click', () => {
+        if (qd.classList.contains('done')) return;
+        qd.classList.add('done'); answered++;
+        const j = +b.dataset.j;
+        if (j === q.a) { b.classList.add('right'); score++; }
+        else { b.classList.add('wrong'); qd.querySelectorAll('.opt')[q.a].classList.add('right'); }
+        const s = el.querySelector('.score');
+        s.textContent = `${score} / ${answered} correct`;
+        if (answered === qs.length) {
+          s.textContent += score === qs.length ? ' — all of them. Retry from memory in two days.' : ' — reread the sections you missed, then retry.';
+          if (pageId && (!best || score >= best.score)) store.set('quiz:' + pageId, { score, total: qs.length, date: new Date().toISOString() });
+        }
+      }));
+    });
+  }
+
+
+  /* ---------- Java code blocks: annotated, copyable, with a jshell hint (no JVM in the browser) ---------- */
+  function py(el, code, opts) {
+    el = typeof el === 'string' ? document.getElementById(el) : el; opts = opts || {};
+    el.classList.add('pyrun');
+    const src = code.trim();
+    const preview = /--enable-preview|StructuredTaskScope|ScopedValue|STR\./.test(src);
+    el.innerHTML = `<div class="pyhead"><span>Java 21${preview ? ' · needs --enable-preview' : ''}${opts.note ? ' · ' + esc(opts.note) : ''}</span><span class="pystatus">paste into jshell or a scratch file</span><button class="primary copy">Copy</button></div><pre class="pyout" style="display:block;white-space:pre-wrap;margin:0"><code>${esc(src)}</code></pre>`;
+    el.querySelector('.copy').onclick = () => { navigator.clipboard && navigator.clipboard.writeText(src).then(() => { el.querySelector('.pystatus').textContent = 'copied'; }).catch(() => {}); };
+  }
+
+  /* ---------- flip cards ---------- */
+  function cards(el, list) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('cards');
+    el.innerHTML = list.map(([f, b]) => `<div class="card" tabindex="0" role="button" aria-label="flip card"><div class="inner"><div class="face front">${f}</div><div class="face back">${b}</div></div></div>`).join('');
+    el.querySelectorAll('.card').forEach(c => {
+      const t = () => c.classList.toggle('flipped');
+      c.addEventListener('click', t);
+      c.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); t(); } });
+    });
+  }
+
+  /* ---------- stepper ---------- */
+  function stepper(el, steps, render) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('stepper');
+    let i = 0;
+    el.innerHTML = `<div class="controls"><button class="prev">← Back</button><button class="next primary">Next step →</button><span class="idx"></span></div><div class="stage"></div><div class="extra"></div>`;
+    const stage = el.querySelector('.stage'), idx = el.querySelector('.idx'), extra = el.querySelector('.extra');
+    const draw = () => { stage.innerHTML = steps[i]; idx.textContent = `step ${i+1} / ${steps.length}`; if (render) render(i, extra); };
+    el.querySelector('.prev').onclick = () => { i = Math.max(0, i-1); draw(); };
+    el.querySelector('.next').onclick = () => { i = Math.min(steps.length-1, i+1); draw(); };
+    draw();
+  }
+
+  /* ---------- gantt ---------- */
+  function gantt(el, rows, total, colors) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('gantt');
+    const pal = colors || ['#e8b84a','#5bc8f5','#6bcb77','#f47fa0','#c9a8ff','#ffb86b'];
+    el.innerHTML = rows.map((r, i) => `<div class="row"><span>${esc(r.name)}</span><div class="track">${r.segs.map(s =>
+      `<div class="seg" style="left:${100*s.start/total}%;width:${100*(s.end-s.start)/total}%;background:${pal[i%pal.length]}" title="${s.start}–${s.end}">${(s.end-s.start)/total > .06 ? (s.end-s.start) : ''}</div>`).join('')}</div></div>`).join('') +
+      `<div class="row"><span></span><div style="display:flex;justify-content:space-between;font-size:.75rem;color:var(--muted)"><span>0</span><span>${total}</span></div></div>`;
+  }
+
+  /* ---------- objectives checklist (persisted) ---------- */
+  function objectives(el, items) {
+    el = typeof el === 'string' ? document.getElementById(el) : el;
+    el.classList.add('objectives');
+    const saved = (pageId && store.get('obj:' + pageId)) || [];
+    el.innerHTML = items.map((t, i) => `<li><label><input type="checkbox" data-i="${i}" ${saved.includes(i) ? 'checked' : ''}>${t}</label></li>`).join('');
+    el.querySelectorAll('input').forEach(c => c.onchange = () => { const s = [...el.querySelectorAll('input:checked')].map(x => +x.dataset.i); if (pageId) store.set('obj:' + pageId, s); });
+  }
+
+  return { chrome, quiz, cards, stepper, gantt, objectives, py, esc, store, LESSONS, PIECES, title };
+})();
+
+</script>
+<script>
+OS.chrome('0016-concurrency-toolkit');
+OS.objectives('obj',['Explain monitor semantics, inflation, wait/notify discipline and the pinning consequence for virtual threads.','Compare ReentrantLock, Condition, ReadWriteLock, StampedLock, Semaphore, latches/barriers, atomics.','Describe AQS (state int, tryAcquire/tryRelease, FIFO queue, LockSupport permits) as the basis of j.u.c locks.','Contrast ThreadPoolExecutor, ForkJoinPool (work stealing, common pool, ManagedBlocker) and thread-per-task executors.','Apply a decision procedure for concurrency primitives and a memory-model correctness checklist.']);
+let M;function mreset(){M={owner:null,entry:[],wait:[],log:[]};md('');}
+function md(m){document.getElementById('mq').textContent=`monitor owner: ${M.owner||'—'}\nentry list (blocked on monitorenter): [${M.entry.join(', ')}]\nwait set (in Object.wait): [${M.wait.join(', ')}]\n\n`+M.log.slice(-5).join('\n');document.getElementById('mm').textContent=m;}
+const MA={acq(){if(M.owner){M.entry.push('T1');M.log.push('T1: monitorenter contended → inflate to ObjectMonitor; T1 parks in entry list');return md('Contention inflates the lightweight lock (mark word lock bits 10).');}M.owner='T1';M.log.push('T1: monitorenter (CAS on mark word) → owner');md('Uncontended: a CAS, no OS involvement.');},
+acq2(){if(!M.owner){M.owner='T2';M.log.push('T2: monitorenter → owner');return md('');}M.entry.push('T2');M.log.push('T2: monitorenter blocked → entry list');md('T2 waits for the owner to exit. If T2 is a virtual thread it is pinned to its carrier while blocked here (JDK 21).');},
+wait(){if(!M.owner)return md('wait() without the lock → IllegalMonitorStateException');const o=M.owner;M.wait.push(o);M.log.push(`${o}: wait() → releases the monitor, joins the wait set`);M.owner=M.entry.shift()||null;if(M.owner)M.log.push(`${M.owner}: acquired from the entry list`);md('§17.2.1: wait releases all held locks and blocks until notify/notifyAll/interrupt/timeout or a spurious wake-up — hence the loop.');},
+notify(){if(!M.owner)return md('notify() without the lock → IllegalMonitorStateException');if(!M.wait.length)return md('notify() with an empty wait set does nothing (signals are not remembered).');const w=M.wait.shift();M.entry.push(w);M.log.push(`${M.owner}: notify() → ${w} moved from wait set to entry list (must re-acquire the lock)`);md('The notified thread cannot run until the notifier exits the monitor.');},
+exit(){if(!M.owner)return md('no owner');M.log.push(`${M.owner}: monitorexit`);M.owner=M.entry.shift()||null;if(M.owner)M.log.push(`${M.owner}: acquired the monitor (no fairness guarantee about which)`);md('Unlock happens-before the next lock: everything the previous owner wrote is visible.');},
+reset(){mreset();}};
+document.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>MA[b.dataset.m]());mreset();
+document.getElementById('dec').innerHTML=[['Many concurrent tasks that block on I/O','virtual threads (newVirtualThreadPerTaskExecutor or Thread.ofVirtual); structured scopes for fan-out; semaphores for throttling'],['CPU-bound parallel work over data','parallel streams / ForkJoinPool common pool; a fixed pool of ~cores platform threads; never more virtual threads than cores helps'],['Recurring / delayed work','ScheduledThreadPoolExecutor'],['Protect a small in-memory critical section','synchronized (fine even with virtual threads if it never blocks inside), or an Atomic*/LongAdder if it is one variable'],['Guard a slow operation (I/O, remote call) with mutual exclusion','ReentrantLock (unmounts virtual threads; supports tryLock/timeouts) — not synchronized'],['Read-mostly shared structure','ConcurrentHashMap / CopyOnWriteArrayList first; ReentrantReadWriteLock or StampedLock optimistic reads if you must lock'],['Wait for N things / start together','CountDownLatch, CyclicBarrier, Phaser — or a StructuredTaskScope join'],['Pass context down a call tree','ScopedValue (preview) rather than ThreadLocal with virtual threads']].map(([a,b])=>`<div><b>${a}</b> → ${b}</div>`).join('');
+OS.py('py1',`// Three bounded buffers
+class MonitorBuffer<T> {                                      // wait/notify: one wait set for both conditions → notifyAll
+    private final Object[] items; private int head, tail, count;
+    MonitorBuffer(int n) { items = new Object[n]; }
+    synchronized void put(T x) throws InterruptedException {
+        while (count == items.length) wait();                 // loop: spurious wake-ups permitted (JLS 17.2.1)
+        items[tail] = x; tail = (tail + 1) % items.length; count++; notifyAll();
+    }
+    @SuppressWarnings("unchecked") synchronized T take() throws InterruptedException {
+        while (count == 0) wait();
+        T x = (T) items[head]; items[head] = null; head = (head + 1) % items.length; count--; notifyAll(); return x;
+    }
+}
+class LockBuffer<T> {                                         // ReentrantLock + two Conditions; virtual-thread friendly
+    private final ReentrantLock lock = new ReentrantLock();
+    private final Condition notFull = lock.newCondition(), notEmpty = lock.newCondition();
+    private final Object[] items; private int head, tail, count;
+    LockBuffer(int n) { items = new Object[n]; }
+    void put(T x) throws InterruptedException {
+        lock.lock(); try { while (count == items.length) notFull.await(); items[tail] = x; tail = (tail + 1) % items.length; count++; notEmpty.signal(); } finally { lock.unlock(); }
+    }
+    @SuppressWarnings("unchecked") T take() throws InterruptedException {
+        lock.lock(); try { while (count == 0) notEmpty.await(); T x = (T) items[head]; head = (head + 1) % items.length; count--; notFull.signal(); return x; } finally { lock.unlock(); }
+    }
+}
+BlockingQueue<String> q = new ArrayBlockingQueue<>(16);      // the one you should actually use
+// A minimal AQS-based binary semaphore (the pattern behind ReentrantLock/Semaphore/CountDownLatch)
+class Mutex extends AbstractQueuedSynchronizer {
+    protected boolean tryAcquire(int ignore) { return compareAndSetState(0, 1); }
+    protected boolean tryRelease(int ignore) { setState(0); return true; }
+    void lock() { acquire(1); } void unlock() { release(1); }   // acquire parks via LockSupport in the FIFO queue
+}`);
+OS.cards('cards',[['Intrinsic monitor','Reentrant, no timeout/fairness/interruptible acquire; inflates to ObjectMonitor under contention or wait(); pins virtual threads while blocked.'],['wait / notify discipline','Hold the lock; loop on the condition; prefer notifyAll; signals are not remembered.'],['ReentrantLock','Explicit lock/unlock in finally, tryLock with timeout, lockInterruptibly, optional fairness, multiple Conditions; unmounts virtual threads.'],['StampedLock','Write, read and optimistic-read modes with stamp validation; not reentrant.'],['Semaphore','N permits without ownership; the recommended throttle instead of small thread pools.'],['AQS','Atomic int state + tryAcquire/tryRelease (+ shared variants) + FIFO CLH-style queue parked via LockSupport; basis of j.u.c locks/latches.'],['LockSupport permit','At most one per thread; park consumes or blocks (spurious returns allowed); unpark supplies it; virtual-thread aware.'],['ThreadPoolExecutor sizing trap','Threads beyond core are created only when the work queue is full; an unbounded queue never grows the pool.'],['ForkJoinPool','Work-stealing deques (LIFO; FIFO in asyncMode); common pool for parallel streams; ManagedBlocker compensation.']]);
+OS.quiz('quiz',[
+{q:'Calling notify() while no thread is waiting:',o:['queues the signal for the next waiter','does nothing; the signal is lost','throws IllegalMonitorStateException','wakes the next thread to call wait()'],a:1,why:'Monitors do not remember notifications; this is why the condition must be re-checked in a loop rather than relying on a signal count.'},
+{q:'Which lock feature is NOT available with synchronized?',o:['reentrancy','acquire with timeout (tryLock)','release on exception','mutual exclusion'],a:1,why:'Intrinsic locks have no timeout, no interruptible acquire and no fairness option; ReentrantLock provides them.'},
+{q:'In AbstractQueuedSynchronizer, what does a subclass define?',o:['the wait queue implementation','the meaning of the int state via tryAcquire/tryRelease (and shared variants)','the thread scheduler','the memory model'],a:1,why:'AQS supplies the atomic state, the FIFO queue and parking; subclasses interpret state.'},
+{q:'LockSupport.park() returns immediately if:',o:['the thread holds no locks','a permit is available (consuming it) or the thread is interrupted; it may also return spuriously','another thread called notify()','the JVM is shutting down'],a:1,why:'Each thread has at most one permit; park consumes it; unpark supplies it; spurious returns are allowed.'},
+{q:'A ThreadPoolExecutor has core 4, max 16 and an unbounded LinkedBlockingQueue. Under load it runs at most:',o:['16 threads','4 threads — the queue never fills so no extra threads are created','as many as needed','1 thread'],a:1,why:'Threads beyond core are created only when offering to the queue fails; an unbounded queue never fails.'},
+{q:'With virtual threads, guarding a remote call with mutual exclusion should use:',o:['synchronized','ReentrantLock, so the virtual thread unmounts while waiting','Object.wait()','a fixed thread pool'],a:1,why:'Blocking inside synchronized pins the carrier; j.u.c locks park via LockSupport and unmount.'},
+{q:'What is the default parallelism source for parallel streams?',o:['a new pool per stream','the ForkJoinPool common pool (about processors − 1)','the virtual-thread scheduler','a single thread'],a:1,why:'ForkJoinPool.commonPool() runs parallel streams and CompletableFuture defaults; the virtual-thread scheduler is a separate pool.'},
+{q:'To limit a service to 20 concurrent downstream calls when using virtual threads, use:',o:['newFixedThreadPool(20) of virtual threads','a Semaphore(20)','ReentrantReadWriteLock','ThreadLocal counters'],a:1,why:'Semaphore permits express the limit directly; JEP 444 says never pool virtual threads.'}]);
+</script></body></html>
